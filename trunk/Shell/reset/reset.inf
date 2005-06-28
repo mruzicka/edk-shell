@@ -34,7 +34,7 @@
 --*/
 
 [defines]
-BASE_NAME            = Reset
+BASE_NAME            = Resets
 FILE_GUID            = EE14B4E9-E71C-499d-97E2-F389F7A8C565
 COMPONENT_TYPE       = APPLICATION
 

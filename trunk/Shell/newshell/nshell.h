@@ -47,4 +47,15 @@ extern EFI_SHELL_ENVIRONMENT  *SE;
 #define EFI_NSHELL_MAJOR_VERSION  0x00000001
 #define EFI_NSHELL_MINOR_VERSION  0x00000000
 
+#undef EFI_MONOSHELL_CODE
+#undef EFI_NO_MONOSHELL_CODE
+
+#if EFI_MONOSHELL == 1
+#define EFI_MONOSHELL_CODE(code)    code
+#define EFI_NO_MONOSHELL_CODE(code)
+#else
+#define EFI_MONOSHELL_CODE(code)
+#define EFI_NO_MONOSHELL_CODE(code) code
+#endif
+
 #endif

@@ -19,8 +19,8 @@ Abstract:
 
 --*/
 
-#include "nshell.h"
 #include "FakeHii.h"
+#include "nshell.h"
 
 extern UINT8    STRING_ARRAY_NAME[];
 extern BOOLEAN  gHiiInitialized = FALSE;
