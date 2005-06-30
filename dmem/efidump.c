@@ -175,7 +175,7 @@ TABLE_HEADER_INFO DmemTableHeader[] = {
   DumpGenericHeader
 };
 
-UINT8   FatNumber[] = { 12, 16, 32, 0 };
+static UINT8   FatNumber[] = { 12, 16, 32, 0 };
   
 VOID
 EFITableHeaderPrint (
