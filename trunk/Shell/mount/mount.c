@@ -79,7 +79,9 @@ NameHasSpace (
   return TRUE;
 }
 
-EFI_APPLICATION_ENTRY_POINT(MountMain)
+EFI_BOOTSHELL_CODE(
+  EFI_APPLICATION_ENTRY_POINT(MountMain)
+)
 //
 //
 //
