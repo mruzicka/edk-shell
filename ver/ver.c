@@ -1,6 +1,6 @@
 /*++
  
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -191,7 +191,7 @@ Returns:
 
   if (LibCheckVarGetFlag (&ChkPck, L"-s")) {
     PrintToken (STRING_TOKEN (STR_VER_SHELL_VER), HiiHandle, SE2->MajorVersion, SE2->MinorVersion);
-    PrintToken (STRING_TOKEN (STR_VER_SHELL_SIG), HiiHandle, &SE2->SEXGuid);
+    PrintToken (STRING_TOKEN (STR_VER_SHELL_SIG), HiiHandle, &SE2->SESGuid);
   } else {
     //
     // Print version info

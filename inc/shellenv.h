@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -397,7 +397,7 @@ EFI_STATUS
   OUT EFI_DEVICE_PATH_PROTOCOL     **DevPath
   );
 
-#define EFI_SE_EXT_GUID \
+#define EFI_SE_EXT_SIGNATURE_GUID \
   { \
     0xd2c18636, 0x40e5, 0x4eb5, \
     { \
@@ -429,7 +429,7 @@ typedef struct {
   //
   // Major Version grows if shell environment interface has been changes
   //
-  EFI_GUID                                SEXGuid;
+  EFI_GUID                                SESGuid;
   UINT32                                  MajorVersion;
   UINT32                                  MinorVersion;
   SHELLENV_ENABLE_PAGE_BREAK              EnablePageBreak;

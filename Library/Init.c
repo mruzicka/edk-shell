@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -183,7 +183,7 @@ EFI_HII_PROTOCOL *HiiProt        = NULL;
 EFI_HII_HANDLE   HiiLibHandle    = (EFI_HII_HANDLE) 0;
 BOOLEAN          HiiInitialized  = FALSE;
 UINTN            NumStrings      = 0;
-EFI_GUID         SEXGuid         = EFI_SE_EXT_GUID;
+EFI_GUID         SESGuid         = EFI_SE_EXT_SIGNATURE_GUID;
 
 EFI_STATUS
 LibInitializeStrings (
@@ -297,7 +297,7 @@ LibInitializeShellApplication (
                 &ShellEnvProtocol,
                 (VOID *) &SE2
                 );
-  if (EFI_ERROR (Status) || !(CompareGuid (&SE2->SEXGuid, &SEXGuid) == 0 &&
+  if (EFI_ERROR (Status) || !(CompareGuid (&SE2->SESGuid, &SESGuid) == 0 &&
     (SE2->MajorVersion > EFI_SHELL_MAJOR_VER ||
       (SE2->MajorVersion == EFI_SHELL_MAJOR_VER && SE2->MinorVersion >= EFI_SHELL_MINOR_VER))
     )
@@ -321,7 +321,7 @@ LibInitializeShellApplication (
            &ShellEnvProtocol,
            (VOID *) &SE2
            );
-      if (CompareGuid (&SE2->SEXGuid, &SEXGuid) == 0 &&
+      if (CompareGuid (&SE2->SESGuid, &SESGuid) == 0 &&
         (SE2->MajorVersion > EFI_SHELL_MAJOR_VER ||
           (SE2->MajorVersion == EFI_SHELL_MAJOR_VER && SE2->MinorVersion >= EFI_SHELL_MINOR_VER)
         )
