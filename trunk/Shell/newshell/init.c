@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -758,7 +758,7 @@ _ShellLoadEnvDriver (
   UINTN                     NoHandles;
   EFI_HANDLE                *Handles;
   EFI_SHELL_ENVIRONMENT2    *Junk;
-  EFI_GUID                  SEXGuid = EFI_SE_EXT_GUID;
+  EFI_GUID                  SESGuid = EFI_SE_EXT_SIGNATURE_GUID;
   //
   // If we already have a loaded driver, we don't need to load anymore.
   //
@@ -767,7 +767,7 @@ _ShellLoadEnvDriver (
             (VOID *) &Junk
             );
   if (!EFI_ERROR (Status)) {
-    if (!CompareGuid (&Junk->SEXGuid, &SEXGuid)) {
+    if (!CompareGuid (&Junk->SESGuid, &SESGuid)) {
       if (Junk->MajorVersion >= EFI_NSHELL_MAJOR_VERSION) {
         return Status;
       }
@@ -820,7 +820,7 @@ _ShellLoadEnvDriver (
               );
     if (!EFI_ERROR (Status)) {
       Status = EFI_UNSUPPORTED;
-      if (!CompareGuid (&Junk->SEXGuid, &SEXGuid)) {
+      if (!CompareGuid (&Junk->SESGuid, &SESGuid)) {
         if (Junk->MajorVersion >= EFI_NSHELL_MAJOR_VERSION) {
           Status = EFI_SUCCESS;
         }

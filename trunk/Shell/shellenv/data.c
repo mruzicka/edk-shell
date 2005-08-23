@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -62,7 +62,7 @@ EFI_SHELL_ENVIRONMENT2        SEnvInterface2 = {
   SEnvBatchIsActive,
   SEnvFreeResources,
 
-  EFI_SE_EXT_GUID,
+  EFI_SE_EXT_SIGNATURE_GUID,
   EFI_SHELL_MAJOR_VER,
   EFI_SHELL_MINOR_VER,
   SEnvEnablePageBreak,

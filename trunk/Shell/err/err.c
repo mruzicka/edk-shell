@@ -1,6 +1,6 @@
 /*++
 
-Copyright 2005, Intel Corporation                                                         
+Copyright (c) 2005, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -75,6 +75,11 @@ PrintErrMsg (
   IN UINTN EFIDebug
   );
 
+EFI_STATUS
+_SetAllDriverMask (
+  IN     UINTN          Msk
+  );
+
 VOID
 _DumpGlobalMask (
   VOID
@@ -118,6 +123,7 @@ _SetGlobalMask (
                     &DebugLevel
                     );
       EFIDebug = DebugLevel;
+      _SetAllDriverMask(DebugLevel);
       break;
     } else if (In == 'N' || In == 'n') {
       break;
@@ -279,6 +285,59 @@ _SetDriverMask (
 
 Done:
   ShellCloseHandleEnumerator ();
+  return Status;
+}
+
+EFI_STATUS
+_SetAllDriverMask (
+  IN     UINTN         Msk
+  )
+{
+  EFI_STATUS              Status;
+  EFI_HANDLE              *Buffer;
+  UINTN                   BufferSize;
+  UINTN                   Index;
+  EFI_DEBUG_MASK_PROTOCOL *dmp;
+  
+  dmp       = NULL;
+  Buffer    = NULL;
+  BufferSize = 0;
+
+  Status = BS->LocateHandle (
+                 ByProtocol,
+                 &gEfiDebugMaskProtocolGuid,
+                 NULL,
+                 &BufferSize,
+                 Buffer
+                 );
+  if (Status != EFI_BUFFER_TOO_SMALL) {
+    PrintToken (STRING_TOKEN (STR_ERR_NO_HANDLE), HiiHandle);
+    goto Done;
+  }
+  
+  Buffer = AllocatePool (BufferSize);
+  
+  Status = BS->LocateHandle (
+                 ByProtocol,
+                 &gEfiDebugMaskProtocolGuid,
+                 NULL,
+                 &BufferSize,
+                 Buffer
+                 );
+  if (EFI_ERROR(Status)) {
+    PrintToken (STRING_TOKEN (STR_ERR_NO_HANDLE), HiiHandle);
+    goto Done;
+  }
+  
+  for (Index = 0; Index < BufferSize / sizeof(EFI_HANDLE); Index ++) {
+    Status = BS->HandleProtocol (Buffer[Index], &gEfiDebugMaskProtocolGuid, &dmp);
+    Status = dmp->SetDebugMask (dmp, Msk);
+  }
+
+Done: 
+  if (Buffer != NULL) {
+    FreePool (Buffer);
+  }
   return Status;
 }
 
