@@ -85,7 +85,13 @@ _DumpGlobalMask (
   VOID
   )
 {
-  UPDATE_DEBUG_MASK ();
+  VOID  *Variable; 
+  Variable = LibGetVariable (L"EFIDebug", &gEfiGlobalVariableGuid); 
+  if (NULL == Variable) { 
+    EFIDebug = EFI_D_ERROR; 
+  } else { 
+    EFIDebug = *(UINTN *) Variable; 
+  } 
   PrintErrMsg (EFIDebug);
 }
 

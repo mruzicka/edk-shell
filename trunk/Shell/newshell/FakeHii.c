@@ -1051,7 +1051,7 @@ FakeHiiGetString (
   IN STRING_REF                         Token,
   IN BOOLEAN                            Raw,
   IN CHAR16                             *LanguageString,
-  IN OUT UINT16                         *BufferLength,
+  IN OUT UINTN                          *BufferLength,
   OUT EFI_STRING                        StringBuffer
   )
 /*++
@@ -1252,7 +1252,7 @@ LangNotFound:
 
     Count = Count * sizeof (CHAR16);;
 
-    if (*BufferLength >= Count) {
+    if (*BufferLength >= (UINTN)Count) {
       //
       // Copy the string to the user's buffer
       //
@@ -1287,10 +1287,10 @@ LangNotFound:
         Count = Count * 2;
       }
 
-      *BufferLength = (UINT16) Count;
+      *BufferLength = (UINTN) Count;
       return EFI_SUCCESS;
     } else {
-      *BufferLength = (UINT16) Count;
+      *BufferLength = (UINTN) Count;
       return EFI_BUFFER_TOO_SMALL;
     }
 
@@ -1408,7 +1408,7 @@ FakeHiiGetForms (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,
   IN     EFI_FORM_ID        FormId,
-  IN OUT UINT16             *BufferLength,
+  IN OUT UINTN              *BufferLength,
   OUT    UINT8              *Buffer
   )
 /*++

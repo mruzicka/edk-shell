@@ -539,7 +539,7 @@ Returns:
   //
   // Get all the forms associated with this HiiHandle
   //
-  Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &DataLength, RawData);
+  Status = Hii->GetForms (Hii, HiiHandle, 0, &DataLength, RawData);
 
   if (EFI_ERROR (Status)) {
     FreePool (RawData);
@@ -554,7 +554,7 @@ Returns:
     //
     // Get all the forms associated with this HiiHandle
     //
-    Status = Hii->GetForms (Hii, HiiHandle, 0, (UINT16 *) &DataLength, RawData);
+    Status = Hii->GetForms (Hii, HiiHandle, 0, &DataLength, RawData);
   }
 
   OldData = RawData;
@@ -1263,7 +1263,7 @@ Returns:
 --*/
 {
   EFI_STATUS        Status;
-  UINT16            StringSize;
+  UINTN             StringSize;
   EFI_HII_PROTOCOL  *HiiProt;
 
   ASSERT (String);

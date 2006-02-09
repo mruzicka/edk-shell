@@ -448,7 +448,7 @@ Returns:
 {
   VA_LIST           args;
   CHAR16            *StringPtr;
-  UINT16            StringSize;
+  UINTN             StringSize;
   EFI_HII_PROTOCOL  *Hii;
   UINTN             Value;
   EFI_STATUS        Status;

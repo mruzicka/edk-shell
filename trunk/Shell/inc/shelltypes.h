@@ -178,4 +178,8 @@ typedef struct {
   SHELLCMD_GET_LINE_HELP    GetLineHelp;
 } COMMAND;
 
+#if defined(__cplusplus)
+} /* extern "C" */
+#endif
+
 #endif
