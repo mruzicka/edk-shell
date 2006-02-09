@@ -1,5 +1,5 @@
 Notes:
-  This EFI Shell release package has been tested on the 2005-06-16's EDK which snapshot
-is Edk-Dev-Snapshot-20050616, User can get this version EDK from the following URL:
-  http://edk.tianocore.org/files/documents/16/135/Edk-Dev-Snapshot-20050616.zip
+  This EFI Shell release package has been tested on the 2006-01-27's EDK which snapshot
+is Edk-Dev-Snapshot-20060127, User can get this version EDK from the following URL:
+  http://edk.tianocore.org/files/documents/16/218/Edk-Dev-Snapshot-20060127.zip
   We don't guarantee this package can work correctly on the other EDK snapshot.
