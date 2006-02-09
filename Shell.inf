@@ -179,6 +179,11 @@ COMPONENT_TYPE       = APPLICATION
   Library\EBC\math.c
   Library\EBC\initplat.c
 
+[sources.x64]
+  ver\ia32\ver32.c
+  Library\ipf\math.c
+  Library\ia32\initplat.c
+
 [includes.common]
   .
   .\Inc

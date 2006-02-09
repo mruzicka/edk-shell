@@ -181,7 +181,7 @@ FakeHiiGetString (
   IN STRING_REF                             Token,
   IN BOOLEAN                                Raw,
   IN CHAR16                                 *LanguageString,
-  IN OUT UINT16                             *BufferLength,
+  IN OUT UINTN                              *BufferLength,
   OUT EFI_STRING                            StringBuffer
   );
 
@@ -197,7 +197,7 @@ FakeHiiGetForms (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,
   IN     EFI_FORM_ID        FormId,
-  IN OUT UINT16             *BufferLength,
+  IN OUT UINTN              *BufferLength,
   OUT    UINT8              *Buffer
   );
 

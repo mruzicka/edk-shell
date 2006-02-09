@@ -1109,10 +1109,10 @@ CheckValidFileName (
   )
 {
   EFI_STATUS  Status;
-  UINTN       Index;
-  UINTN       Index1;
-  UINTN       Pos;
-  UINTN       Len;
+  INTN        Index;
+  INTN        Index1;
+  INTN        Pos;
+  INTN        Len;
 
   Status = EFI_SUCCESS;
   //

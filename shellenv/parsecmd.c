@@ -948,39 +948,52 @@ OnMetPersentageSign (
   }
 
   if (EFI_NOT_FOUND == Status) {
-    if (IsInBatch && IsDigit (VarName[0])) {
-      Status = VarSubstitute (
-                VarName,
-                VAR_TYPE_POSITION,
-                SEnvBatchIsActive (),
-                tp
-                );
-    }
-
-    if (IsInBatch && IsAlpha (VarName[0])) {
-      Status = VarSubstitute (
-                VarName,
-                VAR_TYPE_INDEX,
-                SEnvBatchIsActive (),
-                tp
-                );
-    }
-
-    if (!EFI_ERROR (Status)) {
-      //
-      // We got here, it means either substitution of %n or %x succeeded,
-      // step over it and continue.
-      //
-      *Current += 2;
-    } else if (EFI_NOT_FOUND == Status) {
-      Status = EFI_SUCCESS;
+    if (IsInBatch) {
       if (IsDigit (VarName[0])) {
-        *Current += 2;
-      } else if (0 == *tmp || !ValidChar) {
-        (*Current)++;
-      } else {
-        *Current = tmp + 1;
+        Status = VarSubstitute (
+                  VarName,
+                  VAR_TYPE_POSITION,
+                  SEnvBatchIsActive (),
+                  tp
+                  );
       }
+  
+      if (IsAlpha (VarName[0])) {
+        Status = VarSubstitute (
+                  VarName,
+                  VAR_TYPE_INDEX,
+                  SEnvBatchIsActive (),
+                  tp
+                  );
+      }
+  
+      if (!EFI_ERROR (Status)) {
+        //
+        // We got here, it means either substitution of %n or %x succeeded,
+        // step over it and continue.
+        //
+        *Current += 2;
+      } else if (EFI_NOT_FOUND == Status) {
+        Status = EFI_SUCCESS;
+        if (IsDigit (VarName[0])) {
+          *Current += 2;
+        } else if (0 == *tmp || !ValidChar) {
+          (*Current)++;
+        } else {
+          *Current = tmp + 1;
+        }
+      }
+    } else {
+      if (0 == *tmp || !ValidChar)
+      {
+        tmp = *Current + 1; 
+      }
+      while((*Current) < tmp)
+      {
+        InsertChar2ArgPart(**Current, tp);
+        (*Current) ++;
+      }
+      Status = EFI_SUCCESS;
     }
   } else {
     *Current = tmp + 1;

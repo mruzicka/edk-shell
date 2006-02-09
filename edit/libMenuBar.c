@@ -188,7 +188,7 @@ MainMenuBarRefresh (
   UINTN                 Width;
   CHAR16                *NameString;
   CHAR16                *FunctionKeyString;
-  UINT16                BufferSize;
+  UINTN                 BufferSize;
   EFI_STATUS            Status;
 
   //

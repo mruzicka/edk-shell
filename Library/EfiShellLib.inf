@@ -58,6 +58,10 @@ COMPONENT_TYPE  = LIBRARY
   EBC\math.c
   EBC\initplat.c
   
+[sources.x64]
+  ipf\math.c
+  ia32\initplat.c
+
 [includes.common]
   .
   ..\Inc

@@ -280,7 +280,7 @@ StrChr (
 {
   ASSERT (Str != NULL);
   
-  for (; *Str != (char) c; ++Str) {
+  for (; *Str != c; ++Str) {
     if (*Str == '\0') {
       return NULL;
     }
