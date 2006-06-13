@@ -74,6 +74,7 @@ SHELL_VAR_CHECK_ITEM      CpCheckList[] = {
 // Function Declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeCP (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -84,6 +85,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeCP (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -148,6 +150,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeCPGetLineHelp (
   OUT CHAR16              **Str
   )

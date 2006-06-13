@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -667,10 +667,12 @@ DEV_PATH_CONSIST_MAPPING_TABLE  DevPathConsistMappingTable[] = {
   MEDIA_PROTOCOL_DP,
   _DevPathSerialDefault,
   _DevPathCompareDefault,
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   _DevPathSerialDefault,
   _DevPathCompareDefault,
+#endif
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   _DevPathSerialDefault,

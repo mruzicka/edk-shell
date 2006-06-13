@@ -645,6 +645,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvDPath (
   IN EFI_HANDLE           h,
   IN VOID                 *Interface
@@ -685,6 +686,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvDPathTok (
   IN EFI_HANDLE   h,
   IN VOID         *Interface
@@ -732,6 +734,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvTextOut (
   IN EFI_HANDLE   h,
   IN VOID         *Interface
@@ -784,6 +787,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvBlkIo (
   IN EFI_HANDLE   h,
   IN VOID         *Interface
@@ -952,6 +956,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvImageTok (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -989,6 +994,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvImage (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -1058,6 +1064,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvIsaIo (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -1128,6 +1135,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvPciRootBridgeIo (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -1198,6 +1206,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvPciIo (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -1261,6 +1270,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvUsbIo (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -1312,6 +1322,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvDebugSupport (
   IN EFI_HANDLE       h,
   IN VOID             *Interface
@@ -1357,6 +1368,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvBusSpecificDriverOverride (
   IN EFI_HANDLE       h,
   IN VOID             *Interface

@@ -63,6 +63,7 @@ SHELL_VAR_CHECK_ITEM      MvCheckList[] = {
 // Function Declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeMv (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -82,6 +83,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeMv (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -740,6 +742,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeMvGetLineHelp (
   OUT CHAR16              **Str
   )

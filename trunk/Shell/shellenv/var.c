@@ -265,6 +265,7 @@ Returns:
 }
 
 CHAR16 *
+EFIAPI
 SEnvGetMap (
   IN CHAR16           *Name
   )
@@ -284,6 +285,7 @@ Returns:
 }
 
 CHAR16 *
+EFIAPI
 SEnvGetEnv (
   IN CHAR16           *Name
   )
@@ -511,6 +513,7 @@ SEnvCmdGetStringByToken (
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdAliasGetLineHelp (
   IN OUT CHAR16         **Str
   )
@@ -534,6 +537,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdSetGetLineHelp (
   IN OUT CHAR16         **Str
   )
@@ -927,6 +931,7 @@ Quit:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdSet (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -960,6 +965,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdAlias (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable

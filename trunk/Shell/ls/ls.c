@@ -93,6 +93,7 @@ GetFileType (
   );
 
 EFI_STATUS
+EFIAPI
 InitializeLS (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -106,6 +107,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeLS (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1059,6 +1061,7 @@ LsDumpFileInfo (
 
 
 EFI_STATUS
+EFIAPI
 InitializeLSGetLineHelp (
   OUT CHAR16              **Str
   )

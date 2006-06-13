@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -84,7 +84,6 @@ KnownGuids[] = {
   L"Vt100",
   &UnknownDeviceGuid,
   L"Unknown Device",
-
   &gEfiPartTypeSystemPartGuid,
   L"ESP",
   &gEfiPartTypeLegacyMbrGuid,
@@ -1157,6 +1156,7 @@ Returns:
   VOID                              *Buffer;
   UINTN                             BufferSize;
   UINT32                            AuthenticationStatus;
+  EFI_GUID                          *NameGuid;
 
   FV          = NULL;
   Buffer      = NULL;
@@ -1174,8 +1174,11 @@ Returns:
     //
     // Find the Fv File path
     //
-    if (DevicePathType (DevPathNode) == MEDIA_DEVICE_PATH && DevicePathSubType (DevPathNode) == MEDIA_FV_FILEPATH_DP) {
-
+//    if (DevicePathType (DevPathNode) == MEDIA_DEVICE_PATH  &&
+//		DevicePathSubType (DevPathNode) == MEDIA_FV_FILEPATH_DP)
+//    if (DevicePathType (DevPathNode) == MEDIA_DEVICE_PATH && DevicePathSubType (DevPathNode) == MEDIA_FV_FILEPATH_DP) {
+    NameGuid = GetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)DevPathNode);
+	if (NameGuid != NULL) {
       FvFilePath = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) DevPathNode;
       Status = BS->HandleProtocol (
                     Image->DeviceHandle,

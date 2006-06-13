@@ -93,12 +93,14 @@ DriversSyntaxOld (
   );
 
 EFI_STATUS
+EFIAPI
 DriversMain (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 DriversMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -453,6 +455,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 DriversGetLineHelp (
   OUT CHAR16              **Str
   )

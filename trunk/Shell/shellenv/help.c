@@ -135,6 +135,7 @@ IsValidCommand (
 }
 
 EFI_STATUS
+EFIAPI
 SEnvHelpGetLineHelp (
   IN CHAR16                   **Str
   )
@@ -158,6 +159,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvHelp (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable

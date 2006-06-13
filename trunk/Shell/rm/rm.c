@@ -62,6 +62,7 @@ SHELL_VAR_CHECK_ITEM    RmCheckList[] = {
 // Function declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeRM (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -75,6 +76,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeRM (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -610,6 +612,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeRMGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -111,6 +111,7 @@ SEnvCmdDriverConfiguration (
   );
 
 EFI_STATUS
+EFIAPI
 DrvcfgMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -761,6 +762,7 @@ ShellCmdDriverConfigurationProcessActionRequired (
 }
 
 EFI_STATUS
+EFIAPI
 DrvcfgGetLineHelp (
   OUT CHAR16              **Str
   )

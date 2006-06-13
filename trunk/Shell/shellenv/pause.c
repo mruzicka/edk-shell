@@ -55,6 +55,7 @@ SHELL_VAR_CHECK_ITEM    PauseCheckList[] = {
 // Internal prototypes
 //
 EFI_STATUS
+EFIAPI
 SEnvCmdPause (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -211,6 +212,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdPauseGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -24,6 +24,7 @@ Revision History
 #include "shelle.h"
 
 EFI_STATUS
+EFIAPI
 SEnvNoUse (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable

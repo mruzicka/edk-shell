@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -105,6 +105,19 @@ INTN
 DevicePathCompare (
   IN  EFI_DEVICE_PATH_PROTOCOL *DevicePath1,
   IN  EFI_DEVICE_PATH_PROTOCOL *DevicePath2
+  );
+
+VOID
+EFIAPI
+InitializeFwVolDevicepathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH     *FvDevicePathNode,
+  IN EFI_GUID                               *NameGuid
+  );
+
+EFI_GUID *
+EFIAPI
+GetNameGuidFromFwVolDevicePathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
   );
 
 #endif

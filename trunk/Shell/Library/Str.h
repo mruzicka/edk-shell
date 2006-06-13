@@ -199,6 +199,7 @@ MetaiMatch (
   );
 
 BOOLEAN
+EFIAPI
 LibStubMetaiMatch (
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *String,
@@ -206,6 +207,7 @@ LibStubMetaiMatch (
   );
 
 INTN
+EFIAPI
 LibStubStriCmp (
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *s1,
@@ -213,12 +215,14 @@ LibStubStriCmp (
   );
 
 VOID
+EFIAPI
 LibStubStrLwr (
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *Str
   );
 
 VOID
+EFIAPI
 LibStubStrUpr (
   IN EFI_UNICODE_COLLATION_PROTOCOL   *This,
   IN CHAR16                           *Str

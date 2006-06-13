@@ -148,6 +148,7 @@ FakeUninstallHiiDatabase (
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiNewPackOld (
   IN EFI_HII_PROTOCOL               *This,
   IN EFI_HII_PACK_LIST              *PackageList,
@@ -155,6 +156,7 @@ FakeHiiNewPackOld (
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiNewPack (
   IN EFI_HII_PROTOCOL               *This,
   IN EFI_HII_PACKAGES               *PackageList,
@@ -162,12 +164,14 @@ FakeHiiNewPack (
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiRemovePack (
   IN EFI_HII_PROTOCOL                   *This,
   IN EFI_HII_HANDLE                     Handle
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiFindHandles (
   IN EFI_HII_PROTOCOL                     *This,
   IN OUT UINT16                           *HandleBufferLength,
@@ -175,6 +179,7 @@ FakeHiiFindHandles (
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetString (
   IN EFI_HII_PROTOCOL                       *This,
   IN EFI_HII_HANDLE                         Handle,
@@ -186,6 +191,7 @@ FakeHiiGetString (
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetPrimaryLanguages (
   IN EFI_HII_PROTOCOL                     *This,
   IN EFI_HII_HANDLE                       Handle,
@@ -193,6 +199,7 @@ FakeHiiGetPrimaryLanguages (
   );
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetForms (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,

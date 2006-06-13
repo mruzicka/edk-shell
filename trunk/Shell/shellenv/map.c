@@ -614,6 +614,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdMap (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -1233,6 +1234,7 @@ Done:
 }
 
 EFI_DEVICE_PATH_PROTOCOL *
+EFIAPI
 SEnvNameToPath (
   IN CHAR16                   *Path
   )
@@ -1258,6 +1260,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdCd (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1463,6 +1466,7 @@ Done:
 }
 
 CHAR16 *
+EFIAPI
 SEnvGetCurDir (
   IN CHAR16       *DeviceName OPTIONAL
   )
@@ -1738,6 +1742,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdMapGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1761,6 +1766,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdCdGetLineHelp (
   OUT CHAR16                  **Str
   )

@@ -44,6 +44,7 @@ SEnvBatchFindVariable (
 
 extern
 CHAR16  *
+EFIAPI
 SEnvGetEnv (
   IN CHAR16          *Name
   );

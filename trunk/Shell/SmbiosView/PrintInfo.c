@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006 Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1635,10 +1635,24 @@ Returns:
     break;
 
   //
+  // Slot Type: PCI
+  //
+  case 0x06:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_VALUE_PRESENT), HiiHandle, SlotId);
+    break;
+
+  //
   // PCMCIA
   //
   case 0x07:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_IDENTIFIES_ADAPTER_NUM), HiiHandle, SlotId);
+    break;
+	
+  //
+  // Slot Type: PCI-E
+  //
+  case 0xA5:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_VALUE_PRESENT), HiiHandle, SlotId);
     break;
 
   default:

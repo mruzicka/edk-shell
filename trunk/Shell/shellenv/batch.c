@@ -1432,6 +1432,7 @@ Returns:
 }
 
 BOOLEAN
+EFIAPI
 SEnvBatchIsActive (
   VOID
   )

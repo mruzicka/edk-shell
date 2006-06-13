@@ -126,6 +126,7 @@ SEnvConnectAllConsoles (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdConnect (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -477,6 +478,7 @@ ConnectDone:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDisconnect (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -1216,6 +1218,7 @@ SEnvConnectAllConsoles (
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdReconnect (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -1471,6 +1474,7 @@ ReconnectDone:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdConnectGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1494,6 +1498,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDisconnectGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1517,6 +1522,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdReconnectGetLineHelp (
   OUT CHAR16                  **Str
   )

@@ -30,6 +30,7 @@ Revision History
 STATIC CHAR16 *TargetLabel;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdGoto (
   IN  EFI_HANDLE               ImageHandle,
   IN  EFI_SYSTEM_TABLE         *SystemTable
@@ -240,6 +241,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdGotoGetLineHelp (
   OUT CHAR16              **Str
   )

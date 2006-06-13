@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -511,14 +511,10 @@ Returns: (VOID)
 {
   NODE  i;
 
-  for (i = WNDSIZ; i <= WNDSIZ + UINT8_MAX; i++) {
-    mLevel[i]     = 1;
-    mPosition[i]  = NIL;  /* sentinel */
-  }
+  SetMem (mLevel + WNDSIZ, (UINT8_MAX + 1) * sizeof (UINT8), 1);
+  SetMem (mPosition + WNDSIZ, (UINT8_MAX + 1) * sizeof (NODE), 0);
 
-  for (i = WNDSIZ; i < WNDSIZ * 2; i++) {
-    mParent[i] = NIL;
-  }
+  SetMem (mParent + WNDSIZ, WNDSIZ * sizeof (NODE), 0);
 
   mAvail = 1;
   for (i = 1; i < WNDSIZ - 1; i++) {
@@ -526,9 +522,7 @@ Returns: (VOID)
   }
 
   mNext[WNDSIZ - 1] = NIL;
-  for (i = WNDSIZ * 2; i <= MAX_HASH_VAL; i++) {
-    mNext[i] = NIL;
-  }
+  SetMem (mNext + WNDSIZ * 2, (MAX_HASH_VAL - WNDSIZ * 2 + 1) * sizeof (NODE), 0);
 }
 
 STATIC
@@ -1286,13 +1280,8 @@ Returns:
     }
   }
 
-  for (i = 0; i < NC; i++) {
-    mCFreq[i] = 0;
-  }
-
-  for (i = 0; i < NP; i++) {
-    mPFreq[i] = 0;
-  }
+  SetMem (mCFreq, NC * sizeof (UINT16), 0);
+  SetMem (mPFreq, NP * sizeof (UINT16), 0);
 }
 
 STATIC
@@ -1358,15 +1347,8 @@ HufEncodeStart (
   VOID
   )
 {
-  INT32 i;
-
-  for (i = 0; i < NC; i++) {
-    mCFreq[i] = 0;
-  }
-
-  for (i = 0; i < NP; i++) {
-    mPFreq[i] = 0;
-  }
+  SetMem (mCFreq, NC * sizeof (UINT16), 0);
+  SetMem (mPFreq, NP * sizeof (UINT16), 0);
 
   mOutputPos = mOutputMask = 0;
   InitPutBits ();

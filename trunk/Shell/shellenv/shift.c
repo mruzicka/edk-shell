@@ -28,6 +28,7 @@ Revision History
 // Internal prototypes
 //
 EFI_STATUS
+EFIAPI
 SEnvCmdShift (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -113,6 +114,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdShiftGetLineHelp (
   OUT CHAR16              **Str
   )

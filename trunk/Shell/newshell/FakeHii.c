@@ -405,6 +405,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiNewPack (
   IN  EFI_HII_PROTOCOL      *This,
   IN  EFI_HII_PACKAGES      *Packages,
@@ -684,7 +685,7 @@ Returns:
 
     case EFI_HII_HANDLES:
       Handlepack                  = (EFI_HII_HANDLE_PACK *) PackageHeader;
-      PackageInstance->HandlePack = *Handlepack;
+      CopyMem (&PackageInstance->HandlePack, Handlepack, sizeof(EFI_HII_HANDLE_PACK));
       break;
 
     case EFI_HII_FONT:
@@ -797,6 +798,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiRemovePack (
   IN EFI_HII_PROTOCOL                   *This,
   IN EFI_HII_HANDLE                     Handle
@@ -880,6 +882,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiFindHandles (
   IN EFI_HII_PROTOCOL                     *This,
   IN OUT UINT16                           *HandleBufferLength,
@@ -1045,6 +1048,7 @@ FakeAsciiToUnicode (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetString (
   IN EFI_HII_PROTOCOL                   *This,
   IN EFI_HII_HANDLE                     Handle,
@@ -1252,7 +1256,7 @@ LangNotFound:
 
     Count = Count * sizeof (CHAR16);;
 
-    if (*BufferLength >= (UINTN)Count) {
+    if (*BufferLength >= (UINTN) Count) {
       //
       // Copy the string to the user's buffer
       //
@@ -1301,6 +1305,7 @@ LangNotFound:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetPrimaryLanguages (
   IN EFI_HII_PROTOCOL                     *This,
   IN EFI_HII_HANDLE                       Handle,
@@ -1404,6 +1409,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetForms (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle,
@@ -1541,6 +1547,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiNewPackOld (
   IN  EFI_HII_PROTOCOL      *This,
   IN  EFI_HII_PACK_LIST     *Package,

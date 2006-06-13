@@ -506,6 +506,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvCloseConsoleProxy (
   IN     EFI_HANDLE                       ConInHandle,
   IN OUT EFI_SIMPLE_TEXT_IN_PROTOCOL      **ConIn,
@@ -1431,6 +1432,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvSetKeyFilter (
   IN UINT32      KeyFilter
   )
@@ -1449,6 +1451,7 @@ Returns:
 }
 
 UINT32
+EFIAPI
 SEnvGetKeyFilter (
   IN VOID
   )

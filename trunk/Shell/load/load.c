@@ -68,6 +68,7 @@ SHELL_VAR_CHECK_ITEM    LoadCheckList[] = {
 //
 //
 EFI_STATUS
+EFIAPI
 InitializeLoad (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -89,6 +90,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeLoad (
   IN EFI_HANDLE             ImageHandle,
   IN EFI_SYSTEM_TABLE       *SystemTable
@@ -432,6 +434,7 @@ LoadDriver (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeLoadGetLineHelp (
   OUT CHAR16              **Str
   )
