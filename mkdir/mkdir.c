@@ -35,6 +35,7 @@ extern UINT8  STRING_ARRAY_NAME[];
 // Function declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeMkDir (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -79,6 +80,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeMkDir (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -296,6 +298,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeMkDirGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -52,6 +52,7 @@ Revision History
 #include EFI_GUID_DEFINITION (SalSystemTable)
 #include EFI_GUID_DEFINITION (Smbios)
 #include EFI_GUID_DEFINITION (StandardErrorDevice)
+#include EFI_GUID_DEFINITION (FrameworkDevicePath)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
@@ -93,6 +94,10 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (SimplePointer)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
 #include EFI_PROTOCOL_DEFINITION (Tcp)
+#include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
+#include EFI_PROTOCOL_DEFINITION (EdidDiscovered)
+#include EFI_PROTOCOL_DEFINITION (EdidActive)
+#include EFI_PROTOCOL_DEFINITION (EdidOverride)
 #include EFI_PROTOCOL_DEFINITION (UgaDraw)
 #include EFI_PROTOCOL_DEFINITION (UgaIo)
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
@@ -184,7 +189,6 @@ extern EFI_GUID                 ShellEnvProtocol;
 //
 extern EFI_GUID                 NullGuid;
 extern EFI_GUID                 UnknownDeviceGuid;
-
 //
 // Memory allocation type
 //

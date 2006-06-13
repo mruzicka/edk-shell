@@ -34,6 +34,7 @@ CheckIfFileExists (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdIf (
   IN  EFI_HANDLE               ImageHandle,
   IN  EFI_SYSTEM_TABLE         *SystemTable
@@ -325,6 +326,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndif (
   IN EFI_HANDLE                ImageHandle,
   IN EFI_SYSTEM_TABLE          *SystemTable
@@ -435,6 +437,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdElse (
   IN  EFI_HANDLE               ImageHandle,
   IN  EFI_SYSTEM_TABLE         *SystemTable
@@ -557,6 +560,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdIfGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -580,6 +584,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndifGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -603,6 +608,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdElseGetLineHelp (
   OUT CHAR16              **Str
   )

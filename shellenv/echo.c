@@ -193,6 +193,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEchoGetLineHelp (
   OUT CHAR16              **Str
   )

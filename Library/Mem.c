@@ -47,7 +47,7 @@ Returns:
 
 --*/
 {
-  INT8  *pt;
+  volatile INT8  *pt;
 
   ASSERT (Buffer != NULL);
 

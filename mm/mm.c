@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -37,7 +37,8 @@ typedef enum {
   EfiMemory,
   EFIMemoryMappedIo,
   EfiIo,
-  EfiPciConfig
+  EfiPciConfig,
+  EfiPciEConfig
 } EFI_ACCESS_TYPE;
 
 EFI_STATUS
@@ -78,25 +79,31 @@ SHELL_VAR_CHECK_ITEM    IomodCheckList[] = {
   {
     L"-MMIO",
     0x01,
-    0x0E,
+    0x10E,
     FlagTypeSingle
   },
   {
     L"-MEM",
     0x02,
-    0x0D,
+    0x10D,
     FlagTypeSingle
   },
   {
     L"-IO",
     0x04,
-    0x0B,
+    0x10B,
     FlagTypeSingle
   },
   {
     L"-PCI",
     0x08,
-    0x07,
+    0x107,
+    FlagTypeSingle
+  },
+  {
+    L"-PCIE",
+    0x100,
+    0x0F,
     FlagTypeSingle
   },
   {
@@ -149,6 +156,12 @@ OldShellParserMM (
   );
 
 EFI_STATUS
+GetPciEAddressFromInputAddress (
+  IN UINT64                 InputAddress,
+  OUT UINT64                *PciEAddress
+  );
+
+EFI_STATUS
 DumpIoModify (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -173,16 +186,17 @@ Notes:
     ;MEM = Memory, 
     ;MMIO = Memory Mapped IO, 
     ;IO = in/out, 
-    ;PCI = PCI Config space
+    ;PCI = PCI Config space (format: 000000ssbbddffrr)
     Default access type is memory (MEM)
 
   For Shell Mode 1.1.2:
-    MM Address [Width] [-[MEM | MMIO | IO | PCI]] [:Value]
+    MM Address [Width] [-[MEM | MMIO | IO | PCI | PCIE]] [:Value]
     1|2|4|8 supported byte widths - Default is 1 byte. 
     -MEM = Memory, 
     -MMIO = Memory Mapped IO, 
     -IO = in/out, 
-    -PCI = PCI Config space
+    -PCI = PCI Config space (format: 000000ssbbddffrr)
+    -PCIE = PCIE Config space (format: 000000ssbbddffrrr)
     Default access type is memory (MEM)
 
 --*/
@@ -190,6 +204,7 @@ Notes:
   EFI_STATUS                      Status;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *IoDev;
   UINT64                          Address;
+  UINT64                          PciEAddress;
   UINT64                          Value;
   EFI_IO_WIDTH                    Width;
   EFI_ACCESS_TYPE                 AccessType;
@@ -209,6 +224,7 @@ Notes:
   SHELL_VAR_CHECK_PACKAGE         ChkPck;
 
   Address = 0;
+  PciEAddress = 0;
   IoDev = NULL;
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
 
@@ -318,6 +334,8 @@ Notes:
       AccessType = EfiIo;
     } else if (LibCheckVarGetFlag (&ChkPck, L"-PCI") != NULL) {
       AccessType = EfiPciConfig;
+    } else if (LibCheckVarGetFlag (&ChkPck, L"-PCIE") != NULL) {
+      AccessType = EfiPciEConfig;
     }
 
     if (LibCheckVarGetFlag (&ChkPck, L"-n") != NULL) {
@@ -439,6 +457,11 @@ Notes:
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
+
+  if (AccessType == EfiPciEConfig) {
+    GetPciEAddressFromInputAddress (Address, &PciEAddress);
+  }
+
   //
   // Set value
   //
@@ -449,6 +472,8 @@ Notes:
       IoDev->Io.Write (IoDev, Width, Address, 1, &Value);
     } else if (AccessType == EfiPciConfig) {
       IoDev->Pci.Write (IoDev, Width, Address, 1, &Value);
+    } else if (AccessType == EfiPciEConfig) {
+      IoDev->Pci.Write (IoDev, Width, PciEAddress, 1, &Buffer);
     } else {
       WriteMem (Width, Address, 1, &Value);
     }
@@ -470,6 +495,9 @@ Notes:
     } else if (AccessType == EfiPciConfig) {
       PrintToken (STRING_TOKEN (STR_IOMOD_HPCI), HiiHandle);
       IoDev->Pci.Read (IoDev, Width, Address, 1, &Buffer);
+    } else if (AccessType == EfiPciEConfig) {
+      PrintToken (STRING_TOKEN (STR_IOMOD_HPCIE), HiiHandle);
+      IoDev->Pci.Read (IoDev, Width, PciEAddress, 1, &Buffer);
     } else {
       PrintToken (STRING_TOKEN (STR_IOMOD_HMEM), HiiHandle);
       ReadMem (Width, Address, 1, &Buffer);
@@ -499,7 +527,7 @@ Notes:
       PrintToken (STRING_TOKEN (STR_IOMOD_IO_ADDRESS_2), HiiHandle, L"mm");
       break;
     }
-
+    
     Buffer = 0;
     if (AccessType == EFIMemoryMappedIo) {
       PrintToken (STRING_TOKEN (STR_IOMOD_HMMIO), HiiHandle);
@@ -510,6 +538,9 @@ Notes:
     } else if (AccessType == EfiPciConfig) {
       PrintToken (STRING_TOKEN (STR_IOMOD_HPCI), HiiHandle);
       IoDev->Pci.Read (IoDev, Width, Address, 1, &Buffer);
+    } else if (AccessType == EfiPciEConfig) {
+      PrintToken (STRING_TOKEN (STR_IOMOD_HPCIE), HiiHandle);
+      IoDev->Pci.Read (IoDev, Width, PciEAddress, 1, &Buffer);
     } else {
       PrintToken (STRING_TOKEN (STR_IOMOD_HMEM), HiiHandle);
       ReadMem (Width, Address, 1, &Buffer);
@@ -553,6 +584,8 @@ Notes:
         IoDev->Io.Write (IoDev, Width, Address, 1, &Buffer);
       } else if (AccessType == EfiPciConfig) {
         IoDev->Pci.Write (IoDev, Width, Address, 1, &Buffer);
+      } else if (AccessType == EfiPciEConfig) {
+        IoDev->Pci.Write (IoDev, Width, PciEAddress, 1, &Buffer);
       } else {
         WriteMem (Width, Address, 1, &Buffer);
       }
@@ -562,6 +595,9 @@ Notes:
     }
 
     Address += Size;
+    if (AccessType == EfiPciEConfig) {
+      GetPciEAddressFromInputAddress (Address, &PciEAddress);
+    }
     Print (L"\n");
   } while (!Complete);
 
@@ -853,4 +889,33 @@ Returns:
           STRING_TOKEN (STR_HELPINFO_MM_LINEHELP),
           Str
           );
+}
+
+EFI_STATUS
+GetPciEAddressFromInputAddress (
+  IN UINT64                 InputAddress,
+  OUT UINT64                *PciEAddress
+  )
+/*++
+
+Routine Description:
+
+  Get the PCI-E Address from a PCI address format 0x0000ssbbddffrrr
+  where ss is SEGMENT, bb is BUS, dd is DEVICE, ff is FUNCTION
+  and rrr is REGISTER (extension format for PCI-E)
+
+Arguments:
+
+  InputAddress - PCI address format on input
+  PciEAddress  - PCI-E address extention format
+
+Returns:
+
+  EFI_SUCCESS   - Success
+
+--*/
+{
+  *PciEAddress = RShiftU64(InputAddress & ~(UINT64) 0xFFF, 4) +
+    LShiftU64((UINT16) InputAddress & 0x0FFF, 32);
+  return EFI_SUCCESS;
 }

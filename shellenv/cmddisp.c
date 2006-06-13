@@ -1,6 +1,6 @@
 /*++ 
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -36,197 +36,233 @@ Revision History
 EFI_MONOSHELL_CODE (
   
 EFI_STATUS
+EFIAPI
 DriversGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 DrvcfgGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 DrvdiagGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeResetGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeReset (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeCPGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeCP (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeRMGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeRM (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeDateGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeDate (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 DriversMain (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeLSGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeLS (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeMkDirGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeMkDir (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeTimeGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeTime (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeVolGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeVol (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeVerGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeVer (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeTypeGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeType (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeMvGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeMv (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeTouchGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeTouch (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeAttribGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeAttrib (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeClsGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeCls (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeLoadGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeLoad (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 InitializeUnloadGetLineHelp (
   OUT CHAR16              **Str
   );
 
 EFI_STATUS
+EFIAPI
 InitializeUnload (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -245,24 +281,367 @@ OpeninfoMain (
   );
 
 EFI_STATUS
+EFIAPI
 DrvcfgMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 DrvdiagMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
-
 )
+#ifdef EFI_FULLSHELL
+EFI_MONOSHELL_CODE (
+EFI_STATUS
+EFIAPI
+InitializeCompGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeComp (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+DumpBlockDev (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeDblkGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+DevicesMain (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeDevicesGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
+EFI_STATUS
+EFIAPI
+DevicetreeMain (
+  IN EFI_HANDLE               ImageHandle,
+  IN EFI_SYSTEM_TABLE         *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+DevicetreeMainGetLineHelp (
+  OUT CHAR16                **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+DumpMem (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+DumpMemGetLineHelp (
+  OUT CHAR16          **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeDumpStore (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeDumpStoreGetLineHelp (
+  OUT CHAR16                **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeEFIEditor (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeEFIEditorGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeCompress (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeCompressGetLineHelp (
+  OUT CHAR16                     **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeDecompress (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeDecompressGetLineHelp (
+  OUT CHAR16                  **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeError (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeErrorGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
+EFI_STATUS
+EFIAPI
+GuidMain (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+GuidMainGetLineHelp (
+  OUT CHAR16          **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeEFIHexEditor (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeEFIHexEditorGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeIpConfig (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeIpConfigGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeLoadPciRom (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeLoadPciRomGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+DumpMm (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+DumpMmGetLineHelp (
+  OUT CHAR16          **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeMemmap (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeMemmapGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+DumpIoModify (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeMMGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeMode (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeModeGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+MountMain (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+MountMainGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
+EFI_STATUS
+EFIAPI
+OpeninfoMain (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+);
+
+EFI_STATUS
+EFIAPI
+InitializeOpenInfoGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+PciDump (
+  IN EFI_HANDLE                             ImageHandle,
+  IN EFI_SYSTEM_TABLE                       *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializePciGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeSerialMode (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeSerialModeGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeSmbiosViewApplication (
+    IN EFI_HANDLE           ImageHandle,
+    IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeSmbiosViewApplicationGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeStall (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeStallGetLineHelp (
+  OUT CHAR16            **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeTelnetMgmt (
+  IN EFI_HANDLE         ImageHandle,
+  IN EFI_SYSTEM_TABLE   *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeTelnetmgmtGetLineHelp (
+  OUT CHAR16              **Str
+  );
+  
+EFI_STATUS
+EFIAPI
+InitializeTZone (
+  IN EFI_HANDLE             hImageHandle,
+  IN EFI_SYSTEM_TABLE    *pSystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeZoneGetLineHelp (
+  OUT CHAR16              **Str
+  );
+)
+#endif
 
 struct {
   SHELLENV_INTERNAL_COMMAND Dispatch;
   CHAR16                    *Cmd;
   SHELLCMD_GET_LINE_HELP    GetLineHelp;
 }
+
 SEnvInternalCommands[] = {
   SEnvHelp,
   L"?",
@@ -390,6 +769,88 @@ SEnvInternalCommands[] = {
   InitializeVol,
   L"vol",
   InitializeVolGetLineHelp,
+
+#ifdef EFI_FULLSHELL
+  InitializeComp,
+  L"comp",
+  InitializeCompGetLineHelp,
+  DumpBlockDev,
+  L"dblk",
+  InitializeDblkGetLineHelp,
+  DevicesMain,
+  L"devices",
+  InitializeDevicesGetLineHelp,
+  DevicetreeMain,
+  L"devtree",
+  DevicetreeMainGetLineHelp,
+  DumpMem,
+  L"dmem",
+  DumpMemGetLineHelp,
+  InitializeDumpStore,
+  L"dmpstore",
+  InitializeDumpStoreGetLineHelp,
+  InitializeEFIEditor,
+  L"edit",
+  InitializeEFIEditorGetLineHelp,
+  InitializeCompress,
+  L"eficompress",
+  InitializeCompressGetLineHelp,
+  InitializeDecompress,
+  L"efidecompress",
+  InitializeDecompressGetLineHelp,
+  InitializeError,
+  L"err",
+  InitializeErrorGetLineHelp,
+  GuidMain,
+  L"guid",
+  GuidMainGetLineHelp,
+  InitializeEFIHexEditor,
+  L"hexedit",
+  InitializeEFIHexEditorGetLineHelp,
+  InitializeIpConfig,
+  L"ipconfig",
+  InitializeIpConfigGetLineHelp,
+  InitializeLoadPciRom,
+  L"loadpcirom",
+  InitializeLoadPciRomGetLineHelp,
+  DumpMm,
+  L"mem",
+  DumpMmGetLineHelp,
+  InitializeMemmap,
+  L"memmap",
+  InitializeMemmapGetLineHelp,
+  DumpIoModify,
+  L"mm",
+  InitializeMMGetLineHelp,
+  InitializeMode,
+  L"mode",
+  InitializeModeGetLineHelp,
+  MountMain,
+  L"mount",
+  MountMainGetLineHelp,
+  OpeninfoMain,
+  L"openinfo",
+  InitializeOpenInfoGetLineHelp,
+  PciDump,
+  L"pci",
+  InitializePciGetLineHelp,
+  InitializeSerialMode,
+  L"sermode",
+  InitializeSerialModeGetLineHelp,
+  InitializeSmbiosViewApplication,
+  L"smbiosview",
+  InitializeSmbiosViewApplicationGetLineHelp,
+  InitializeStall,
+  L"stall",
+  InitializeStallGetLineHelp,
+  InitializeTelnetMgmt,
+  L"telnetmgmt",
+  InitializeTelnetmgmtGetLineHelp,
+  InitializeTZone,
+  L"timezone",
+  InitializeZoneGetLineHelp,
+#endif
+
 #endif
 
   {
@@ -430,6 +891,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvAddCommand (
   IN SHELLENV_INTERNAL_COMMAND    Handler,
   IN CHAR16                       *CmdStr,

@@ -53,6 +53,7 @@ EFI_HII_HANDLE      HiiNewshellHandle;
 // Prototypes
 //
 EFI_STATUS
+EFIAPI
 InitializeShell (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -506,6 +507,7 @@ _CleanUpOnExit (
 EFI_DRIVER_ENTRY_POINT (InitializeShell)
 
 EFI_STATUS
+EFIAPI
 InitializeShell (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable

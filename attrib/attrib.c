@@ -35,6 +35,7 @@ extern UINT8  STRING_ARRAY_NAME[];
 // Function declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeAttrib (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -135,6 +136,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeAttrib (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -465,6 +467,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeAttribGetLineHelp (
   OUT CHAR16              **Str
   )

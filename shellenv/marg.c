@@ -206,6 +206,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDelDupFileArg (
   IN EFI_LIST_ENTRY   *ListHead
   )
@@ -252,6 +253,7 @@ SEnvDelDupFileArg (
 }
 
 EFI_STATUS
+EFIAPI
 SEnvFreeFileList (
   IN OUT EFI_LIST_ENTRY       *ListHead
   )
@@ -423,6 +425,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvFileMetaArg (
   IN CHAR16               *Path,
   IN OUT EFI_LIST_ENTRY   *ListHead
@@ -846,6 +849,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvIFileMetaArgNoWildCard (
   IN CHAR16               *Path,
   IN OUT EFI_LIST_ENTRY   *ListHead

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -542,6 +542,67 @@ _DevPathAcpi (
 }
 
 VOID
+_DevPathExtendedAcpi (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  ACPI_EXTENDED_HID_DEVICE_PATH *ExtendedAcpi;
+  // Index for HID, UID and CID strings, 0 for non-exist
+  UINT16 HIDSTRIdx = 0;
+  UINT16 UIDSTRIdx = 0;
+  UINT16 CIDSTRIdx = 0;
+  UINT16 i, length, anchor;
+  CHAR8 *AsChar8Array;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  ExtendedAcpi = DevPath;
+  length = DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) ExtendedAcpi);
+  ASSERT (length >= 19);
+  AsChar8Array = (CHAR8 *) ExtendedAcpi;
+
+  // find HIDSTR
+  anchor = 16;
+  for (i = anchor; i < length && AsChar8Array[i]; i++) ;
+  if (i > anchor) HIDSTRIdx = anchor;
+  // find UIDSTR
+  anchor = i + 1;
+  for (i = anchor; i < length && AsChar8Array[i]; i++) ;
+  if (i > anchor) UIDSTRIdx = anchor;
+  // find CIDSTR
+  anchor = i + 1;
+  for (i = anchor; i < length && AsChar8Array[i]; i++) ;
+  if (i > anchor) CIDSTRIdx = anchor;
+  
+  CatPrint (Str, L"Acpi(");
+  if (HIDSTRIdx) {
+    CatPrint (Str, L"%a,", AsChar8Array + HIDSTRIdx);
+  } else {
+    if ((ExtendedAcpi->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+      CatPrint (Str, L"PNP%04x,", EISA_ID_TO_NUM (ExtendedAcpi->HID));
+    } else {
+      CatPrint (Str, L"%08x,", ExtendedAcpi->HID);
+    }
+  }
+  if (UIDSTRIdx) {
+    CatPrint (Str, L"%a,", AsChar8Array + UIDSTRIdx);
+  } else {
+    CatPrint (Str, L"%x,", ExtendedAcpi->UID);
+  }
+  if (CIDSTRIdx) {
+    CatPrint (Str, L"%a)", AsChar8Array + CIDSTRIdx);
+  } else {
+    if ((ExtendedAcpi->CID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+      CatPrint (Str, L"PNP%04x)", EISA_ID_TO_NUM (ExtendedAcpi->CID));
+    } else {
+      CatPrint (Str, L"%08x)", ExtendedAcpi->CID);
+    }
+  }
+}
+
+VOID
 _DevPathAtapi (
   IN OUT POOL_PRINT       *Str,
   IN VOID                 *DevPath
@@ -1016,6 +1077,9 @@ DevPathTable[] = {
   ACPI_DEVICE_PATH,
   ACPI_DP,
   _DevPathAcpi,
+  ACPI_DEVICE_PATH,
+  ACPI_EXTENDED_DP,
+  _DevPathExtendedAcpi,
   MESSAGING_DEVICE_PATH,
   MSG_ATAPI_DP,
   _DevPathAtapi,
@@ -1070,9 +1134,11 @@ DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_PROTOCOL_DP,
   _DevPathMediaProtocol,
+#if (EFI_SPECIFICATION_VERSION < 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   _DevPathFvFilePath,
+#endif
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   _DevPathBssBss,
@@ -1548,3 +1614,120 @@ Returns:
   }
 }
 
+VOID
+EFIAPI
+InitializeFwVolDevicepathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH     *FvDevicePathNode,
+  IN EFI_GUID                               *NameGuid
+  )
+/*++
+
+Routine Description:
+  The function returns 0 if the two device paths are equal.
+  Otherwise, other value is returned.
+
+  Initialize a Firmware Volume (FV) Media Device Path node.
+  
+  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
+  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
+  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
+  device path is defined for PIWG extensions of device path. If the code 
+  is compiled to conform with the UEFI 2.0 specification use the new device path
+  else use the old form for backwards compatability.
+
+Arguments:
+  FvDevicePathNode  - Pointer to a FV device path node to initialize
+
+  NameGuid          - FV file name to use in FvDevicePathNode
+
+Returns:
+
+--*/
+{
+#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+  //
+  // Use old Device Path that conflicts with UEFI
+  //
+  FvDevicePathNode->Header.Type     = MEDIA_DEVICE_PATH;
+  FvDevicePathNode->Header.SubType  = MEDIA_FV_FILEPATH_DP;
+  SetDevicePathNodeLength (&FvDevicePathNode->Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
+  
+#else
+  //
+  // Use the new Device path that does not conflict with the UEFI
+  //
+  FvDevicePathNode->Piwg.Header.Type     = MEDIA_DEVICE_PATH;
+  FvDevicePathNode->Piwg.Header.SubType  = MEDIA_VENDOR_DP;
+  SetDevicePathNodeLength (&FvDevicePathNode->Piwg.Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
+
+  //
+  // Add the GUID for generic PIWG device paths
+  //
+  CopyMem (&FvDevicePathNode->Piwg.PiwgSpecificDevicePath, &gEfiFrameworkDevicePathGuid, sizeof(EFI_GUID));
+
+  //
+  // Add in the FW Vol File Path PIWG defined inforation
+  //
+  FvDevicePathNode->Piwg.Type = PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE;
+
+#endif
+  CopyMem (&FvDevicePathNode->NameGuid, NameGuid, sizeof(EFI_GUID));
+}
+
+EFI_GUID *
+EFIAPI
+GetNameGuidFromFwVolDevicePathNode (
+  IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
+  )
+/*++
+
+Routine Description:
+  The function returns 0 if the two device paths are equal.
+  Otherwise, other value is returned.
+
+  Check to see if the Firmware Volume (FV) Media Device Path is valid.
+  
+  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
+  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
+  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
+  device path is defined for PIWG extensions of device path. If the code 
+  is compiled to conform with the UEFI 2.0 specification use the new device path
+  else use the old form for backwards compatability. The return value to this
+  function points to a location in FvDevicePathNode and it does not allocate
+  new memory for the GUID pointer that is returned.
+
+Arguments:
+  FvDevicePathNode  - Pointer to FV device path to check
+
+Returns:
+  NULL  -  FvDevicePathNode is not valid.
+  Other -  FvDevicePathNode is valid and pointer to NameGuid was returned.
+
+--*/
+{
+#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+  BOOLEAN       Found;
+  //
+  // Use old Device Path that conflicts with UEFI
+  //
+  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH ||
+      DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
+    Found = TRUE;
+    return &FvDevicePathNode->NameGuid;
+  }
+
+#else
+  //
+  // Use the new Device path that does not conflict with the UEFI
+  //
+  if (FvDevicePathNode->Piwg.Header.Type == MEDIA_DEVICE_PATH ||
+      FvDevicePathNode->Piwg.Header.SubType == MEDIA_VENDOR_DP) {
+    if (CompareMem (&gEfiFrameworkDevicePathGuid, &FvDevicePathNode->Piwg.PiwgSpecificDevicePath, sizeof(EFI_GUID)) == 0) {
+      if (FvDevicePathNode->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
+        return &FvDevicePathNode->NameGuid;
+      }
+    }
+  }
+#endif  
+  return NULL;
+}

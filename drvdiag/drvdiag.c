@@ -117,6 +117,7 @@ ShellCmdDriverRunDiagnostics (
   );
 
 EFI_STATUS
+EFIAPI
 DrvdiagMain (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -126,6 +127,7 @@ DrvdiagMain (
 //
 //
 EFI_STATUS
+EFIAPI
 DrvdiagMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -625,6 +627,7 @@ ShellCmdDriverRunDiagnostics (
 }
 
 EFI_STATUS
+EFIAPI
 DrvdiagGetLineHelp (
   OUT CHAR16              **Str
   )

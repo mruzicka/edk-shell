@@ -38,6 +38,7 @@ ENV_SHELL_INTERFACE_ITEM  *mOldSEnv = NULL;
 //
 //
 EFI_STATUS
+EFIAPI
 InitializeShellEnvironment (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -51,6 +52,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeShellEnvironment (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -168,6 +170,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvFreeResources (
   VOID
   )
@@ -203,6 +206,7 @@ Returns:
 }
 
 EFI_SHELL_INTERFACE *
+EFIAPI
 SEnvNewShell (
   IN EFI_HANDLE                   ImageHandle
   )

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -199,9 +199,7 @@ Returns:
   }
 
   ASSERT (DescriptorVersion == EFI_MEMORY_DESCRIPTOR_VERSION);
-  for (Index = 0; Index < EfiMaxMemoryType; Index += 1) {
-    NoPages[Index] = 0;
-  }
+  SetMem (NoPages, EfiMaxMemoryType * sizeof (UINT64) , 0);
 
   Desc = MemMap;
   PrintToken (STRING_TOKEN (STR_MEMMAP_START_END), HiiHandle);

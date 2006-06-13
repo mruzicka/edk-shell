@@ -1673,6 +1673,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvExecute (
   IN EFI_HANDLE           *ParentImageHandle,
   IN CHAR16               *CommandLine,
@@ -2164,6 +2165,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvExit (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -2258,6 +2260,7 @@ Done:
 }
 
 VOID
+EFIAPI
 SEnvIncrementShellNestingLevel (
   IN VOID
   )
@@ -2278,6 +2281,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvDecrementShellNestingLevel (
   IN VOID
   )
@@ -2300,6 +2304,7 @@ Returns:
 }
 
 BOOLEAN
+EFIAPI
 SEnvIsRootShell (
   IN VOID
   )
@@ -2324,6 +2329,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvEnablePageBreak (
   IN INT32      StartRow,
   IN BOOLEAN    AutoWrap
@@ -2353,6 +2359,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvDisablePageBreak (
   IN VOID
   )
@@ -2381,6 +2388,7 @@ Returns:
 }
 
 BOOLEAN
+EFIAPI
 SEnvGetPageBreak (
   IN VOID
   )
@@ -2448,6 +2456,7 @@ Returns:
 }
 
 BOOLEAN
+EFIAPI
 SEnvGetExecutionBreak (
   IN VOID
   )
@@ -2877,6 +2886,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvExitGetLineHelp (
   OUT CHAR16                  **Str
   )

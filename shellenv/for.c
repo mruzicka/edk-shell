@@ -389,6 +389,7 @@ SEnvCmdForRun (
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdFor (
   IN  EFI_HANDLE               ImageHandle,
   IN  EFI_SYSTEM_TABLE         *SystemTable
@@ -516,6 +517,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndfor (
   IN  EFI_HANDLE               ImageHandle,
   IN  EFI_SYSTEM_TABLE         *SystemTable
@@ -671,6 +673,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdForGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -694,6 +697,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndforGetLineHelp (
   OUT CHAR16              **Str
   )

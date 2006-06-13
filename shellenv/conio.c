@@ -75,6 +75,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoOpen (
   IN EFI_FILE                   *File,
   OUT EFI_FILE                  **NewHandle,
@@ -106,6 +107,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoNop (
   IN EFI_FILE  *File
   )
@@ -127,6 +129,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoGetPosition (
   IN EFI_FILE                   *File,
   OUT UINT64                    *Position
@@ -150,6 +153,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoSetPosition (
   IN EFI_FILE                   *File,
   OUT UINT64                    Position
@@ -173,6 +177,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoGetInfo (
   IN EFI_FILE                   *File,
   IN EFI_GUID                   *InformationType,
@@ -200,6 +205,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoSetInfo (
   IN EFI_FILE                   *File,
   IN EFI_GUID                   *InformationType,
@@ -227,6 +233,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoWrite (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -252,6 +259,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvErrIoWrite (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -277,6 +285,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvErrIoRead (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -425,6 +434,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvConIoRead (
   IN EFI_FILE                       *File,
   IN OUT UINTN                      *BufferSize,
@@ -844,6 +854,7 @@ Returns:
 //
 //
 EFI_STATUS
+EFIAPI
 SEnvReset (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN BOOLEAN                          ExtendedVerification
@@ -866,6 +877,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvOutputString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
@@ -967,6 +979,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvTestString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
@@ -1007,6 +1020,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvQueryMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber,
@@ -1040,6 +1054,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvSetMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber
@@ -1061,6 +1076,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvSetAttribute (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN UINTN                            Attribute
@@ -1085,6 +1101,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvClearScreen (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This
   )
@@ -1106,6 +1123,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvSetCursorPosition (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        Column,
@@ -1131,6 +1149,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvEnableCursor (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN BOOLEAN                      Enable
@@ -1155,6 +1174,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummyReset (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN BOOLEAN                          ExtendedVerification
@@ -1178,6 +1198,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummyOutputString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
@@ -1200,6 +1221,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummyTestString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
@@ -1222,6 +1244,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummyQueryMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber,
@@ -1248,6 +1271,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummySetMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber
@@ -1271,6 +1295,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummySetAttribute (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN UINTN                            Attribute
@@ -1294,6 +1319,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummyClearScreen (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This
   )
@@ -1315,6 +1341,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummySetCursorPosition (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        Column,
@@ -1340,6 +1367,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvDummyEnableCursor (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN BOOLEAN                      Enable

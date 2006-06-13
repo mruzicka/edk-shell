@@ -40,6 +40,7 @@ EFI_GUID  EfiDateGuid = EFI_DATE_GUID;
 //
 //
 EFI_STATUS
+EFIAPI
 InitializeDate (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -99,6 +100,7 @@ SHELL_VAR_CHECK_ITEM    DateCheckList[] = {
 //
 //
 EFI_STATUS
+EFIAPI
 InitializeDate (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -404,6 +406,7 @@ IsLeapYear (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeDateGetLineHelp (
   OUT CHAR16              **Str
   )

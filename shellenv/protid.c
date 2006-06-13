@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -122,6 +122,22 @@ SEnvInternalProtocolInfo[] = {
   NULL,
   NULL,
   EFI_UGA_IO_PROTOCOL_GUID,
+  L"GraphicsOutput",
+  NULL,
+  NULL,
+  EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID,
+  L"EdidDiscovered",
+  NULL,
+  NULL,
+  EFI_EDID_DISCOVERED_PROTOCOL_GUID,
+  L"EdidActive",
+  NULL,
+  NULL,
+  EFI_EDID_ACTIVE_PROTOCOL_GUID,
+  L"EdidOverride",
+  NULL,
+  NULL,
+  EFI_EDID_OVERRIDE_PROTOCOL_GUID,
   //
   // just plain old protocol ids
   //
@@ -581,6 +597,7 @@ Returns:
 }
 
 VOID
+EFIAPI
 SEnvAddProtocol (
   IN EFI_GUID                                 *Protocol,
   IN SHELLENV_DUMP_PROTOCOL_INFO              DumpToken OPTIONAL,
@@ -815,6 +832,7 @@ Returns:
 }
 
 CHAR16 *
+EFIAPI
 SEnvGetProtocol (
   IN EFI_GUID     *ProtocolId,
   IN BOOLEAN      GenId
@@ -1787,6 +1805,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDH (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -2358,6 +2377,7 @@ extern EFI_LIST_ENTRY SEnvEnv;
 extern EFI_LIST_ENTRY SEnvAlias;
 
 EFI_STATUS
+EFIAPI
 SEnvLoadDefaults (
   IN EFI_HANDLE           Image,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -2594,6 +2614,7 @@ SEnvCloseProtocolInfoEnumerator (
 }
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDHGetLineHelp (
   IN CHAR16                   **Str
   )

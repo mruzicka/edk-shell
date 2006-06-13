@@ -125,6 +125,7 @@ typedef struct _ENV_SHELL_INTERFACE_ITEM {
 // Internal prototypes from init.c
 //
 EFI_SHELL_INTERFACE       *
+EFIAPI
 SEnvNewShell (
   IN EFI_HANDLE                   ImageHandle
   );
@@ -138,6 +139,7 @@ SEnvInitCommandTable (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvAddCommand (
   IN SHELLENV_INTERNAL_COMMAND    Handler,
   IN CHAR16                       *CmdStr,
@@ -178,6 +180,7 @@ SEnvFreeRedirArgument (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvExecute (
   IN EFI_HANDLE           *ParentImageHandle,
   IN CHAR16               *CommandLine,
@@ -193,6 +196,7 @@ SEnvDoExecute (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvExitGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -214,6 +218,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvExit (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -233,32 +238,38 @@ SEnvStringToArg (
   );
 
 VOID
+EFIAPI
 SEnvIncrementShellNestingLevel (
   IN VOID
   );
 
 VOID
+EFIAPI
 SEnvDecrementShellNestingLevel (
   IN VOID
   );
 
 BOOLEAN
+EFIAPI
 SEnvIsRootShell (
   IN VOID
   );
 
 VOID
+EFIAPI
 SEnvEnablePageBreak (
   IN INT32      StartRow,
   IN BOOLEAN    AutoWrap
   );
 
 VOID
+EFIAPI
 SEnvDisablePageBreak (
   IN VOID
   );
 
 BOOLEAN
+EFIAPI
 SEnvGetPageBreak (
   IN VOID
   );
@@ -274,6 +285,7 @@ SEnvDisableExecutionBreak (
   );
 
 BOOLEAN
+EFIAPI
 SEnvGetExecutionBreak (
   IN VOID
   );
@@ -308,6 +320,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvLoadDefaults (
   IN EFI_HANDLE           Parent,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -352,6 +365,7 @@ SEnvResetProtocolInfoEnumerator (
   );
 
 VOID
+EFIAPI
 SEnvAddProtocol (
   IN EFI_GUID                                 *Protocol,
   IN SHELLENV_DUMP_PROTOCOL_INFO              DumpToken OPTIONAL,
@@ -374,6 +388,7 @@ SEnvLoadHandleProtocolInfo (
   );
 
 CHAR16                    *
+EFIAPI
 SEnvGetProtocol (
   IN EFI_GUID                     *ProtocolId,
   IN BOOLEAN                      GenId
@@ -413,6 +428,7 @@ SEnvDHProt (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvHelpGetLineHelp (
   IN CHAR16         **Str
   )
@@ -434,12 +450,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvHelp (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDHGetLineHelp (
   OUT CHAR16                   **Str
   )
@@ -461,6 +479,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDH (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -583,6 +602,7 @@ SEnvInitVariables (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdSetGetLineHelp (
   IN OUT CHAR16                             **Str
   )
@@ -604,12 +624,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdSet (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdAliasGetLineHelp (
   IN OUT CHAR16         **Str
   )
@@ -631,17 +653,20 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdAlias (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
 
 CHAR16                    *
+EFIAPI
 SEnvGetMap (
   IN CHAR16           *Name
   );
 
 CHAR16                    *
+EFIAPI
 SEnvGetEnv (
   IN CHAR16           *Name
   );
@@ -685,6 +710,7 @@ SEnvConIoInitDosKey (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoOpen (
   IN EFI_FILE                   *File,
   OUT EFI_FILE                  **NewHandle,
@@ -694,23 +720,27 @@ SEnvConIoOpen (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoNop (
   IN EFI_FILE  *File
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoGetPosition (
   IN EFI_FILE                   *File,
   OUT UINT64                    *Position
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoSetPosition (
   IN EFI_FILE                   *File,
   OUT UINT64                    Position
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoGetInfo (
   IN EFI_FILE                   *File,
   IN EFI_GUID                   *InformationType,
@@ -719,6 +749,7 @@ SEnvConIoGetInfo (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoSetInfo (
   IN EFI_FILE                   *File,
   IN EFI_GUID                   *InformationType,
@@ -727,6 +758,7 @@ SEnvConIoSetInfo (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoWrite (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -734,6 +766,7 @@ SEnvConIoWrite (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvConIoRead (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -741,6 +774,7 @@ SEnvConIoRead (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvErrIoWrite (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -748,6 +782,7 @@ SEnvErrIoWrite (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvErrIoRead (
   IN EFI_FILE                   *File,
   IN OUT UINTN                  *BufferSize,
@@ -755,24 +790,28 @@ SEnvErrIoRead (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvReset (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN BOOLEAN                          ExtendedVerification
   );
 
 EFI_STATUS
+EFIAPI
 SEnvOutputString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
   );
 
 EFI_STATUS
+EFIAPI
 SEnvTestString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
   );
 
 EFI_STATUS
+EFIAPI
 SEnvQueryMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber,
@@ -781,23 +820,27 @@ SEnvQueryMode (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvSetMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber
   );
 
 EFI_STATUS
+EFIAPI
 SEnvSetAttribute (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN UINTN                            Attribute
   );
 
 EFI_STATUS
+EFIAPI
 SEnvClearScreen (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This
   );
 
 EFI_STATUS
+EFIAPI
 SEnvSetCursorPosition (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        Column,
@@ -805,30 +848,35 @@ SEnvSetCursorPosition (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvEnableCursor (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN BOOLEAN                      Enable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummyReset (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN BOOLEAN                          ExtendedVerification
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummyOutputString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummyTestString (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN CHAR16                       *String
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummyQueryMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber,
@@ -837,23 +885,27 @@ SEnvDummyQueryMode (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummySetMode (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        ModeNumber
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummySetAttribute (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL     *This,
   IN UINTN                            Attribute
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummyClearScreen (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummySetCursorPosition (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN UINTN                        Column,
@@ -861,6 +913,7 @@ SEnvDummySetCursorPosition (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDummyEnableCursor (
   IN EFI_SIMPLE_TEXT_OUT_PROTOCOL *This,
   IN BOOLEAN                      Enable
@@ -878,6 +931,7 @@ SEnvOpenConsoleProxy (
   );
 
 VOID
+EFIAPI
 SEnvCloseConsoleProxy (
   IN     EFI_HANDLE                       ConInHandle,
   IN OUT EFI_SIMPLE_TEXT_IN_PROTOCOL      **ConIn,
@@ -930,11 +984,13 @@ SEnvConOutGetPageBreak (
   );
 
 VOID
+EFIAPI
 SEnvSetKeyFilter (
   IN UINT32      KeyFilter
   );
 
 UINT32
+EFIAPI
 SEnvGetKeyFilter (
   IN VOID
   );
@@ -953,6 +1009,7 @@ PrintShortPdbFileName (
   );
 
 VOID
+EFIAPI
 SEnvBlkIo (
   EFI_HANDLE,
   VOID *
@@ -963,56 +1020,67 @@ SEnvComponentName (
   VOID *
   );
 VOID
+EFIAPI
 SEnvDPath (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvDPathTok (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvDebugSupport (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvImage (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvImageTok (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvIsaIo (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvPciIo (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvPciRootBridgeIo (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvTextOut (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvUsbIo (
   EFI_HANDLE,
   VOID *
   );
 VOID
+EFIAPI
 SEnvBusSpecificDriverOverride (
   EFI_HANDLE,
   VOID *
@@ -1027,6 +1095,7 @@ SEnvInitMap (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdMapGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1048,12 +1117,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdMap (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdConnectGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1075,12 +1146,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdConnect (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDisconnectGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1102,12 +1175,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdDisconnect (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdReconnectGetLineHelp (
   OUT CHAR16                  **Str
   )
@@ -1129,6 +1204,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdReconnect (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -1150,6 +1226,7 @@ SEnvFileNameToPath (
   );
 
 EFI_DEVICE_PATH_PROTOCOL  *
+EFIAPI
 SEnvNameToPath (
   IN CHAR16                   *PathName
   );
@@ -1160,11 +1237,13 @@ SEnvSetCurrentDevice (
   );
 
 CHAR16                    *
+EFIAPI
 SEnvGetCurDir (
   IN CHAR16       *DeviceName OPTIONAL
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdCdGetLineHelp (
   OUT CHAR16      **Str
   )
@@ -1186,6 +1265,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdCd (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1208,6 +1288,7 @@ SEnvGetFsDevicePath (
 // Prototypes from echo.c
 //
 EFI_STATUS
+EFIAPI
 SEnvCmdEchoGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1229,6 +1310,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEcho (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1238,6 +1320,7 @@ SEnvCmdEcho (
 // Prototypes from if.c
 //
 EFI_STATUS
+EFIAPI
 SEnvCmdIfGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1259,12 +1342,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdIf (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdElseGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1286,12 +1371,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdElse (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndifGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1313,12 +1400,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndif (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdShiftGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1340,6 +1429,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdShift (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1348,6 +1438,7 @@ SEnvCmdShift (
 // Prototypes from wait.c
 //
 EFI_STATUS
+EFIAPI
 SEnvNoUse (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1357,6 +1448,7 @@ SEnvNoUse (
 // Prototypes from goto.c
 //
 EFI_STATUS
+EFIAPI
 SEnvCmdGotoGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1378,6 +1470,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdGoto (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1421,6 +1514,7 @@ SEnvSubstituteForLoopIndex (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdForGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1442,12 +1536,14 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdFor (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndforGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1469,6 +1565,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdEndfor (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1478,6 +1575,7 @@ SEnvCmdEndfor (
 // Prototypes from pause.c
 //
 EFI_STATUS
+EFIAPI
 SEnvCmdPauseGetLineHelp (
   OUT CHAR16              **Str
   )
@@ -1499,6 +1597,7 @@ Returns:
 ;
 
 EFI_STATUS
+EFIAPI
 SEnvCmdPause (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -1513,16 +1612,19 @@ SEnvFileHandleToFileName (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvDelDupFileArg (
   IN EFI_LIST_ENTRY   *ListHead
   );
 
 EFI_STATUS
+EFIAPI
 SEnvFreeFileList (
   IN OUT EFI_LIST_ENTRY   *ListHead
   );
 
 EFI_STATUS
+EFIAPI
 SEnvFileMetaArg (
   IN CHAR16               *Arg,
   IN OUT EFI_LIST_ENTRY   *ListHead
@@ -1535,6 +1637,7 @@ SEnvIFileMetaArg (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvIFileMetaArgNoWildCard (
   IN CHAR16               *Arg,
   IN OUT EFI_LIST_ENTRY   *ListHead
@@ -1849,11 +1952,13 @@ SEnvBatchExtraStackEmpty (
   );
 
 BOOLEAN
+EFIAPI
 SEnvBatchIsActive (
   VOID
   );
 
 VOID
+EFIAPI
 SEnvFreeResources (
   VOID
   );
