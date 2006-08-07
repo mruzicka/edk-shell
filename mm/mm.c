@@ -229,6 +229,11 @@ Notes:
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
 
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
+  
+  //
+  // Enable tab key which can pause the output
+  //
+  EnableOutputTabPause();
 
   Status = LibInitializeStrings (&HiiHandle, STRING_ARRAY_NAME, &EfiIomodGuid);
 
