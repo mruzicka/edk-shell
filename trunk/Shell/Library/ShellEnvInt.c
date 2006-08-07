@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -120,6 +120,67 @@ Returns:
 --*/
 {
   return SE2->GetPageBreak ();
+}
+
+VOID
+EnableOutputTabPause (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Enable tab key which can pause output
+
+Arguments:
+
+Returns:
+
+--*/
+{
+  SE2->SetKeyFilter (SE2->GetKeyFilter () | EFI_OUTPUT_PAUSE);
+}
+
+VOID
+DisableOutputTabPause (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  disable tab key which can pause output
+
+  Disable pause key
+
+Arguments:
+
+Returns:
+  
+--*/
+{
+  SE2->SetKeyFilter (SE2->GetKeyFilter () & ~EFI_OUTPUT_PAUSE);
+}
+
+BOOLEAN
+GetOutputTabPause (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Get the status of tab pause
+  
+Arguments:
+
+Returns:
+  TRUE    - the status of the tab key is enabled
+  FALSE - the status of the tab key is disabled
+  
+--*/
+{
+  return (BOOLEAN) ((SE2->GetKeyFilter () & EFI_OUTPUT_PAUSE) != 0);
 }
 
 VOID

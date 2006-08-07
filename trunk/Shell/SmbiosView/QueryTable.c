@@ -275,6 +275,54 @@ TABLE_ITEM  ProcessorUpgradeTable[] = {
     0x09,
     L"Slot 2"
   },
+  {
+    0x0A,
+    L"370-pin socket"
+  },
+  {
+    0x0B,
+    L"Slot A"
+  },
+  {
+    0x0C,
+    L"Slot M"
+  },
+  {
+    0x0D,
+    L"Socket 423"
+  },
+  {
+    0x0E,
+    L"Socket A"
+  },
+  {
+    0x0F,
+    L"Socket 478"
+  },
+  {
+    0x10,
+    L"Socket 754"
+  },
+  {
+    0x11,
+    L"Socket 940"
+  },
+  {
+    0x12,
+    L"Socket 939"
+  },
+  {
+    0x13,
+    L"Socket mPGA604"
+  },
+  {
+    0x14,
+    L"Socket LGA771"
+  },
+  {
+    0x15,
+    L"Socket LGA775"
+  }
 };
 
 TABLE_ITEM  McErrorDetectMethodTable[] = {
@@ -1800,6 +1848,10 @@ TABLE_ITEM  MemoryDeviceFormFactorTable[] = {
   {
     0x0E,
     L"  SRIMM"
+  },
+  {
+    0x0F,
+    L"  FB-DIMM"
   }
 };
 
@@ -1872,6 +1924,18 @@ TABLE_ITEM  MemoryDeviceTypeTable[] = {
     0x11,
     L"  RDRAM"
   },
+  {
+    0x12,
+    L"  DDR"
+  },
+  {
+    0x13,
+    L"  DDR2"
+  },
+  {
+    0x14,
+    L"  DDR2 FB-DIMM"
+  }
 };
 
 TABLE_ITEM  MemoryDeviceTypeDetailTable[] = {

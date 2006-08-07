@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -189,6 +189,11 @@ Returns:
   Status                    = EFI_SUCCESS;
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
+   
+  //
+  // Enable tab key which can pause the output
+  //
+  EnableOutputTabPause();
 
   if (!EFI_PROPER_VERSION (1, 10)) {
     PrintToken (
@@ -807,6 +812,7 @@ Returns:
   UINTN       AllHandleCount;
   EFI_HANDLE  *AllHandleBuffer;
   UINTN       Index;
+  UINTN       NewIndex;
   UINTN       HandleCount;
   EFI_HANDLE  *HandleBuffer;
   UINT32      *HandleType;
@@ -827,6 +833,33 @@ Returns:
 
   for (Index = 0; Index < AllHandleCount; Index++) {
     //
+    // Check whether the handle is still in handle database
+    // as DisconnectController will destroy handles
+    //
+    Status = LibLocateHandle (
+               AllHandles,
+               NULL,
+               NULL,
+               &HandleCount,
+               &HandleBuffer
+               );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    for (NewIndex = 0; NewIndex < HandleCount; NewIndex++) {
+      if (HandleBuffer[NewIndex] == AllHandleBuffer[Index]) {
+        break;
+      }
+    }
+    FreePool (HandleBuffer);
+    if (NewIndex == HandleCount) {
+      //
+      // The handle has been removed, skip it
+      //
+      continue;
+    }
+        
+    //
     // Scan the handle database
     //
     Status = LibScanHandleDatabase (
@@ -843,11 +876,12 @@ Returns:
     }
 
     Device = TRUE;
-    if (HandleType[Index] & EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE) {
+    
+    if (HandleType[NewIndex] & EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE) {
       Device = FALSE;
     }
 
-    if (HandleType[Index] & EFI_HANDLE_TYPE_IMAGE_HANDLE) {
+    if (HandleType[NewIndex] & EFI_HANDLE_TYPE_IMAGE_HANDLE) {
       Device = FALSE;
     }
 
@@ -860,7 +894,10 @@ Returns:
       }
 
       if (!Parent) {
-        if (HandleType[Index] & EFI_HANDLE_TYPE_DEVICE_HANDLE) {
+        if (HandleType[NewIndex] & EFI_HANDLE_TYPE_DEVICE_HANDLE) {
+          //
+          // Found a root controller handle, disconnect it
+          //
           Status = BS->DisconnectController (
                         AllHandleBuffer[Index],
                         NULL,

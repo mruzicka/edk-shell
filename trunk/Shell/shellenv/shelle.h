@@ -1617,6 +1617,11 @@ SEnvDelDupFileArg (
   IN EFI_LIST_ENTRY   *ListHead
   );
 
+VOID
+SEnvFreeFileArg (
+  IN SHELL_FILE_ARG       *Arg
+  );
+
 EFI_STATUS
 EFIAPI
 SEnvFreeFileList (

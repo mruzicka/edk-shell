@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -481,6 +481,20 @@ Returns:
   EFI_LIST_ENTRY                *LinePos;
   EFI_LIST_ENTRY                *NewPos;
   BOOLEAN                       InScrolling;
+  EFI_STATUS                    Status;
+  BOOLEAN                       InTabScrolling;
+  EFI_LIST_ENTRY                DirList;
+  SHELL_FILE_ARG                *Arg;
+  EFI_LIST_ENTRY                *TabLinePos;
+  EFI_LIST_ENTRY                *TempPos;
+  CHAR16                        *TabStr;
+  CHAR16                        *TabOutputStr;
+  BOOLEAN                       HasSpaceInTabOutputStr;
+  BOOLEAN                       InQuotationMode;
+  CHAR16                        *TempStr;
+  UINTN                         TabPos;
+  UINTN                         TabUpdatePos;
+  UINTN                         Count;
 
   ConOut            = ST->ConOut;
   ConIn             = ST->ConIn;
@@ -491,9 +505,21 @@ Returns:
   Update            = 0;
   Delete            = 0;
   LinePos           = NewPos = &SEnvLineHistory;
-
   InScrolling       = FALSE;
-
+  InTabScrolling    = FALSE;
+  Status            = EFI_SUCCESS;
+  TabLinePos        = &DirList;
+  TabPos            = 0;
+  TabUpdatePos      = 0;
+  TabStr            = AllocateZeroPool (*BufferSize);
+  if (TabStr == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  TabOutputStr      = AllocateZeroPool (*BufferSize);
+  if (TabOutputStr == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  
   //
   // If buffer is not large enough to hold a CHAR16, do nothing.
   //
@@ -525,7 +551,10 @@ Returns:
     // Read a key
     //
     WaitForSingleEvent (ConIn->WaitForKey, 0);
-    ConIn->ReadKeyStroke (ConIn, &Key);
+    Status = ConIn->ReadKeyStroke (ConIn, &Key);
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
 
     //
     // Press PageUp or PageDown to scroll the history screen up or down.
@@ -543,6 +572,79 @@ Returns:
       if (InScrolling) {
         SEnvConOutHistoryQuitScroll ();
         InScrolling = FALSE;
+      }
+    }
+
+    //
+    // Press tab key to scroll the matching file or directory name
+    // Press any other key to quit scrolling
+    //
+    if (Key.UnicodeChar == CHAR_TAB) {
+      if (InTabScrolling) {
+        TabLinePos = TabLinePos->Flink;
+        if (TabLinePos == &DirList) {
+          TabLinePos = TabLinePos->Flink;
+        }
+      } else {
+        TabPos          = 0;
+        TabUpdatePos    = 0;
+        InQuotationMode = FALSE;
+        for (Index = 0; Index < Len; Index++) {
+          if (Str[Index] == L'\"') {
+            InQuotationMode = !InQuotationMode;
+          }
+          if (Str[Index] == L' ' && !InQuotationMode) {
+            TabPos = Index + 1;
+            TabUpdatePos = Index + 1;
+          }
+          if (Str[Index] == L'\\') {
+            TabUpdatePos = Index + 1;
+          }
+        }
+        CopyMem (TabStr, Str + TabPos, (Len - TabPos) * sizeof (CHAR16));
+        Count = 0;
+        for (Index = 0; Index < Len - TabPos; Index++) {
+          while (TabStr[Index] == L'\"') {
+            ++Count;
+            ++Index;
+          }
+          TabStr[Index - Count] = TabStr[Index];
+        }
+        TabStr[Len - TabPos - Count] = L'*';
+        TabStr[Len - TabPos - Count + 1] = 0;
+        InitializeListHead (&DirList);
+        Status  = ShellFileMetaArg (TabStr, &DirList);
+        TempStr = Str;
+        while (*TempStr == L' ') {
+          TempStr++;
+        }
+        //
+        // If "cd" is typed, only directory name will be auto-complete filled
+        //
+        if ((TempStr[0] == L'c' || TempStr[0] == L'C') && 
+            (TempStr[1] == L'd' || TempStr[1] == L'D')
+            ) {
+          TempPos = DirList.Flink;
+          while (TempPos != &DirList) {
+            Arg = CR (TempPos, SHELL_FILE_ARG, Link, SHELL_FILE_ARG_SIGNATURE);
+            TempPos = TempPos->Flink;
+            if (! (Arg && Arg->Info && (Arg->Info->Attribute & EFI_FILE_DIRECTORY))) {
+              SEnvFreeFileArg (Arg);
+            }
+          }
+        }
+        if (EFI_ERROR (Status) || IsListEmpty (&DirList)) {
+          InTabScrolling = FALSE;
+          continue;
+        } else {
+          TabLinePos = DirList.Flink;
+          InTabScrolling = TRUE;
+        }
+      }
+    } else {
+      if (InTabScrolling) {
+        ShellFreeFileList (&DirList);
+        InTabScrolling = FALSE;
       }
     }
 
@@ -574,7 +676,10 @@ Returns:
         MoveCursorBackward (LineLength, &Column, &Row);
       }
       break;
-
+    
+    case CHAR_TAB:
+      break;
+    
     default:
       if (Key.UnicodeChar >= ' ') {
         //
@@ -708,6 +813,47 @@ Returns:
     if (Done) {
       break;
     }
+    
+    //
+    // If we are in auto-complete mode, we are preparing to print the next file or directory name
+    //
+    if (InTabScrolling) {
+      Arg = CR (TabLinePos, SHELL_FILE_ARG, Link, SHELL_FILE_ARG_SIGNATURE);
+      if (Arg && (Arg->Status != EFI_SUCCESS)) {
+        continue;
+      }
+      Column = StartColumn + TabUpdatePos % LineLength;
+      Row -= (Len - StrPos + Column + OutputLength) / LineLength;
+      HasSpaceInTabOutputStr = FALSE;
+      OutputLength = StrLen (Arg->FileName);
+      //
+      // if the output string contains  blank space, quotation marks L'\"' should be added to the output.
+      //
+      for (TempStr = Arg->FileName; *TempStr != 0; TempStr++) {
+        if (*TempStr == L' ') {
+          HasSpaceInTabOutputStr = TRUE;
+          break;
+        }
+      }
+      if (HasSpaceInTabOutputStr) {
+        TabOutputStr[0] = L'\"';
+        CopyMem (TabOutputStr + 1, Arg->FileName, OutputLength * sizeof (CHAR16));
+        TabOutputStr[OutputLength + 1] = L'\"';
+        TabOutputStr[OutputLength + 2] = 0;
+      } else {
+        CopyMem (TabOutputStr, Arg->FileName, OutputLength * sizeof (CHAR16));
+        TabOutputStr[OutputLength] = 0;
+      }
+      OutputLength = StrLen (TabOutputStr) < MaxStr - 1 ? StrLen (TabOutputStr) : MaxStr - 1;
+      CopyMem (Str + TabUpdatePos, TabOutputStr, OutputLength * sizeof (CHAR16));
+      Str[TabUpdatePos + OutputLength] = 0;
+      StrPos = TabUpdatePos + OutputLength;
+      Update = TabUpdatePos;
+      if (Len > TabUpdatePos + OutputLength) {
+        Delete = Len - TabUpdatePos - OutputLength;
+      }
+    }
+    
     //
     // If we have a new position, we are preparing to print a previous or next
     // command.
@@ -844,6 +990,8 @@ Returns:
 
     FreePool (LineCmd);
   }
+  FreePool (TabStr);
+  FreePool (TabOutputStr);
   //
   // Return the data to the caller
   //
