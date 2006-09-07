@@ -479,6 +479,7 @@ Returns:
     PrintToken (STRING_TOKEN (STR_COMP_NO_DIFFERENCE), HiiCompHandle);
   } else {
     PrintToken (STRING_TOKEN (STR_COMP_DIFFERENCE), HiiCompHandle);
+    Status = EFI_ABORTED;
   }
 
 Done:

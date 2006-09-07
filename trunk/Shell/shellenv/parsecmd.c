@@ -790,8 +790,7 @@ Returns:
 
 --*/
 {
-  CHAR16
-Var[3];
+  CHAR16 Var[3];
 
   ASSERT (NULL != Content);
   ASSERT (NULL != VarName);

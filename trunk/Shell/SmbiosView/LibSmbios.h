@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -307,7 +307,6 @@ typedef struct {
   SMBIOS_STRING ManufactureDate;
   SMBIOS_STRING SerialNumber;
   SMBIOS_STRING DeviceName;
-  SMBIOS_STRING BankLocator;
   UINT8         DeviceChemistry;
   UINT16        DeviceCapacity;
   UINT16        DesignVoltage;
@@ -375,7 +374,7 @@ typedef struct {
   UINT16        Tolerance;
   UINT16        Accuracy;
   UINT32        OEMDefined;
-  UINT32        NominalValue;
+  UINT16        NominalValue;
 } SMBIOS_TYPE28;
 
 typedef struct {
@@ -476,7 +475,6 @@ typedef struct {
   SMBIOS_STRING AssetTagNumber;
   SMBIOS_STRING ModelPartNumber;
   SMBIOS_STRING RevisionLevel;
-  SMBIOS_STRING Description;
   UINT16        MaxPowerCapacity;
   UINT16        PowerSupplyCharacteristics;
   UINT16        InputVoltageProbeHandle;

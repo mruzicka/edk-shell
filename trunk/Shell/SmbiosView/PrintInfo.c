@@ -651,7 +651,6 @@ Returns:
     PrintPendingString (pStruct, Type22, ManufactureDate);
     PrintPendingString (pStruct, Type22, SerialNumber);
     PrintPendingString (pStruct, Type22, DeviceName);
-    PrintPendingString (pStruct, Type22, BankLocator);
     DisplayPBDeviceChemistry (
       pStruct->Type22->DeviceChemistry,
       Option
@@ -841,7 +840,6 @@ Returns:
     PrintPendingString (pStruct, Type39, AssetTagNumber);
     PrintPendingString (pStruct, Type39, ModelPartNumber);
     PrintPendingString (pStruct, Type39, RevisionLevel);
-    PrintPendingString (pStruct, Type39, Description);
     PrintStructValueH (pStruct, Type39, MaxPowerCapacity);
     DisplaySPSCharacteristics (
       pStruct->Type39->PowerSupplyCharacteristics,
