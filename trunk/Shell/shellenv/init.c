@@ -25,7 +25,7 @@ Revision History
 #include "shellenvguid.h"
 
 extern UINT8              STRING_ARRAY_NAME[];
-extern
+extern EFI_STATUS
 FakeInitializeHiiDatabase (
   EFI_HANDLE,
   EFI_SYSTEM_TABLE *,

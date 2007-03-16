@@ -518,7 +518,7 @@ Returns:
       i = Failure[i];
     }
 
-    if (Pat[i] == Pat[i + 1]) {
+    if (Pat[j] == Pat[i + 1]) {
       Failure[j] = i + 1;
     } else {
       Failure[j] = -1;

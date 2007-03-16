@@ -171,10 +171,11 @@ LibGetSmbiosStructure (
 
   Routine Description:
     Get SMBIOS structure given the Handle,copy data to the Buffer,
-    Handle is then the next.
+    Handle is changed to the next handle or 0xFFFF when the end is
+    reached or the handle is not found.
 
   Arguments:
-    Handle:         - 0x0: get the first structure
+    Handle:         - 0xFFFF: get the first structure
                     - Others: get a structure according to this value.
     Buffter:        - The pointer to the caller's memory buffer.
     Length:         - Length of return buffer in bytes.
@@ -193,21 +194,14 @@ LibGetSmbiosStructure (
   SMBIOS_STRUCTURE_POINTER  SmbiosEnd;
   UINT8                     *Raw;
 
+  if (*Handle == INVALIDE_HANDLE) {
+    *Handle = mSmbiosStruct->Hdr->Handle;
+    return DMI_INVALID_HANDLE;
+  }
+
   if (Buffer == NULL) {
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_LIBSMBIOSVIEW_NO_BUFF_SPEC), HiiHandle);
     return DMI_INVALID_HANDLE;
-  }
-
-  if (*Handle == INVALIDE_HANDLE) {
-    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_LIBSMBIOSVIEW_INVALID_HANDLE), HiiHandle);
-    return DMI_INVALID_HANDLE;
-  }
-
-  if (*Handle == 0) {
-    //
-    // first handle
-    //
-    *Handle = mSmbiosStruct->Hdr->Handle;
   }
 
   *Length       = 0;
@@ -228,7 +222,11 @@ LibGetSmbiosStructure (
       //
       // update with the next structure handle.
       //
-      *Handle = Smbios.Hdr->Handle;
+      if (Smbios.Raw < SmbiosEnd.Raw) {
+        *Handle = Smbios.Hdr->Handle;
+      } else {
+        *Handle = INVALIDE_HANDLE;
+      }
       return DMI_SUCCESS;
     }
     //

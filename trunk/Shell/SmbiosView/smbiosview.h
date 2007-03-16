@@ -27,7 +27,6 @@ Revision History
 #define STRUCTURE_TYPE_RANDOM     (UINT8) 0xFE
 #define STRUCTURE_TYPE_INVALID    (UINT8) 0xFF
 
-#define STRUCTURE_HANDLE_RANDOM   (UINT16) 0x0000
 #define STRUCTURE_HANDLE_INVALID  (UINT16) 0xFFFF
 
 typedef struct {
@@ -48,7 +47,8 @@ EFI_STATUS
 SMBiosView (
   IN  UINT8     QueryType,
   IN  UINT16    QueryHandle,
-  IN  UINT8     Option
+  IN  UINT8     Option,
+  IN  BOOLEAN   RandomView
   );
 
 EFI_STATUS

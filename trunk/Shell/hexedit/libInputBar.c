@@ -85,6 +85,7 @@ Returns:
   return EFI_SUCCESS;
 }
 
+VOID
 HMainInputBarPrintInput (
   VOID
   )

@@ -34,11 +34,6 @@ Revision History
 
 #define EFI_FAKE_HII_DATA_SIGNATURE     EFI_SIGNATURE_32 ('F', 'H', 'I', 'I')
 
-#define EFI_HII_PROTOCOL_GUID_OLD \
-  { \
-    0xcd361957, 0xafbe, 0x425e, 0xa3, 0x58, 0x5f, 0x58, 0x89, 0xcf, 0xfe, 0x7b \
-  }
-
 #define DEFAULT_FORM_BUFFER_SIZE    0xFFFF
 #define DEFAULT_STRING_BUFFER_SIZE  0xFFFF
 
@@ -48,45 +43,6 @@ Revision History
 
 #define NARROW_WIDTH                8
 #define WIDE_WIDTH                  16
-
-typedef struct {
-  EFI_HII_IFR_PACK       *IfrPack;
-  EFI_HII_FONT_PACK      *FontPack;
-  EFI_HII_STRING_PACK    *StringPack;
-  EFI_HII_KEYBOARD_PACK  *KeyboardPack;
-  EFI_GUID               *GuidId;
-} EFI_HII_PACK_LIST;
-
-typedef
-EFI_STATUS
-(EFIAPI *EFI_HII_NEW_PACK_OLD) (
-  IN  EFI_HII_PROTOCOL    *This,
-  IN  EFI_HII_PACK_LIST   *Package,
-  OUT EFI_HII_HANDLE      *Handle
-  );
-
-typedef struct _EFI_HII_PROTOCOL_OLD {
-  EFI_HII_NEW_PACK_OLD          NewPack;
-  EFI_HII_REMOVE_PACK           RemovePack;
-  EFI_HII_FIND_HANDLES          FindHandles;
-  EFI_HII_EXPORT                ExportDatabase;
-
-  EFI_HII_TEST_STRING           TestString;
-  EFI_HII_GET_GLYPH             GetGlyph;
-  EFI_HII_GLYPH_TO_BLT          GlyphToBlt;
-
-  EFI_HII_NEW_STRING            NewString;
-  EFI_HII_GET_PRI_LANGUAGES     GetPrimaryLanguages;
-  EFI_HII_GET_SEC_LANGUAGES     GetSecondaryLanguages;
-  EFI_HII_GET_STRING            GetString;
-  EFI_HII_RESET_STRINGS         ResetStrings;
-  EFI_HII_GET_LINE              GetLine;
-  EFI_HII_GET_FORMS             GetForms;
-  EFI_HII_GET_DEFAULT_IMAGE     GetDefaultImage;
-  EFI_HII_UPDATE_FORM           UpdateForm;
-
-  EFI_HII_GET_KEYBOARD_LAYOUT   GetKeyboardLayout;
-} EFI_HII_PROTOCOL_OLD;
 
 typedef struct {
   EFI_HII_PACK_HEADER   Header;
@@ -109,13 +65,6 @@ typedef struct _EFI_FAKE_HII_HANDLE_DATABASE {
   struct _EFI_FAKE_HII_HANDLE_DATABASE  *NextHandleDatabase;
 } EFI_FAKE_HII_HANDLE_DATABASE;
 
-typedef struct _EFI_FAKE_HII_DATA_OLD {
-  UINTN                         Signature;
-  EFI_FAKE_HII_GLOBAL_DATA      *GlobalData;
-  EFI_FAKE_HII_HANDLE_DATABASE  *DatabaseHead;          // Head of the Null-terminated singly-linked list of handles.
-  EFI_HII_PROTOCOL_OLD          Hii;
-} EFI_FAKE_HII_DATA_OLD;
-
 typedef struct _EFI_FAKE_HII_DATA {
   UINTN                         Signature;
   EFI_FAKE_HII_GLOBAL_DATA      *GlobalData;
@@ -134,7 +83,6 @@ typedef struct {
 } EFI_FAKE_HII_PACKAGE_INSTANCE;
 
 #define EFI_FAKE_HII_DATA_FROM_THIS(a)      CR (a, EFI_FAKE_HII_DATA, Hii, EFI_FAKE_HII_DATA_SIGNATURE)
-#define EFI_FAKE_HII_DATA_OLD_FROM_THIS(a)  CR (a, EFI_FAKE_HII_DATA_OLD, Hii, EFI_FAKE_HII_DATA_SIGNATURE)
 
 EFI_STATUS
 FakeInitializeHiiDatabase (
@@ -145,14 +93,6 @@ FakeInitializeHiiDatabase (
 EFI_STATUS
 FakeUninstallHiiDatabase (
   VOID
-  );
-
-EFI_STATUS
-EFIAPI
-FakeHiiNewPackOld (
-  IN EFI_HII_PROTOCOL               *This,
-  IN EFI_HII_PACK_LIST              *PackageList,
-  OUT EFI_HII_HANDLE                *Handle
   );
 
 EFI_STATUS

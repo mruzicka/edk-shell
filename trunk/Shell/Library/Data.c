@@ -78,5 +78,3 @@ EFI_DEVICE_PATH_PROTOCOL        LibEndDevicePath[] = {
 //
 EFI_GUID                        NullGuid                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 EFI_GUID                        UnknownDeviceGuid         = UNKNOWN_DEVICE_GUID;
-EFI_GUID                        gEfiMpsTableGuid          = EFI_MPS_TABLE_GUID;
-

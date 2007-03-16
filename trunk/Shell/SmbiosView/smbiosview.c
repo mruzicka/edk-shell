@@ -126,6 +126,7 @@ Returns:
   UINT8                   StructType;
   UINT16                  StructHandle;
   EFI_STATUS              Status;
+  BOOLEAN                 RandomView;
 
   SHELL_VAR_CHECK_CODE    RetCode;
   CHAR16                  *Useful;
@@ -218,7 +219,12 @@ Returns:
   }
 
   StructType    = STRUCTURE_TYPE_RANDOM;
-  StructHandle  = STRUCTURE_HANDLE_RANDOM;
+  RandomView    = TRUE;
+  //
+  // Initialize the StructHandle to be the first handle
+  //
+  StructHandle  = STRUCTURE_HANDLE_INVALID;
+  LibGetSmbiosStructure (&StructHandle, NULL, NULL);
 
   Item          = LibCheckVarGetFlag (&ChkPck, L"-t");
   if (Item) {
@@ -232,6 +238,7 @@ Returns:
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-h");
   if (Item) {
+    RandomView   = FALSE;
     StructHandle = (UINT16) (StrToUIntegerBase (Item->VarStr, 16, &Status));
     if (EFI_ERROR (Status)) {
       PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_INVALID_ARG), HiiHandle, L"smbiosview", Item->VarStr);
@@ -251,7 +258,7 @@ Returns:
   //
   // Show SMBIOS structure information
   //
-  Status = SMBiosView (StructType, StructHandle, gShowType);
+  Status = SMBiosView (StructType, StructHandle, gShowType, RandomView);
 
 Done:
   //
@@ -274,7 +281,8 @@ EFI_STATUS
 SMBiosView (
   IN  UINT8   QueryType,
   IN  UINT16  QueryHandle,
-  IN  UINT8   Option
+  IN  UINT8   Option,
+  IN  BOOLEAN RandomView
   )
 /*++
   Routine Description:
@@ -332,7 +340,7 @@ SMBiosView (
       PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_SMBIOSVIEW_QUERYTYPE), HiiHandle, QueryType);
     }
 
-    if (QueryHandle == STRUCTURE_HANDLE_RANDOM) {
+    if (RandomView) {
       PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_SMBIOSVIEW_QUERYHANDLE_RANDOM), HiiHandle);
     } else {
       PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_SMBIOSVIEW_QUERYHANDLE), HiiHandle, QueryHandle);
@@ -369,7 +377,9 @@ SMBiosView (
       //
       // handle then point to the next!
       //
-      LibGetSmbiosStructure (&Handle, Buffer, &Length);
+      if (LibGetSmbiosStructure (&Handle, Buffer, &Length) != DMI_SUCCESS) {
+        break;
+      }
       Offset      = (UINT16) (Offset + Length);
       pStruct.Raw = Buffer;
 
@@ -379,10 +389,6 @@ SMBiosView (
       // only if QueryType != Random and Hdr->Type != QueryType, skiped it.
       //
       if (QueryType != STRUCTURE_TYPE_RANDOM && pStruct.Hdr->Type != QueryType) {
-        continue;
-      }
-
-      if (QueryHandle != STRUCTURE_HANDLE_RANDOM && pStruct.Hdr->Handle != QueryHandle) {
         continue;
       }
 
@@ -435,6 +441,9 @@ SMBiosView (
 
           return Status;
         }
+      }
+      if (!RandomView) {
+        break;
       }
     }
 
@@ -617,7 +626,8 @@ InitSmbiosTableStatistics (
   //
   // search from the first one
   //
-  Handle = STRUCTURE_HANDLE_RANDOM;
+  Handle = STRUCTURE_HANDLE_INVALID;
+  LibGetSmbiosStructure (&Handle, NULL, NULL);
   for (Index = 1; Index <= SMBiosTable->NumberOfSmbiosStructures; Index++) {
     //
     // If reach the end of table, break..

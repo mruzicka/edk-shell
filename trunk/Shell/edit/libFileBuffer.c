@@ -96,7 +96,7 @@ FileBufferInit (
   //
   // default set FileName to NewFile.txt
   //
-  FileBuffer.FileName = PoolPrint (L"NewFile.txt");
+  FileBuffer.FileName = EditGetDefaultFileName ();
   if (FileBuffer.FileName == NULL) {
     return EFI_LOAD_ERROR;
   }
@@ -3462,4 +3462,75 @@ FileBufferReplaceAll (
   FileBufferRefresh ();
 
   return EFI_SUCCESS;
+}
+
+CHAR16 *
+EditGetDefaultFileName (
+  VOID
+  )
+{
+  EFI_STATUS         Status;
+  UINTN              Suffix;
+  BOOLEAN            FoundNewFile;
+  CHAR16             *FileNameTmp;
+  EFI_LIST_ENTRY     DirList;
+  SHELL_FILE_ARG     *Arg;
+
+  Suffix       = 0;
+  FoundNewFile = FALSE;
+
+  do {
+    if (Suffix != 0) {
+      FileNameTmp = PoolPrint (L"NewFile%d.txt", Suffix);
+    } else {
+      FileNameTmp = PoolPrint (L"NewFile.txt");
+    }
+
+    //
+    // GET CURRENT DIR HANDLE
+    //
+    InitializeListHead (&DirList);
+
+    //
+    // after that filename changed to path
+    //
+    Status = ShellFileMetaArgNoWildCard (FileNameTmp, &DirList);
+
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+
+    if (DirList.Flink == &DirList) {
+      break;
+    }
+
+    Arg = CR (DirList.Flink, SHELL_FILE_ARG, Link, SHELL_FILE_ARG_SIGNATURE);
+
+    //
+    // Make sure Arg is valid
+    //
+    if (Arg == NULL || Arg->Parent == NULL) {
+      ShellFreeFileList (&DirList);
+      break;
+    }
+
+    if (Arg->Status == EFI_NOT_FOUND) {
+      FoundNewFile = TRUE;
+      ShellFreeFileList (&DirList);
+      break;
+    } else {
+      FreePool (FileNameTmp);
+      FileNameTmp = NULL;
+    }
+
+    ShellFreeFileList (&DirList);
+    Suffix++;
+
+  } while (Suffix != 0);
+
+  if (!FoundNewFile && FileNameTmp != NULL) {
+    FreePool (FileNameTmp);
+    FileNameTmp = NULL;
+  }
+  return FileNameTmp;
 }

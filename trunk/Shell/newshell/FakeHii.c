@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -26,10 +26,7 @@ Revision History
 
 #include "FakeHii.h"
 
-EFI_GUID gEfiHiiProtocolGuidOld = EFI_HII_PROTOCOL_GUID_OLD;
-
 EFI_HANDLE mFakeHiiHandle = NULL;
-EFI_HANDLE mOldFakeHiiHandle = NULL;
 
 EFI_STATUS
 FakeInitializeHiiDatabase (
@@ -55,13 +52,10 @@ Returns:
   UINTN                 HandleCount;
   EFI_HANDLE            *HandleBuffer;
   EFI_FAKE_HII_DATA     *HiiData;
-  EFI_FAKE_HII_DATA_OLD *OldHiiData;
   EFI_HANDLE            Handle;
   BOOLEAN               HiiInstalled;
-  BOOLEAN               OldHiiInstalled;
 
   HiiInstalled = FALSE;
-  OldHiiInstalled = FALSE;
   HiiData = NULL;
   Status = LibLocateHandle (
             ByProtocol,
@@ -107,50 +101,6 @@ Returns:
     } 
   }
   
-  Status = LibLocateHandle (
-            ByProtocol,
-            &gEfiHiiProtocolGuidOld,
-            NULL,
-            &HandleCount,
-            &HandleBuffer
-            );
-  if (!EFI_ERROR (Status)) {
-    if (NULL != HandleBuffer) {
-      FreePool (HandleBuffer);
-      OldHiiInstalled = TRUE;
-    }
-  }
-
-  if (!OldHiiInstalled)   
-  {
-    OldHiiData = AllocateZeroPool (sizeof (EFI_FAKE_HII_DATA_OLD));
-    if (NULL == OldHiiData) {
-      FakeUninstallHiiDatabase ();
-      return EFI_OUT_OF_RESOURCES;
-    }
-  
-    OldHiiData->Signature                = EFI_FAKE_HII_DATA_SIGNATURE;
-    OldHiiData->DatabaseHead             = NULL;
-    OldHiiData->Hii.NewPack              = FakeHiiNewPackOld;
-    OldHiiData->Hii.RemovePack           = FakeHiiRemovePack;
-    OldHiiData->Hii.FindHandles          = FakeHiiFindHandles;
-    OldHiiData->Hii.GetPrimaryLanguages  = FakeHiiGetPrimaryLanguages;
-    OldHiiData->Hii.GetString            = FakeHiiGetString;
-    OldHiiData->Hii.GetForms             = FakeHiiGetForms;
-  
-    Handle = NULL;
-    Status = BS->InstallProtocolInterface (
-                  &mOldFakeHiiHandle,
-                  &gEfiHiiProtocolGuidOld,
-                  EFI_NATIVE_INTERFACE,
-                  &OldHiiData->Hii
-                  );
-  
-    if (EFI_ERROR (Status)) {
-      FakeUninstallHiiDatabase ();
-    } 
-  }
-  
   return Status;
 }
 
@@ -162,9 +112,7 @@ FakeUninstallHiiDatabase (
 {                                    
   EFI_STATUS              Status;
   EFI_HII_PROTOCOL        *FakeHii;
-  EFI_HII_PROTOCOL_OLD    *FakeHiiOld;
   EFI_FAKE_HII_DATA       *HiiData;
-  EFI_FAKE_HII_DATA_OLD   *OldHiiData;
   
   if (mFakeHiiHandle != NULL) {
     Status = BS->HandleProtocol (
@@ -180,22 +128,6 @@ FakeUninstallHiiDatabase (
     HiiData = EFI_FAKE_HII_DATA_FROM_THIS (FakeHii);
     mFakeHiiHandle = NULL;
     FreePool (HiiData);
-  }
-  
-  if (mOldFakeHiiHandle != NULL) {
-    Status = BS->HandleProtocol (
-                  mOldFakeHiiHandle,
-                  &gEfiHiiProtocolGuidOld,
-                  &FakeHiiOld
-                  );
-    Status = BS->UninstallProtocolInterface (
-                  mOldFakeHiiHandle,
-                  &gEfiHiiProtocolGuidOld,
-                  FakeHiiOld
-                  );
-    OldHiiData = EFI_FAKE_HII_DATA_OLD_FROM_THIS (FakeHiiOld);
-    mOldFakeHiiHandle = NULL;
-    FreePool (OldHiiData);
   }
   
   return EFI_SUCCESS;
@@ -356,7 +288,7 @@ Returns:
   // If there is no string package, and the PackageInstance->IfrPack.Guid and PackageInstance->Guid are
   // different, we should return the correct handle for the caller to use for strings.
   //
-  if ((PackageInstance->StringSize == 0) && (!CompareGuid (&Guid, &PackageInstance->Guid))) {
+  if ((PackageInstance->StringSize == 0) && (CompareGuid (&Guid, &PackageInstance->Guid) != 0)) {
     //
     // Search the database for a handle that matches the PackageInstance->Guid
     //
@@ -386,7 +318,7 @@ Returns:
       // If the Guid from the new handle matches the original Guid referenced in the original package data
       // return the appropriate package instance data to use.
       //
-      if (CompareGuid (&Guid, &PackageInstance->Guid)) {
+      if (CompareGuid (&Guid, &PackageInstance->Guid) == 0) {
         if (TotalStringCount != NULL) {
           *TotalStringCount = HandleDatabase->NumberOfTokens;
         }
@@ -547,7 +479,7 @@ Returns:
     //
     // Check to see if IfrPack->Guid != GuidId
     //
-    if (!CompareGuid (&Guid, Packages->GuidId)) {
+    if (CompareGuid (&Guid, Packages->GuidId) != 0) {
       //
       // If a string package is present, the GUIDs should have agreed.  Return an error
       //
@@ -1543,294 +1475,5 @@ Returns:
     }
   }
 
-  return EFI_SUCCESS;
-}
-
-EFI_STATUS
-EFIAPI
-FakeHiiNewPackOld (
-  IN  EFI_HII_PROTOCOL      *This,
-  IN  EFI_HII_PACK_LIST     *Package,
-  OUT EFI_HII_HANDLE        *Handle
-  )
-/*++
-
-Routine Description:
-  Extracts the various packs from a package list.
-  
-Arguments:
-
-Returns: 
-
---*/
-{
-  EFI_FAKE_HII_PACKAGE_INSTANCE        *PackageInstance;
-  EFI_FAKE_HII_DATA_OLD                *HiiData;
-  EFI_FAKE_HII_HANDLE_DATABASE         *HandleDatabase;
-  EFI_FAKE_HII_HANDLE_DATABASE         *Database;
-  EFI_FAKE_HII_GLOBAL_DATA             *GlobalData;
-  EFI_STATUS                      Status;
-  UINTN                           IfrSize;
-  UINTN                           StringSize;
-  UINTN                           InstanceSize;
-  UINTN                           Count;
-  UINT16                          Member;
-  EFI_GUID                        Guid;
-  EFI_FORM_SET_STUB               FormSetStub;
-  UINT8                           *Location;
-  UINT16                          Unicode;
-  UINT16                          NumWideGlyphs;
-  UINT16                          NumNarrowGlyphs;
-  UINT32                          NumberOfTokens;
-  UINT8                           *Local;
-  EFI_NARROW_GLYPH                *NarrowGlyph;
-  EFI_WIDE_GLYPH                  *WideGlyph;
-
-  if (Package == NULL || This == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  HiiData = EFI_FAKE_HII_DATA_OLD_FROM_THIS(This);
-
-  GlobalData = HiiData->GlobalData;
-
-  Database = HiiData->DatabaseHead;
-
-  InstanceSize = 0;
-  IfrSize = 0;
-  StringSize = 0;
-  NumberOfTokens = 0;
-
-  //
-  // If sending a StringPack without an IfrPack, you must include a GuidId
-  //
-  if ((Package->StringPack != NULL) && (Package->IfrPack == NULL)) {
-    if (Package->GuidId == NULL) {
-      return EFI_INVALID_PARAMETER;
-    }
-  }
-
-  //
-  // If passing in an IfrPack and a GuidId is provided, ensure they are the same value.
-  //
-  if ((Package->IfrPack != NULL) && (Package->GuidId != NULL)) {
-    Location = ((UINT8 *)Package->IfrPack);
-    Location = (UINT8 *)(((UINTN)Location) + sizeof (EFI_HII_PACK_HEADER));
-
-    //
-    // Advance to the Form Set Op-code
-    //
-    for (Count = 0; ((EFI_IFR_OP_HEADER *)&Location[Count])->OpCode != EFI_IFR_FORM_SET_OP; ) {
-      Count = Count + ((EFI_IFR_OP_HEADER *)&Location[Count])->Length;
-    }
-
-    //
-    // Copy to local variable
-    //
-    CopyMem(&Guid, &((EFI_IFR_FORM_SET *)&Location[Count])->Guid, sizeof (EFI_GUID));
-
-    //
-    // Check to see if IfrPack->Guid != GuidId
-    //
-    if (!CompareGuid(&Guid, Package->GuidId)) {
-      //
-      // If a string package is present, the GUIDs should have agreed.  Return an error
-      //
-      if (Package->StringPack != NULL) {
-        return EFI_INVALID_PARAMETER;
-      } 
-    }
-  }
-
-  if (Package->FontPack != NULL) { 
-    //
-    // Add whatever narrow glyphs were passed to us if undefined
-    //
-    CopyMem(&NumNarrowGlyphs, &Package->FontPack->NumberOfNarrowGlyphs, sizeof (UINT16));
-    for (Count = 0; Count <= NumNarrowGlyphs; Count++) {
-      Local = (UINT8*)(&Package->FontPack->NumberOfWideGlyphs + sizeof(UINT8)) + (sizeof(EFI_NARROW_GLYPH)) * Count;
-      NarrowGlyph = (EFI_NARROW_GLYPH*)Local;
-      CopyMem(&Member, &NarrowGlyph->UnicodeWeight, sizeof (UINT16));
-      //
-      // If the glyph is already defined, do not overwrite it.  It is what it is.
-      //
-      CopyMem(&Unicode, &GlobalData->NarrowGlyphs[Member].UnicodeWeight, sizeof (UINT16));
-      if (Unicode == 0)  {
-        CopyMem(&GlobalData->NarrowGlyphs[Member], Local, sizeof (EFI_NARROW_GLYPH));
-      }
-    }
-
-    //
-    // Add whatever wide glyphs were passed to us if undefined
-    //
-    CopyMem(&NumWideGlyphs, &Package->FontPack->NumberOfWideGlyphs, sizeof (UINT16));
-    for (Count = 0; Count <= NumWideGlyphs; Count++) {
-      Local = (UINT8*)(&Package->FontPack->NumberOfWideGlyphs + sizeof(UINT8)) + (sizeof(EFI_NARROW_GLYPH)) * NumNarrowGlyphs;
-      WideGlyph = (EFI_WIDE_GLYPH*)Local;
-      CopyMem(&Member, 
-                 (UINTN*)(Local + sizeof (EFI_WIDE_GLYPH) * Count), 
-                 sizeof (UINT16));
-      //
-      // If the glyph is already defined, do not overwrite it.  It is what it is.
-      //
-      CopyMem(&Unicode, &GlobalData->WideGlyphs[Member].UnicodeWeight, sizeof (UINT16));
-      if (Unicode == 0)  {
-        Local = (UINT8*)(&Package->FontPack->NumberOfWideGlyphs + sizeof(UINT8)) + (sizeof(EFI_NARROW_GLYPH)) * NumNarrowGlyphs;
-        WideGlyph = (EFI_WIDE_GLYPH*)Local;
-        CopyMem(&GlobalData->WideGlyphs[Member], 
-           (UINTN *)(Local + sizeof (EFI_WIDE_GLYPH) * Count), 
-           sizeof (EFI_WIDE_GLYPH));
-      }
-    }
-  }
-
-  if (Package->KeyboardPack != NULL) {
-    //
-    // Sending me a Keyboard Package
-    //
-    if (Package->KeyboardPack->DescriptorCount > 105) {
-      return EFI_INVALID_PARAMETER;
-    }
-    
-    //
-    // If someone updates the Descriptors with a count of 0, blow aware the overrides.
-    //
-    if (Package->KeyboardPack->DescriptorCount == 0) {
-      ZeroMem (GlobalData->OverrideKeyboardLayout, sizeof (EFI_KEY_DESCRIPTOR) * 106);
-    }
-
-    if (Package->KeyboardPack->DescriptorCount < 106 && Package->KeyboardPack->DescriptorCount > 0) {
-      //
-      // If SystemKeyboard was updated already, then steer changes to the override database
-      //
-      if (GlobalData->SystemKeyboardUpdate) { 
-        ZeroMem (GlobalData->OverrideKeyboardLayout, sizeof (EFI_KEY_DESCRIPTOR) * 106);
-        for (Count = 0;Count < Package->KeyboardPack->DescriptorCount; Count++) {
-          CopyMem(&Member, &Package->KeyboardPack->Descriptor[Count].Key, sizeof (UINT16));
-          CopyMem(&GlobalData->OverrideKeyboardLayout[Member], &Package->KeyboardPack->Descriptor[Count], sizeof (EFI_KEY_DESCRIPTOR));
-        }
-      } else { 
-        //
-        // SystemKeyboard was never updated, so this is likely the keyboard driver setting the System database.
-        //
-        ZeroMem (GlobalData->SystemKeyboardLayout, sizeof (EFI_KEY_DESCRIPTOR) * 106);
-        for (Count = 0;Count < Package->KeyboardPack->DescriptorCount; Count++) {
-          CopyMem(&Member, &Package->KeyboardPack->Descriptor->Key, sizeof (UINT16));
-          CopyMem(&GlobalData->SystemKeyboardLayout[Member], &Package->KeyboardPack->Descriptor[Count], sizeof (EFI_KEY_DESCRIPTOR));
-        }
-
-        //
-        // Just updated the system keyboard database, reflect that in the global flag.
-        //
-        GlobalData->SystemKeyboardUpdate = TRUE;
-      }
-    }
-  }
-
-  //
-  // If someone is passing in a string only, create a dummy IfrPack with a Guid 
-  // to enable future searching of this data. 
-  //
-  if ((Package->IfrPack == NULL) && (Package->StringPack != NULL)) {
-    ZeroMem (&FormSetStub, sizeof (FormSetStub));
-
-    FormSetStub.Header.Type = EFI_HII_IFR;
-    FormSetStub.Header.Length = sizeof (EFI_FORM_SET_STUB);
-
-    FormSetStub.FormSet.Header.OpCode = EFI_IFR_FORM_SET_OP;
-    FormSetStub.FormSet.Header.Length = (UINT8)sizeof (EFI_IFR_FORM_SET);
-    FormSetStub.FormSet.FormSetTitle = 0x02;  // Dummy string
-    CopyMem (&FormSetStub.FormSet.Guid, Package->GuidId, sizeof(EFI_GUID));
-
-    FormSetStub.EndFormSet.Header.OpCode = EFI_IFR_END_FORM_SET_OP;
-    FormSetStub.EndFormSet.Header.Length = (UINT8)sizeof (EFI_IFR_END_FORM_SET);
-    Package->IfrPack = (EFI_HII_IFR_PACK *)&FormSetStub;
-  }
-
-  if (Package->IfrPack != NULL) {
-    //
-    // Sending me an IFR Package
-    // Get its size
-    //
-    Status = FakeGetPackSize ((VOID *)Package->IfrPack, &IfrSize, NULL);
-  }
-
-  if (Package->StringPack != NULL) {
-    //
-    // Sending me a String Package
-    // Get its size 
-    //
-    Status = FakeGetPackSize ((VOID *)Package->StringPack, &StringSize, &NumberOfTokens);
-  }
-
-  InstanceSize = IfrSize + StringSize;
-
-  if (InstanceSize != 0) {
-    PackageInstance = AllocateZeroPool (InstanceSize + sizeof (EFI_FAKE_HII_PACKAGE_INSTANCE));
-
-    ASSERT (PackageInstance);
-  
-    //
-    // If there is no DatabaseHead allocated - allocate one
-    //
-    if (HiiData->DatabaseHead == NULL) {
-      HiiData->DatabaseHead = AllocateZeroPool (sizeof(EFI_FAKE_HII_HANDLE_DATABASE));
-      ASSERT (HiiData->DatabaseHead);
-    }
-
-    //
-    // If the head is being used (Handle is non-zero), allocate next Database and
-    // add it to the linked-list
-    //
-    if (HiiData->DatabaseHead->Handle != 0) {
-      HandleDatabase = AllocateZeroPool (sizeof(EFI_FAKE_HII_HANDLE_DATABASE));
-
-      ASSERT (HandleDatabase);
-
-      for ( ; Database->NextHandleDatabase != NULL; Database = Database->NextHandleDatabase);
-
-      //
-      // We are sitting on the Database entry which contains the null Next pointer.  Fix it.
-      //
-      Database->NextHandleDatabase = HandleDatabase;
-
-    }
-
-    Database = HiiData->DatabaseHead;
-
-    //
-    // Initialize this instance data
-    //
-    for (*Handle = 1; Database->NextHandleDatabase != NULL; Database = Database->NextHandleDatabase) {
-      //
-      // Since the first Database instance will have a passed back handle of 1, we will continue
-      // down the linked list of entries until we encounter the end of the linked list.  Each time
-      // we go down one level deeper, increment the handle value that will be passed back.  
-      //
-      if (Database->Handle >= *Handle) {
-        *Handle = Database->Handle + 1;
-      }
-    }
-
-    PackageInstance->Handle         = *Handle;
-    PackageInstance->IfrSize        = IfrSize;
-    PackageInstance->StringSize     = StringSize;
-    if (Package->GuidId != NULL) {
-      CopyMem (&PackageInstance->Guid, Package->GuidId, sizeof (EFI_GUID));
-    }
-
-    Database->Buffer                = PackageInstance;
-    Database->Handle                = PackageInstance->Handle;
-    Database->NumberOfTokens        = NumberOfTokens;
-    Database->NextHandleDatabase    = NULL;
-
-    if (IfrSize > 0) {
-      CopyMem (&PackageInstance->IfrData, Package->IfrPack, IfrSize);
-    }
-
-    if (StringSize > 0) {
-      CopyMem ((CHAR8 *)(&PackageInstance->IfrData) + IfrSize, Package->StringPack, StringSize);
-    }
-  }
   return EFI_SUCCESS;
 }

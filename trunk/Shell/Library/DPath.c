@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -21,6 +21,12 @@ Revision History
 --*/
 
 #include "EfiShelllib.h"
+
+EFI_GUID mEfiDevicePathMessagingUartFlowControlGuid = DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+EFI_GUID mEfiDevicePathMessagingSASGuid = DEVICE_PATH_MESSAGING_SAS;
+#endif
 
 EFI_DEVICE_PATH_PROTOCOL *
 DevicePathInstance (
@@ -420,7 +426,7 @@ _DevPathPci (
   ASSERT (DevPath != NULL);
 
   Pci = DevPath;
-  CatPrint (Str, L"Pci(%x|%x)", Pci->Device, Pci->Function);
+  CatPrint (Str, L"Pci(%x|%x)", (UINTN) Pci->Device, (UINTN) Pci->Function);
 }
 
 VOID
@@ -435,7 +441,7 @@ _DevPathPccard (
   ASSERT (DevPath != NULL);
 
   Pccard = DevPath;
-  CatPrint (Str, L"Pccard(Function%x)", Pccard->FunctionNumber);
+  CatPrint (Str, L"Pccard(Function%x)", (UINTN) Pccard->FunctionNumber);
 }
 
 VOID
@@ -452,8 +458,8 @@ _DevPathMemMap (
   MemMap = DevPath;
   CatPrint (
     Str,
-    L"MemMap(%d:%.lx-%.lx)",
-    MemMap->MemoryType,
+    L"MemMap(%d:%lx-%lx)",
+    (UINTN) MemMap->MemoryType,
     MemMap->StartingAddress,
     MemMap->EndingAddress
     );
@@ -474,7 +480,7 @@ _DevPathController (
   CatPrint (
     Str,
     L"Ctrl(%d)",
-    Controller->Controller
+    (UINTN) Controller->Controller
     );
 }
 
@@ -484,9 +490,14 @@ _DevPathVendor (
   IN VOID                 *DevPath
   )
 {
-  VENDOR_DEVICE_PATH                *Vendor;
-  CHAR16                            *Type;
-  UNKNOWN_DEVICE_VENDOR_DEVICE_PATH *UnknownDevPath;
+  VENDOR_DEVICE_PATH  *Vendor;
+  CHAR16              *Type;
+  UINTN               DataLength;
+  UINTN               Index;
+  UINT32              FlowControlMap;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  UINT16              Info;
+#endif
 
   ASSERT (Str != NULL);
   ASSERT (DevPath != NULL);
@@ -499,6 +510,74 @@ _DevPathVendor (
 
   case MESSAGING_DEVICE_PATH:
     Type = L"Msg";
+    if (CompareGuid (&Vendor->Guid, &gEfiPcAnsiGuid) == 0) {
+      CatPrint (Str, L"VenPcAnsi()");
+      return ;
+    } else if (CompareGuid (&Vendor->Guid, &gEfiVT100Guid) == 0) {
+      CatPrint (Str, L"VenVt100()");
+      return ;
+    } else if (CompareGuid (&Vendor->Guid, &gEfiVT100PlusGuid) == 0) {
+      CatPrint (Str, L"VenVt100Plus()");
+      return ;
+    } else if (CompareGuid (&Vendor->Guid, &gEfiVTUTF8Guid) == 0) {
+      CatPrint (Str, L"VenUft8()");
+      return ;
+    } else if (CompareGuid (&Vendor->Guid, &mEfiDevicePathMessagingUartFlowControlGuid) == 0) {
+      FlowControlMap = (((UART_FLOW_CONTROL_DEVICE_PATH *) Vendor)->FlowControlMap);
+      switch (FlowControlMap & 0x00000003) {
+      case 0:
+        CatPrint (Str, L"UartFlowCtrl(%s)", L"None");
+        break;
+
+      case 1:
+        CatPrint (Str, L"UartFlowCtrl(%s)", L"Hardware");
+        break;
+
+      case 2:
+        CatPrint (Str, L"UartFlowCtrl(%s)", L"XonXoff");
+        break;
+
+      default:
+        break;
+      }
+
+      return ;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+    } else if (CompareGuid (&Vendor->Guid, &mEfiDevicePathMessagingSASGuid) == 0) {
+      CatPrint (
+        Str,
+        L"SAS(%lx,%lx,%x,",
+        ((SAS_DEVICE_PATH *) Vendor)->SasAddress,
+        ((SAS_DEVICE_PATH *) Vendor)->Lun,
+        ((SAS_DEVICE_PATH *) Vendor)->RelativeTargetPort
+        );
+      Info = (((SAS_DEVICE_PATH *) Vendor)->DeviceTopology);
+      if ((Info & 0x0f) == 0) {
+        CatPrint (Str, L"NoTopology,0,0,0,");
+      } else if (((Info & 0x0f) == 1) || ((Info & 0x0f) == 2)) {
+        CatPrint (
+          Str,
+          L"%s,%s,%s,",
+          (Info & (0x1 << 4)) ? L"SATA" : L"SAS",
+          (Info & (0x1 << 5)) ? L"External" : L"Internal",
+          (Info & (0x1 << 6)) ? L"Expanded" : L"Direct"
+          );
+        if ((Info & 0x0f) == 1) {
+          CatPrint (Str, L"0,");
+        } else {
+          CatPrint (Str, L"%x,", (UINTN) ((Info >> 8) & 0xff));
+        }
+      } else {
+        CatPrint (Str, L"0,0,0,0,");
+      }
+
+      CatPrint (Str, L"%x)", (UINTN) ((SAS_DEVICE_PATH *) Vendor)->Reserved);
+      return ;
+#endif
+    } else if (CompareGuid (&Vendor->Guid, &gEfiDebugPortProtocolGuid) == 0) {
+      CatPrint (Str, L"DebugPort()");
+      return ;
+    }
     break;
 
   case MEDIA_DEVICE_PATH:
@@ -511,15 +590,14 @@ _DevPathVendor (
   }
 
   CatPrint (Str, L"Ven%s(%g", Type, &Vendor->Guid);
-  if (CompareGuid (&Vendor->Guid, &UnknownDeviceGuid) == 0) {
-    //
-    // GUID used by EFI to enumerate an EDD 1.1 device
-    //
-    UnknownDevPath = (UNKNOWN_DEVICE_VENDOR_DEVICE_PATH *) Vendor;
-    CatPrint (Str, L":%02x)", UnknownDevPath->LegacyDriveLetter);
-  } else {
-    CatPrint (Str, L")");
+  DataLength = DevicePathNodeLength (&Vendor->Header) - sizeof (VENDOR_DEVICE_PATH);
+  if (DataLength > 0) {
+    CatPrint (Str, L",");
+    for (Index = 0; Index < DataLength; Index++) {
+      CatPrint (Str, L"%02x", (UINTN) ((VENDOR_DEVICE_PATH_WITH_DATA *) Vendor)->VendorDefinedData[Index]);
+    }
   }
+  CatPrint (Str, L")");
 }
 
 VOID
@@ -535,9 +613,9 @@ _DevPathAcpi (
 
   Acpi = DevPath;
   if ((Acpi->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
-    CatPrint (Str, L"Acpi(PNP%04x,%x)", EISA_ID_TO_NUM (Acpi->HID), Acpi->UID);
+    CatPrint (Str, L"Acpi(PNP%04x,%x)", (UINTN) EISA_ID_TO_NUM (Acpi->HID), (UINTN) Acpi->UID);
   } else {
-    CatPrint (Str, L"Acpi(%08x,%x)", Acpi->HID, Acpi->UID);
+    CatPrint (Str, L"Acpi(%08x,%x)", (UINTN) Acpi->HID, (UINTN) Acpi->UID);
   }
 }
 
@@ -547,85 +625,76 @@ _DevPathExtendedAcpi (
   IN VOID                 *DevPath
   )
 {
-  ACPI_EXTENDED_HID_DEVICE_PATH   *ExtendedAcpi;
+  ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR   *ExtendedAcpi;
   //
-  // Index for HID, UID and CID strings, 0 for non-exist
+  // HID, UID and CID strings
   //
-  UINT16                          HIDSTRIdx;
-  UINT16                          UIDSTRIdx;
-  UINT16                          CIDSTRIdx;
-  UINT16                          Index;
-  UINT16                          Length;
-  UINT16                          Anchor;
-  CHAR8                           *AsChar8Array;
+  CHAR8     *HIDString;
+  CHAR8     *UIDString;
+  CHAR8     *CIDString;
+
 
   ASSERT (Str != NULL);
   ASSERT (DevPath != NULL);
+  ASSERT (DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) DevPath) >=
+          sizeof (ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR));
 
-  HIDSTRIdx    = 0;
-  UIDSTRIdx    = 0;
-  CIDSTRIdx    = 0;
-  ExtendedAcpi = DevPath;
-  Length       = DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) ExtendedAcpi);
+  ExtendedAcpi = (ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR *) DevPath;
 
-  ASSERT (Length >= 19);
-  AsChar8Array = (CHAR8 *) ExtendedAcpi;
+  HIDString = ExtendedAcpi->HidUidCidStr;
+  UIDString = NextStrA (HIDString);
+  CIDString = NextStrA (UIDString);
 
-  //
-  // find HIDSTR
-  //
-  Anchor = 16;
-  for (Index = Anchor; Index < Length && AsChar8Array[Index]; Index++) {
-    ;
-  }
-  if (Index > Anchor) {
-    HIDSTRIdx = Anchor;
-  }
-  //
-  // find UIDSTR
-  //
-  Anchor = Index + 1;
-  for (Index = Anchor; Index < Length && AsChar8Array[Index]; Index++) {
-    ;
-  }
-  if (Index > Anchor) {
-    UIDSTRIdx = Anchor;
-  }
-  //
-  // find CIDSTR
-  //
-  Anchor = Index + 1;
-  for (Index = Anchor; Index < Length && AsChar8Array[Index]; Index++) {
-    ;
-  }
-  if (Index > Anchor) {
-    CIDSTRIdx = Anchor;
-  }
-  
-  CatPrint (Str, L"Acpi(");
-  if (HIDSTRIdx != 0) {
-    CatPrint (Str, L"%a,", AsChar8Array + HIDSTRIdx);
+  CatPrint (Str, L"AcpiEx(");
+  if ((ExtendedAcpi->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+    CatPrint (Str, L"PNP%04x,", (UINTN) EISA_ID_TO_NUM (ExtendedAcpi->HID));
   } else {
-    if ((ExtendedAcpi->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
-      CatPrint (Str, L"PNP%04x,", EISA_ID_TO_NUM (ExtendedAcpi->HID));
-    } else {
-      CatPrint (Str, L"%08x,", ExtendedAcpi->HID);
-    }
+    CatPrint (Str, L"%08x,", (UINTN) ExtendedAcpi->HID);
   }
-  if (CIDSTRIdx != 0) {
-    CatPrint (Str, L"%a,", AsChar8Array + CIDSTRIdx);
+  if ((ExtendedAcpi->CID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+    CatPrint (Str, L"PNP%04x,", (UINTN) EISA_ID_TO_NUM (ExtendedAcpi->CID));
   } else {
-    if ((ExtendedAcpi->CID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
-      CatPrint (Str, L"PNP%04x,", EISA_ID_TO_NUM (ExtendedAcpi->CID));
-    } else {
-      CatPrint (Str, L"%08x,", ExtendedAcpi->CID);
-    }
+    CatPrint (Str, L"%08x,", (UINTN) ExtendedAcpi->CID);
   }
-  if (UIDSTRIdx != 0) {
-    CatPrint (Str, L"%a)", AsChar8Array + UIDSTRIdx);
+  CatPrint (Str, L"%x,", (UINTN) ExtendedAcpi->UID);
+
+  if (*HIDString != '\0') {
+    CatPrint (Str, L"%a,", HIDString);
   } else {
-    CatPrint (Str, L"%x)", ExtendedAcpi->UID);
+    CatPrint (Str, L"NULL,");
   }
+  if (*CIDString != '\0') {
+    CatPrint (Str, L"%a,", CIDString);
+  } else {
+    CatPrint (Str, L"NULL,");
+  }
+  if (*UIDString != '\0') {
+    CatPrint (Str, L"%a)", UIDString);
+  } else {
+    CatPrint (Str, L"NULL)");
+  }
+}
+
+VOID
+_DevPathAdrAcpi (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  ACPI_ADR_DEVICE_PATH    *AcpiAdr;
+  UINT16                  Index;
+  UINT16                  Length;
+  UINT16                  AdditionalAdrCount;
+
+  AcpiAdr            = DevPath;
+  Length             = DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) AcpiAdr);
+  AdditionalAdrCount = (Length - 8) / 4;
+
+  CatPrint (Str, L"AcpiAdr(%x", (UINTN) AcpiAdr->ADR);
+  for (Index = 0; Index < AdditionalAdrCount; Index++) {
+    CatPrint (Str, L",%x", (UINTN) *(UINT32 *) ((UINT8 *) AcpiAdr + 8 + Index * 4));
+  }
+  CatPrint (Str, L")");
 }
 
 VOID
@@ -660,7 +729,7 @@ _DevPathScsi (
   ASSERT (DevPath != NULL);
 
   Scsi = DevPath;
-  CatPrint (Str, L"Scsi(Pun%x,Lun%x)", Scsi->Pun, Scsi->Lun);
+  CatPrint (Str, L"Scsi(Pun%x,Lun%x)", (UINTN) Scsi->Pun, (UINTN) Scsi->Lun);
 }
 
 VOID
@@ -705,8 +774,46 @@ _DevPathUsb (
   ASSERT (DevPath != NULL);
 
   Usb = DevPath;
-  CatPrint (Str, L"Usb(%x, %x)", Usb->ParentPortNumber, Usb->InterfaceNumber);
+  CatPrint (Str, L"Usb(%x,%x)", (UINTN) Usb->ParentPortNumber, (UINTN) Usb->InterfaceNumber);
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+void
+_DevPathUsbWWID (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  USB_WWID_DEVICE_PATH  *UsbWWId;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  UsbWWId = DevPath;
+  CatPrint (
+    Str,
+    L"UsbWwid(%x,%x,%x,\"WWID\")",
+    (UINTN) UsbWWId->VendorId,
+    (UINTN) UsbWWId->ProductId,
+    (UINTN) UsbWWId->InterfaceNumber
+    );
+}
+
+void
+_DevPathLogicalUnit (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  DEVICE_LOGICAL_UNIT_DEVICE_PATH *LogicalUnit;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  LogicalUnit = DevPath;
+  CatPrint (Str, L"Unit(%x)", (UINTN) LogicalUnit->Lun);
+}
+#endif
 
 VOID
 _DevPathUsbClass (
@@ -725,12 +832,12 @@ _DevPathUsbClass (
   UsbClass = DevPath;
   CatPrint (
     Str,
-    L"Usb Class(%x, %x, %x, %x, %x)",
-    UsbClass->VendorId,
-    UsbClass->ProductId,
-    UsbClass->DeviceClass,
-    UsbClass->DeviceSubClass,
-    UsbClass->DeviceProtocol
+    L"Usb Class(%x,%x,%x,%x,%x)",
+    (UINTN) UsbClass->VendorId,
+    (UINTN) UsbClass->ProductId,
+    (UINTN) UsbClass->DeviceClass,
+    (UINTN) UsbClass->DeviceSubClass,
+    (UINTN) UsbClass->DeviceProtocol
     );
 }
 
@@ -746,7 +853,7 @@ _DevPathI2O (
   ASSERT (DevPath != NULL);
 
   I2O = DevPath;
-  CatPrint (Str, L"I2O(%x)", I2O->Tid);
+  CatPrint (Str, L"I2O(%x)", (UINTN) I2O->Tid);
 }
 
 VOID
@@ -772,7 +879,7 @@ _DevPathMacAddr (
   CatPrint (Str, L"Mac(");
 
   for (Index = 0; Index < HwAddressSize; Index++) {
-    CatPrint (Str, L"%02x", MAC->MacAddress.Addr[Index]);
+    CatPrint (Str, L"%02x", (UINTN) MAC->MacAddress.Addr[Index]);
   }
 
   CatPrint (Str, L")");
@@ -793,11 +900,11 @@ _DevPathIPv4 (
   CatPrint (
     Str,
     L"IPv4(%d.%d.%d.%d:%d)",
-    IP->RemoteIpAddress.Addr[0],
-    IP->RemoteIpAddress.Addr[1],
-    IP->RemoteIpAddress.Addr[2],
-    IP->RemoteIpAddress.Addr[3],
-    IP->RemotePort
+    (UINTN) IP->RemoteIpAddress.Addr[0],
+    (UINTN) IP->RemoteIpAddress.Addr[1],
+    (UINTN) IP->RemoteIpAddress.Addr[2],
+    (UINTN) IP->RemoteIpAddress.Addr[3],
+    (UINTN) IP->RemotePort
     );
 }
 
@@ -807,9 +914,31 @@ _DevPathIPv6 (
   IN VOID                 *DevPath
   )
 {
+  IPv6_DEVICE_PATH  *IP;
+
   ASSERT (Str != NULL);
 
-  CatPrint (Str, L"IP-v6(not-done)");
+  IP = DevPath;
+  CatPrint (
+    Str,
+    L"IPv6(%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)",
+    (UINTN) IP->RemoteIpAddress.Addr[0],
+    (UINTN) IP->RemoteIpAddress.Addr[1],
+    (UINTN) IP->RemoteIpAddress.Addr[2],
+    (UINTN) IP->RemoteIpAddress.Addr[3],
+    (UINTN) IP->RemoteIpAddress.Addr[4],
+    (UINTN) IP->RemoteIpAddress.Addr[5],
+    (UINTN) IP->RemoteIpAddress.Addr[6],
+    (UINTN) IP->RemoteIpAddress.Addr[7],
+    (UINTN) IP->RemoteIpAddress.Addr[8],
+    (UINTN) IP->RemoteIpAddress.Addr[9],
+    (UINTN) IP->RemoteIpAddress.Addr[10],
+    (UINTN) IP->RemoteIpAddress.Addr[11],
+    (UINTN) IP->RemoteIpAddress.Addr[12],
+    (UINTN) IP->RemoteIpAddress.Addr[13],
+    (UINTN) IP->RemoteIpAddress.Addr[14],
+    (UINTN) IP->RemoteIpAddress.Addr[15]
+    );
 }
 
 VOID
@@ -818,9 +947,20 @@ _DevPathInfiniBand (
   IN VOID                 *DevPath
   )
 {
+  INFINIBAND_DEVICE_PATH  *InfiniBand;
+
   ASSERT (Str != NULL);
 
-  CatPrint (Str, L"InfiniBand(not-done)");
+  InfiniBand = DevPath;
+  CatPrint (
+    Str,
+    L"Infiniband(%x,%g,%lx,%lx,%lx)",
+    (UINTN) InfiniBand->ResourceFlags,
+    InfiniBand->PortGid,
+    InfiniBand->ServiceId,
+    InfiniBand->TargetPortId,
+    InfiniBand->DeviceId
+    );
 }
 
 VOID
@@ -867,15 +1007,15 @@ _DevPathUart (
   }
 
   if (Uart->BaudRate == 0) {
-    CatPrint (Str, L"Uart(DEFAULT %c", Parity);
+    CatPrint (Str, L"Uart(DEFAULT,%c,", Parity);
   } else {
-    CatPrint (Str, L"Uart(%ld %c", Uart->BaudRate, Parity);
+    CatPrint (Str, L"Uart(%ld,%c,", Uart->BaudRate, Parity);
   }
 
   if (Uart->DataBits == 0) {
-    CatPrint (Str, L"D");
+    CatPrint (Str, L"D,");
   } else {
-    CatPrint (Str, L"%d", Uart->DataBits);
+    CatPrint (Str, L"%d,", (UINTN) Uart->DataBits);
   }
 
   switch (Uart->StopBits) {
@@ -901,6 +1041,44 @@ _DevPathUart (
   }
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+VOID
+_DevPathiSCSI (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  ISCSI_DEVICE_PATH_WITH_NAME *iSCSI;
+  UINT16                      Options;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  iSCSI = DevPath;
+  CatPrint (
+    Str,
+    L"iSCSI(%s,%x,%lx,",
+    iSCSI->iSCSITargetName,
+    (UINTN) iSCSI->TargetPortalGroupTag,
+    iSCSI->Lun
+    );
+
+  Options = iSCSI->LoginOption;
+  CatPrint (Str, L"%s,", ((Options >> 1) & 0x0001) ? L"CRC32C" : L"None");
+  CatPrint (Str, L"%s,", ((Options >> 3) & 0x0001) ? L"CRC32C" : L"None");
+  if ((Options >> 11) & 0x0001) {
+    CatPrint (Str, L"%s,", L"None");
+  } else if ((Options >> 12) & 0x0001) {
+    CatPrint (Str, L"%s,", L"CHAP_UNI");
+  } else {
+    CatPrint (Str, L"%s,", L"CHAP_BI");
+
+  }
+
+  CatPrint (Str, L"%s)", (iSCSI->NetworkProtocol == 0) ? L"TCP" : L"reserved");
+}
+#endif
+
 VOID
 _DevPathHardDrive (
   IN OUT POOL_PRINT       *Str,
@@ -918,8 +1096,8 @@ _DevPathHardDrive (
     CatPrint (
       Str,
       L"HD(Part%d,Sig%08x)",
-      Hd->PartitionNumber,
-      *((UINT32 *) (&(Hd->Signature[0])))
+      (UINTN) Hd->PartitionNumber,
+      (UINTN) *((UINT32 *) (&(Hd->Signature[0])))
       );
     break;
 
@@ -927,7 +1105,7 @@ _DevPathHardDrive (
     CatPrint (
       Str,
       L"HD(Part%d,Sig%g)",
-      Hd->PartitionNumber,
+      (UINTN) Hd->PartitionNumber,
       (EFI_GUID *) &(Hd->Signature[0])
       );
     break;
@@ -936,9 +1114,9 @@ _DevPathHardDrive (
     CatPrint (
       Str,
       L"HD(Part%d,MBRType=%02x,SigType=%02x)",
-      Hd->PartitionNumber,
-      Hd->MBRType,
-      Hd->SignatureType
+      (UINTN) Hd->PartitionNumber,
+      (UINTN) Hd->MBRType,
+      (UINTN) Hd->SignatureType
       );
     break;
   }
@@ -956,7 +1134,7 @@ _DevPathCDROM (
   ASSERT (DevPath != NULL);
 
   Cd = DevPath;
-  CatPrint (Str, L"CDROM(Entry%x)", Cd->BootEntry);
+  CatPrint (Str, L"CDROM(Entry%x)", (UINTN) Cd->BootEntry);
 }
 
 VOID
@@ -1106,6 +1284,9 @@ DevPathTable[] = {
   ACPI_DEVICE_PATH,
   ACPI_EXTENDED_DP,
   _DevPathExtendedAcpi,
+  ACPI_DEVICE_PATH,
+  ACPI_ADR_DP,
+  _DevPathAdrAcpi,
   MESSAGING_DEVICE_PATH,
   MSG_ATAPI_DP,
   _DevPathAtapi,
@@ -1121,6 +1302,14 @@ DevPathTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_USB_DP,
   _DevPathUsb,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  MESSAGING_DEVICE_PATH,
+  MSG_USB_WWID_DP,
+  _DevPathUsbWWID,
+  MESSAGING_DEVICE_PATH,
+  MSG_DEVICE_LOGICAL_UNIT_DP,
+  _DevPathLogicalUnit,
+#endif
   MESSAGING_DEVICE_PATH,
   MSG_USB_CLASS_DP,
   _DevPathUsbClass,
@@ -1145,6 +1334,11 @@ DevPathTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_VENDOR_DP,
   _DevPathVendor,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  MESSAGING_DEVICE_PATH,
+  MSG_ISCSI_DP,
+  _DevPathiSCSI,
+#endif
   MEDIA_DEVICE_PATH,
   MEDIA_HARDDRIVE_DP,
   _DevPathHardDrive,
@@ -1732,13 +1926,11 @@ Returns:
 --*/
 {
 #if (EFI_SPECIFICATION_VERSION < 0x00020000) 
-  BOOLEAN       Found;
   //
   // Use old Device Path that conflicts with UEFI
   //
-  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH ||
+  if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
-    Found = TRUE;
     return &FvDevicePathNode->NameGuid;
   }
 
@@ -1746,8 +1938,8 @@ Returns:
   //
   // Use the new Device path that does not conflict with the UEFI
   //
-  if (FvDevicePathNode->Piwg.Header.Type == MEDIA_DEVICE_PATH ||
-      FvDevicePathNode->Piwg.Header.SubType == MEDIA_VENDOR_DP) {
+  if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
+      DevicePathSubType (&FvDevicePathNode->Piwg.Header) == MEDIA_VENDOR_DP) {
     if (CompareMem (&gEfiFrameworkDevicePathGuid, &FvDevicePathNode->Piwg.PiwgSpecificDevicePath, sizeof(EFI_GUID)) == 0) {
       if (FvDevicePathNode->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
         return &FvDevicePathNode->NameGuid;

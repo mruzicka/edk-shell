@@ -206,6 +206,7 @@ Notes:
   UINT64                          Address;
   UINT64                          PciEAddress;
   UINT64                          Value;
+  UINT32                          SegmentNumber;
   EFI_IO_WIDTH                    Width;
   EFI_ACCESS_TYPE                 AccessType;
   UINT64                          Buffer;
@@ -216,6 +217,8 @@ Notes:
   BOOLEAN                         Complete;
   CHAR16                          InputStr[80];
   BOOLEAN                         Interactive;
+  EFI_HANDLE                      *HandleBuffer;
+  UINTN                           BufferSize;
 
   SHELL_VAR_CHECK_CODE            RetCode;
   CHAR16                          *Useful;
@@ -223,9 +226,12 @@ Notes:
   UINTN                           ItemValue;
   SHELL_VAR_CHECK_PACKAGE         ChkPck;
 
-  Address = 0;
-  PciEAddress = 0;
-  IoDev = NULL;
+  Address       = 0;
+  PciEAddress   = 0;
+  IoDev         = NULL;
+  HandleBuffer  = NULL;
+  BufferSize    = 0;
+  SegmentNumber = 0;
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
 
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
@@ -446,13 +452,50 @@ Notes:
   // locate DeviceIO protocol interface
   //
   if (AccessType != EfiMemory) {
-    Status = BS->LocateProtocol (
-                  &gEfiPciRootBridgeIoProtocolGuid,
-                  NULL,
-                  (VOID *) &IoDev
-                  );
+    Status = LibLocateHandle (
+               ByProtocol,
+               &gEfiPciRootBridgeIoProtocolGuid,
+               NULL,
+               &BufferSize,
+               &HandleBuffer
+               );
     if (EFI_ERROR (Status)) {
       PrintToken (STRING_TOKEN (STR_IOMOD_HANDLE_PCI), HiiHandle, L"mm", Status);
+      goto Done;
+    }
+    //
+    // In the case of PCI or PCIE
+    // Get segment number and mask the segment bits in Address
+    //
+    if (AccessType == EfiPciEConfig) {
+      SegmentNumber = (UINT32) RShiftU64 (Address, 36) & 0xff;
+      Address      &= 0xfffffffff;
+    } else {
+      if (AccessType == EfiPciConfig) {
+        SegmentNumber = (UINT32) RShiftU64 (Address, 32) & 0xff;
+        Address      &= 0xffffffff;
+      }
+    }
+    //
+    // Find the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL of the specified segment number
+    //
+    for (Index = 0; Index < BufferSize; Index++) {
+      Status = BS->HandleProtocol (
+                     HandleBuffer[Index],
+                     &gEfiPciRootBridgeIoProtocolGuid,
+                     (VOID *) &IoDev
+                     );
+      if (EFI_ERROR (Status)) {
+        continue;
+      }
+      if (IoDev->SegmentNumber != SegmentNumber) {
+        IoDev = NULL;
+      }
+    }
+    if (IoDev == NULL) {
+      // TODO add token
+      PrintToken (STRING_TOKEN (STR_IOMOD_SEGMENT_NOT_FOUND), HiiHandle, SegmentNumber);
+      Status = EFI_INVALID_PARAMETER;
       goto Done;
     }
   }
@@ -609,6 +652,9 @@ Notes:
   Status = EFI_SUCCESS;
 Done:
 
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }
   LibCheckVarFreeVarList (&ChkPck);
   LibUnInitializeStrings ();
   return Status;

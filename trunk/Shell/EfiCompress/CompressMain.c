@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -365,6 +365,23 @@ Returns:
 
   Status = Compress (File1Buffer, (UINT32) SourceSize, File2Buffer, (UINT32 *) &DestinationSize);
 
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    FreePool (File2Buffer);
+    File2Buffer = AllocatePool (DestinationSize);
+    if (File2Buffer == NULL) {
+      PrintToken (STRING_TOKEN (STR_COMPRESS_OUT_OF_MEM), HiiCompressHandle, L"eficompress");
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
+    }
+
+    Status = Compress (File1Buffer, (UINT32) SourceSize, File2Buffer, (UINT32 *) &DestinationSize);
+  }
+
+  if (EFI_ERROR (Status)) {
+    PrintToken (STRING_TOKEN (STR_COMPRESS_COMPRESS_ERROR), HiiCompressHandle, L"eficompress", Status);
+    goto Done;
+  }
+
   if (SourceSize) {
     Ratio = ((INT32) SourceSize * 100 - (INT32) DestinationSize * 100) / (INT32) SourceSize;
     if (Ratio >= 0) {
@@ -394,23 +411,6 @@ Returns:
       SourceSize,
       DestinationSize
       );
-  }
-
-  if (Status == EFI_BUFFER_TOO_SMALL) {
-    FreePool (File2Buffer);
-    File2Buffer = AllocatePool (DestinationSize);
-    if (File2Buffer == NULL) {
-      PrintToken (STRING_TOKEN (STR_COMPRESS_OUT_OF_MEM), HiiCompressHandle, L"eficompress");
-      Status = EFI_OUT_OF_RESOURCES;
-      goto Done;
-    }
-
-    Status = Compress (File1Buffer, (UINT32) SourceSize, File2Buffer, (UINT32 *) &DestinationSize);
-  }
-
-  if (EFI_ERROR (Status)) {
-    PrintToken (STRING_TOKEN (STR_COMPRESS_COMPRESS_ERROR), HiiCompressHandle, L"eficompress", Status);
-    goto Done;
   }
 
   Status = File2Handle->Write (File2Handle, &DestinationSize, File2Buffer);

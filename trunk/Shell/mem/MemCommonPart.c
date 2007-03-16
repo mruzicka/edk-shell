@@ -172,7 +172,7 @@ Returns:
       return Status;
     }
 
-    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, IO_UINT8, Address, Size, Buffer);
+    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, EfiPciIoWidthUint8, Address, Size, Buffer);
   } else {
     Buffer = (UINT8 *) (UINTN) Address;
   }
@@ -327,7 +327,7 @@ Returns:
       return Status;
     }
 
-    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, IO_UINT8, Address, Size, Buffer);
+    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, EfiPciIoWidthUint8, Address, Size, Buffer);
   } else {
     Buffer = (UINT8 *) (UINTN) Address;
   }

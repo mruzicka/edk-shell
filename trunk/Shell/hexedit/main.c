@@ -80,6 +80,11 @@ EFI_BOOTSHELL_CODE(
   EFI_DRIVER_ENTRY_POINT (InitializeEFIHexEditor)
 )
 
+CHAR16 *
+HexEditGetDefaultFileName (
+  VOID
+  );
+
 VOID
 PrintUsage (
   VOID
@@ -329,7 +334,7 @@ Returns:
     WhatToDo = OPEN_FILE;
   } else if (0 == ChkPck.FlagCount || (ChkPck.FlagCount == 1 && LibCheckVarGetFlag (&ChkPck, L"-b") != NULL)) {
     if (0 == ChkPck.ValueCount) {
-      Name      = PoolPrint (L"NewFile.bin");
+      Name      = HexEditGetDefaultFileName ();
       FreeName  = TRUE;
     } else if (1 == ChkPck.ValueCount) {
       Name = ChkPck.VarList->VarStr;
@@ -433,15 +438,10 @@ Returns:
   //
   // print editor exit code on screen
   //
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_OUT_OF_RESOURCES:
+  if (Status == EFI_SUCCESS) {
+  } else if (Status == EFI_OUT_OF_RESOURCES) {
     PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_OUT_RESOURCE), HiiHandle, L"hexedit");
-    break;
-
-  default:
+  } else {
     if (Buffer != NULL) {
       if (StrCmp (Buffer, L"") != 0) {
         //
@@ -454,8 +454,6 @@ Returns:
     } else {
       PrintToken (STRING_TOKEN (STR_HEXEDIT_UNKNOWN_EDITOR), HiiHandle);
     }
-
-    break;
   }
 
   if (Status != EFI_OUT_OF_RESOURCES) {
@@ -493,4 +491,75 @@ Returns:
 --*/
 {
   return LibCmdGetStringByToken (STRING_ARRAY_NAME, &EfiHexeditGuid, STRING_TOKEN (STR_HEXEDIT_LINE_HELP), Str);
+}
+
+CHAR16 *
+HexEditGetDefaultFileName (
+  VOID
+  )
+{
+  EFI_STATUS         Status;
+  UINTN              Suffix;
+  BOOLEAN            FoundNewFile;
+  CHAR16             *FileNameTmp;
+  EFI_LIST_ENTRY     DirList;
+  SHELL_FILE_ARG     *Arg;
+
+  Suffix       = 0;
+  FoundNewFile = FALSE;
+
+  do {
+    if (Suffix != 0) {
+      FileNameTmp = PoolPrint (L"NewFile%d.bin", Suffix);
+    } else {
+      FileNameTmp = PoolPrint (L"NewFile.bin");
+    }
+
+    //
+    // GET CURRENT DIR HANDLE
+    //
+    InitializeListHead (&DirList);
+
+    //
+    // after that filename changed to path
+    //
+    Status = ShellFileMetaArgNoWildCard (FileNameTmp, &DirList);
+
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+
+    if (DirList.Flink == &DirList) {
+      break;
+    }
+
+    Arg = CR (DirList.Flink, SHELL_FILE_ARG, Link, SHELL_FILE_ARG_SIGNATURE);
+
+    //
+    // Make sure Arg is valid
+    //
+    if (Arg == NULL || Arg->Parent == NULL) {
+      ShellFreeFileList (&DirList);
+      break;
+    }
+
+    if (Arg->Status == EFI_NOT_FOUND) {
+      FoundNewFile = TRUE;
+      ShellFreeFileList (&DirList);
+      break;
+    } else {
+      FreePool (FileNameTmp);
+      FileNameTmp = NULL;
+    }
+
+    ShellFreeFileList (&DirList);
+    Suffix++;
+
+  } while (Suffix != 0);
+
+  if (!FoundNewFile && FileNameTmp != NULL) {
+    FreePool (FileNameTmp);
+    FileNameTmp = NULL;
+  }
+  return FileNameTmp;
 }

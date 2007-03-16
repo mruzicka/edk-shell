@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -44,6 +44,7 @@ Revision History
 #include EFI_GUID_DEFINITION (ConsoleOutDevice)
 #include EFI_GUID_DEFINITION (DxeServices)
 #include EFI_GUID_DEFINITION (GlobalVariable)
+#include EFI_GUID_DEFINITION (GenericVariable)
 #include EFI_GUID_DEFINITION (Gpt)
 #include EFI_GUID_DEFINITION (Mps)
 #include EFI_GUID_DEFINITION (PrimaryConsoleInDevice)
@@ -56,6 +57,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ConsoleControl)
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
 #include EFI_PROTOCOL_DEFINITION (DebugPort)
@@ -105,6 +107,17 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (UsbHostController)
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (VariableStore)
+#include EFI_PROTOCOL_DEFINITION (UsbHostController)
+#include EFI_PROTOCOL_DEFINITION (ScsiPassThruExt)
+#include EFI_PROTOCOL_DEFINITION (ManagedNetwork)
+#include EFI_PROTOCOL_DEFINITION (Arp)
+#include EFI_PROTOCOL_DEFINITION (Dhcp4)
+#include EFI_PROTOCOL_DEFINITION (Tcp4)
+#include EFI_PROTOCOL_DEFINITION (Ip4)
+#include EFI_PROTOCOL_DEFINITION (Ip4Config)
+#include EFI_PROTOCOL_DEFINITION (Udp4)
+#include EFI_PROTOCOL_DEFINITION (Mtftp4)
+#include EFI_PROTOCOL_DEFINITION (DevicePath)
 
 #include "efilibplat.h"
 #include "efipart.h"

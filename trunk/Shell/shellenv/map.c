@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2006, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -409,7 +409,7 @@ DumpMappingItem (
       HiiEnvHandle,
       SLen,
       Var->Name,
-      Removeable ? L"Removeable " : L"",
+      Removeable ? L"Removable " : L"",
       MediaName,
       ConsistName
       );
@@ -1206,15 +1206,23 @@ Returns:
 
     FreeDPath = TRUE;
   }
-  //
-  // Build a file path for the rest of the name string
-  //
-  FPath = SEnvIFileNameToPath (Path);
+  if (StrCmp (L".", Path) == 0) {
+    //
+    // Need not append "." device path, use DPath directly w/o freeing it
+    //
+    FilePath  = DPath;
+    FreeDPath = FALSE;
+  } else {
+    //
+    // Build a file path for the rest of the name string
+    //
+    FPath = SEnvIFileNameToPath (Path);
 
-  //
-  // Append the 2 paths
-  //
-  FilePath = AppendDevicePath (DPath, FPath);
+    //
+    // Append the 2 paths
+    //
+    FilePath = AppendDevicePath (DPath, FPath);
+  }
   ASSERT (FilePath);
 
 Done:

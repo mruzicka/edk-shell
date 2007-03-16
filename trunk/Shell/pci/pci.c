@@ -1355,7 +1355,7 @@ Returns:
     HiiHandle,
     INDEX_OF (&(Bridge->PrefetchableMemBase)),
     Bridge->PrefetchableBaseUpper,
-    Bridge->PrefetchableMemBase << 16
+    (Bridge->PrefetchableMemBase << 16) & 0xfff00000
     );
 
   PrintToken (

@@ -1273,7 +1273,7 @@ SEnvCmdCd (
 
 EFI_STATUS
 SEnvGetFsName (
-  IN EFI_HANDLE               Handle,
+  IN EFI_DEVICE_PATH_PROTOCOL *DevPath,
   IN BOOLEAN                  ConsistMapping,
   OUT CHAR16                  **Name
   );
@@ -2044,6 +2044,13 @@ SEnvBatchGetCondition (
 EFI_STATUS
 SEnvGetShellMode (
   OUT CHAR16       **Mode
+  );
+
+VOID
+EFIAPI
+SEnvGraphicsOutput (
+  IN EFI_HANDLE      h,
+  IN VOID            *Interface
   );
 
 #endif // _SHELLE_H_

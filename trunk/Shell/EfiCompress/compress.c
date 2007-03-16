@@ -1,9 +1,9 @@
-/*++
+/*
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2007, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
-which accompanies this distribution. The full text of the license may be found at         
+which accompanies this distribution.  The full text of the license may be found at        
 http://opensource.org/licenses/bsd-license.php                                            
                                                                                           
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 Module Name:
 
-  Compress.c
+  compress.c
 
 Abstract:
 
@@ -25,39 +25,40 @@ Abstract:
 
 #include "EfiShellLib.h"
 
+
 //
 // Macro Definitions
 //
-typedef INT32 NODE;
-#define UINT8_MAX     0xff
-#define UINT8_BIT     8
-#define THRESHOLD     3
-#define INIT_CRC      0
-#define WNDBIT        19
-#define WNDSIZ        (1U << WNDBIT)
-#define MAXMATCH      256
-#define BLKSIZ        (1U << 14)  // 16 * 1024U
-#define PERC_FLAG     0x80000000U
-#define CODE_BIT      16
-#define NIL           0
-#define MAX_HASH_VAL  (3 * WNDSIZ + (WNDSIZ / 512 + 1) * UINT8_MAX)
-#define HASH(p, c)    ((p) + ((c) << (WNDBIT - 9)) + WNDSIZ * 2)
-#define CRCPOLY       0xA001
-#define UPDATE_CRC(c) mCrc = mCrcTable[(mCrc ^ (c)) & 0xFF] ^ (mCrc >> UINT8_BIT)
+typedef INT16             NODE;
+#define UINT8_MAX         0xff
+#define UINT8_BIT         8
+#define THRESHOLD         3
+#define INIT_CRC          0
+#define WNDBIT            13
+#define WNDSIZ            (1U << WNDBIT)
+#define MAXMATCH          256
+#define BLKSIZ            (1U << 14)  // 16 * 1024U
+#define PERC_FLAG         0x8000U
+#define CODE_BIT          16
+#define NIL               0
+#define MAX_HASH_VAL      (3 * WNDSIZ + (WNDSIZ / 512 + 1) * UINT8_MAX)
+#define HASH(p, c)        ((p) + ((c) << (WNDBIT - 9)) + WNDSIZ * 2)
+#define CRCPOLY           0xA001
+#define UPDATE_CRC(c)     mCrc = mCrcTable[(mCrc ^ (c)) & 0xFF] ^ (mCrc >> UINT8_BIT)
 
 //
 // C: the Char&Len Set; P: the Position Set; T: the exTra Set
 //
-#define NC    (UINT8_MAX + MAXMATCH + 2 - THRESHOLD)
-#define CBIT  9
-#define NP    (WNDBIT + 1)
-#define PBIT  5
-#define NT    (CODE_BIT + 3)
-#define TBIT  5
+#define NC                (UINT8_MAX + MAXMATCH + 2 - THRESHOLD)
+#define CBIT              9
+#define NP                (WNDBIT + 1)
+#define PBIT              4
+#define NT                (CODE_BIT + 3)
+#define TBIT              5
 #if NT > NP
-#define NPT NT
+  #define                 NPT NT
 #else
-#define NPT NP
+  #define                 NPT NP
 #endif
 //
 // Function Prototypes
@@ -260,8 +261,9 @@ STATIC INT32  mRemainder, mMatchLen, mBitCount, mHeapSize, mN;
 STATIC UINT32 mBufSiz = 0, mOutputPos, mOutputMask, mSubBitBuf, mCrc;
 STATIC UINT32 mCompSize, mOrigSize;
 
-STATIC UINT16 *mFreq, *mSortPtr, mLenCnt[17], mLeft[2 * NC - 1], mRight[2 * NC - 1], mCrcTable[UINT8_MAX + 1],
-  mCFreq[2 * NC - 1], mCTable[4096], mCCode[NC], mPFreq[2 * NP - 1], mPTCode[NPT], mTFreq[2 * NT - 1];
+STATIC UINT16 *mFreq, *mSortPtr, mLenCnt[17], mLeft[2 * NC - 1], mRight[2 * NC - 1],
+              mCrcTable[UINT8_MAX + 1], mCFreq[2 * NC - 1], mCTable[4096], mCCode[NC],
+              mPFreq[2 * NP - 1], mPTCode[NPT], mTFreq[2 * NT - 1];
 
 STATIC NODE   mPos, mMatchPos, mAvail, *mPosition, *mParent, *mPrev, *mNext = NULL;
 
@@ -691,7 +693,7 @@ Returns: (VOID)
     }
 
     if (t < WNDSIZ) {
-      mPosition[t] = (NODE) (mPos | (UINT32) PERC_FLAG);
+      mPosition[t] = (NODE) (mPos | PERC_FLAG);
     }
   } else {
     //
@@ -719,7 +721,7 @@ Returns: (VOID)
       mMatchPos = r;
     } else {
       j         = mLevel[r];
-      mMatchPos = (NODE) (mPosition[r] & (UINT32)~PERC_FLAG);
+      mMatchPos = (NODE) (mPosition[r] & ~PERC_FLAG);
     }
 
     if (mMatchPos >= mPos) {
@@ -817,7 +819,7 @@ Returns: (VOID)
     return ;
   }
 
-  t = (NODE) (mPosition[r] & (UINT32)~PERC_FLAG);
+  t = (NODE) (mPosition[r] & ~PERC_FLAG);
   if (t >= mPos) {
     t -= WNDSIZ;
   }
@@ -825,8 +827,8 @@ Returns: (VOID)
   s = t;
   q = mParent[r];
   u = mPosition[q];
-  while (u & (UINT32) PERC_FLAG) {
-    u &= (UINT32)~PERC_FLAG;
+  while (u & PERC_FLAG) {
+    u &= ~PERC_FLAG;
     if (u >= mPos) {
       u -= WNDSIZ;
     }
@@ -849,7 +851,7 @@ Returns: (VOID)
       s = u;
     }
 
-    mPosition[q] = (NODE) (s | WNDSIZ | (UINT32) PERC_FLAG);
+    mPosition[q] = (NODE) (s | WNDSIZ | PERC_FLAG);
   }
 
   s           = Child (r, mText[t + mLevel[r]]);
@@ -962,15 +964,14 @@ Returns:
       // Not enough benefits are gained by outputting a pointer,
       // so just output the original character
       //
-      CompressOutput (mText[mPos - 1], 0);
+      CompressOutput(mText[mPos - 1], 0);
     } else {
       //
       // Outputting a pointer is beneficial enough, do it.
       //
-      CompressOutput (
-        LastMatchLen + (UINT8_MAX + 1 - THRESHOLD),
-        (mPos - LastMatchPos - 2) & (WNDSIZ - 1)
-        );
+      
+      CompressOutput(LastMatchLen + (UINT8_MAX + 1 - THRESHOLD),
+             (mPos - LastMatchPos - 2) & (WNDSIZ - 1));
       LastMatchLen--;
       while (LastMatchLen > 0) {
         GetNextMatch ();
@@ -1189,7 +1190,7 @@ EncodeP (
 
   PutBits (mPTLen[c], mPTCode[c]);
   if (c > 1) {
-    PutBits (c - 1, p & (0xFFFFFFFFU >> (32 - c + 1)));
+    PutBits(c - 1, p & (0xFFFFU >> (17 - c)));
   }
 }
 
@@ -1215,8 +1216,6 @@ Returns:
 --*/
 {
   UINT32  i;
-
-  UINT32  j;
 
   UINT32  k;
 
@@ -1265,14 +1264,10 @@ Returns:
     } else {
       Flags <<= 1;
     }
-
     if (Flags & (1U << (UINT8_BIT - 1))) {
-      EncodeC (mBuf[Pos++] + (1U << UINT8_BIT));
-      k = mBuf[Pos++];
-      for (j = 0; j < 3; j++) {
-        k <<= UINT8_BIT;
-        k += mBuf[Pos++];
-      }
+      EncodeC(mBuf[Pos++] + (1U << UINT8_BIT));
+      k = mBuf[Pos++] << UINT8_BIT;
+      k += mBuf[Pos++];
 
       EncodeP (k);
     } else {
@@ -1309,12 +1304,7 @@ Returns: (VOID)
 
   if ((mOutputMask >>= 1) == 0) {
     mOutputMask = 1U << (UINT8_BIT - 1);
-    //
-    // Check the buffer overflow per outputing UINT8_BIT symbols
-    // which is an Original Character or a Pointer. The biggest
-    // symbol is a Pointer which occupies 5 bytes.
-    //
-    if (mOutputPos >= mBufSiz - 5 * UINT8_BIT) {
+    if (mOutputPos >= mBufSiz - 3 * UINT8_BIT) {
       SendBlock ();
       mOutputPos = 0;
     }
@@ -1322,21 +1312,17 @@ Returns: (VOID)
     CPos        = mOutputPos++;
     mBuf[CPos]  = 0;
   }
-
   mBuf[mOutputPos++] = (UINT8) c;
   mCFreq[c]++;
   if (c >= (1U << UINT8_BIT)) {
     mBuf[CPos] |= mOutputMask;
-    mBuf[mOutputPos++]  = (UINT8) (p >> 24);
-    mBuf[mOutputPos++]  = (UINT8) (p >> 16);
-    mBuf[mOutputPos++]  = (UINT8) (p >> (UINT8_BIT));
-    mBuf[mOutputPos++]  = (UINT8) p;
-    c                   = 0;
+    mBuf[mOutputPos++] = (UINT8)(p >> UINT8_BIT);
+    mBuf[mOutputPos++] = (UINT8) p;
+    c                  = 0;
     while (p) {
       p >>= 1;
       c++;
     }
-
     mPFreq[c]++;
   }
 }
@@ -1421,22 +1407,30 @@ Returns:
 --*/
 {
   UINT8 Temp;
-
-  while (n >= mBitCount) {
-    Temp = (UINT8) (mSubBitBuf | (x >> (n -= mBitCount)));
-    //
-    // n -= mBitCount should never equal to 32
-    //
+  
+  if (n < mBitCount) {
+    mSubBitBuf |= x << (mBitCount -= n);
+  } else {
+      
+    Temp = (UINT8)(mSubBitBuf | (x >> (n -= mBitCount)));
     if (mDst < mDstUpperLimit) {
       *mDst++ = Temp;
     }
-
     mCompSize++;
-    mSubBitBuf  = 0;
-    mBitCount   = UINT8_BIT;
-  }
 
-  mSubBitBuf |= x << (mBitCount -= n);
+    if (n < UINT8_BIT) {
+      mSubBitBuf = x << (mBitCount = UINT8_BIT - n);
+    } else {
+        
+      Temp = (UINT8)(x >> (n - UINT8_BIT));
+      if (mDst < mDstUpperLimit) {
+        *mDst++ = Temp;
+      }
+      mCompSize++;
+      
+      mSubBitBuf = x << (mBitCount = 2 * UINT8_BIT - n);
+    }
+  }
 }
 
 STATIC

@@ -203,4 +203,9 @@ FileBufferAdjustMousePosition (
   INT32
   );
 
+CHAR16 *
+EditGetDefaultFileName (
+  VOID
+  );
+
 #endif

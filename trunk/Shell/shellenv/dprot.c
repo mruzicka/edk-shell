@@ -36,7 +36,7 @@ STATIC CHAR16 *SEnvDP_HardwareStr[] = {
   L"Controller"
 };
 
-STATIC CHAR16 *SEnvDP_ACPI_Str[] = { L"Illegal", L"ACPI" };
+STATIC CHAR16 *SEnvDP_ACPI_Str[] = { L"Illegal", L"Acpi", L"AcpiEx", L"AcpiAdr" };
 
 STATIC CHAR16 *SEnvDP_MessageStr[] = {
   L"Illegal",
@@ -179,7 +179,16 @@ Returns:
 
 --*/
 {
-  ACPI_HID_DEVICE_PATH  *AcpiDevicePath;
+  ACPI_HID_DEVICE_PATH                   *AcpiDevicePath;
+  ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR *AcpiExDevicepath;
+  ACPI_ADR_DEVICE_PATH                   *AcpiAdrDevicePath;
+  UINT16                                 Index;
+  UINT16                                 Length;
+  UINT16                                 AdditionalAdrCount;
+  CHAR8                                  *HIDString;
+  CHAR8                                  *UIDString;
+  CHAR8                                  *CIDString;
+  CHAR8                                  NullString[5];
 
   if (DevicePathType (DevicePath) != ACPI_DEVICE_PATH) {
     return ;
@@ -187,14 +196,103 @@ Returns:
   //
   // Process ACPI device path entry
   //
-  if (DevicePathSubType (DevicePath) == ACPI_DP) {
+  switch (DevicePathSubType (DevicePath)) {
+  case ACPI_DP:
     AcpiDevicePath = (ACPI_HID_DEVICE_PATH *) DevicePath;
-    PrintToken (
-      STRING_TOKEN (STR_SHELLENV_DPROT_HID_UID),
-      HiiEnvHandle,
-      AcpiDevicePath->HID,
-      AcpiDevicePath->UID
-      );
+    if ((AcpiDevicePath->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+      PrintToken (
+        STRING_TOKEN (STR_SHELLENV_DPROT_HIDPNP_UID),
+        HiiEnvHandle,
+        EISA_ID_TO_NUM (AcpiDevicePath->HID),
+        AcpiDevicePath->UID
+        );
+    } else {
+       PrintToken (
+        STRING_TOKEN (STR_SHELLENV_DPROT_HID_UID),
+        HiiEnvHandle,
+        AcpiDevicePath->HID,
+        AcpiDevicePath->UID
+        );
+    }
+    break;
+  case ACPI_EXTENDED_DP:
+    AcpiExDevicepath = (ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR *) DevicePath;
+    HIDString        = AcpiExDevicepath->HidUidCidStr;
+    UIDString        = NextStrA (HIDString);
+    CIDString        = NextStrA (UIDString);
+    CopyMem (NullString, "NULL", sizeof (NullString));
+    if (*HIDString == '\0') {
+      HIDString = NullString;
+    }
+    if (*UIDString == '\0') {
+      UIDString = NullString;
+    }
+    if (*CIDString == '\0') {
+      CIDString = NullString;
+    }
+    if ((AcpiExDevicepath->HID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+      if ((AcpiExDevicepath->CID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+        PrintToken (
+          STRING_TOKEN (STR_SHELLENV_DPROT_HIDPNP_CIDPNP_UID),
+          HiiEnvHandle,
+          EISA_ID_TO_NUM (AcpiExDevicepath->HID),
+          EISA_ID_TO_NUM (AcpiExDevicepath->CID),
+          AcpiExDevicepath->UID,
+          HIDString,
+          CIDString,
+          UIDString
+          );
+      } else {
+        PrintToken (
+          STRING_TOKEN (STR_SHELLENV_DPROT_HIDPNP_CID_UID),
+          HiiEnvHandle,
+          EISA_ID_TO_NUM (AcpiExDevicepath->HID),
+          AcpiExDevicepath->CID,
+          AcpiExDevicepath->UID,
+          HIDString,
+          CIDString,
+          UIDString
+          );
+      }
+    } else {
+      if ((AcpiExDevicepath->CID & PNP_EISA_ID_MASK) == PNP_EISA_ID_CONST) {
+        PrintToken (
+          STRING_TOKEN (STR_SHELLENV_DPROT_HID_CIDPNP_UID),
+          HiiEnvHandle,
+          AcpiExDevicepath->HID,
+          EISA_ID_TO_NUM (AcpiExDevicepath->CID),
+          AcpiExDevicepath->UID,
+          HIDString,
+          CIDString,
+          UIDString
+          );
+      } else {
+        PrintToken (
+          STRING_TOKEN (STR_SHELLENV_DPROT_HID_CID_UID),
+          HiiEnvHandle,
+          AcpiExDevicepath->HID,
+          AcpiExDevicepath->CID,
+          AcpiExDevicepath->UID,
+          HIDString,
+          CIDString,
+          UIDString
+          );
+      }
+    }
+    break;
+  case ACPI_ADR_DP:
+    AcpiAdrDevicePath  = (ACPI_ADR_DEVICE_PATH *) DevicePath;
+    Length             = DevicePathNodeLength (DevicePath);
+    AdditionalAdrCount = (Length - 8) / 4;
+
+    PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_ADR), HiiEnvHandle);
+    Print (L"%hx", AcpiAdrDevicePath->ADR);
+    for (Index = 0; Index < AdditionalAdrCount; Index++) {
+      Print (L",%hx", *(UINT32 *) ((UINT8 *) AcpiAdrDevicePath + 8 + Index * 4));
+    }
+    break;
+  default:
+    break;
   }
 }
 
@@ -565,7 +663,7 @@ struct DevicePathTypes  SEnvDP_Strings[] = {
   SEnvDP_HardwareStr,
   SEnvHardwareDevicePathEntry,
   0x02,
-  0x01,
+  0x03,
   L"ACPI",
   SEnvDP_ACPI_Str,
   SEnvAcpiDevicePathEntry,
@@ -871,7 +969,9 @@ Returns:
   UINT32                          DirCount;
   EFI_IMAGE_DOS_HEADER            *DosHdr;
   EFI_IMAGE_NT_HEADERS            *NtHdr;
-  EFI_IMAGE_OPTIONAL_HEADER       *OptionalHdr;
+  UINT16                          Magic;
+  EFI_IMAGE_OPTIONAL_HEADER32     *OptionalHdr32;
+  EFI_IMAGE_OPTIONAL_HEADER64     *OptionalHdr64;
   EFI_IMAGE_DATA_DIRECTORY        *DirectoryEntry;
   EFI_IMAGE_DEBUG_DIRECTORY_ENTRY *DebugEntry;
   VOID                            *CodeViewEntryPointer;
@@ -881,8 +981,28 @@ Returns:
   DosHdr                = ImageBase;
   if (DosHdr && DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
     NtHdr           = (EFI_IMAGE_NT_HEADERS *) ((UINT8 *) DosHdr + DosHdr->e_lfanew);
-    OptionalHdr     = (VOID *) &NtHdr->OptionalHeader;
-    DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    //
+    // NOTE: We use Machine to identify PE32/PE32+, instead of Magic.
+    //       It is for backward-compatibility consideration, because
+    //       some system will generate PE32+ image with PE32 Magic.
+    //
+    if (NtHdr->FileHeader.Machine == EFI_IMAGE_MACHINE_IA32) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC;
+    } else if (NtHdr->FileHeader.Machine == EFI_IMAGE_MACHINE_IA64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else if (NtHdr->FileHeader.Machine == EFI_IMAGE_MACHINE_X64) {
+      Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    } else {
+      Magic = NtHdr->OptionalHeader.Magic;
+    }
+    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+      OptionalHdr32 = (VOID *) &NtHdr->OptionalHeader;
+      DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr32->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    } else {
+      OptionalHdr64 = (VOID *) &NtHdr->OptionalHeader;
+      DirectoryEntry  = (EFI_IMAGE_DATA_DIRECTORY *) &(OptionalHdr64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_DEBUG]);
+    }
+    
     if (DirectoryEntry->VirtualAddress != 0) {
       for (DirCount = 0;
            (DirCount < DirectoryEntry->Size / sizeof (EFI_IMAGE_DEBUG_DIRECTORY_ENTRY)) && CodeViewEntryPointer == NULL;
@@ -1414,4 +1534,85 @@ Returns:
       }
     }
   } while (!EFI_ERROR (Status));
+}
+
+VOID
+EFIAPI
+SEnvGraphicsOutput (
+  IN EFI_HANDLE      h,
+  IN VOID            *Interface
+  )
+{
+  EFI_GRAPHICS_OUTPUT_PROTOCOL           *GraphicsOutput;
+  EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE      *Mode;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION   *Info;
+
+  GraphicsOutput = (EFI_GRAPHICS_OUTPUT_PROTOCOL *) Interface;
+  Mode           = GraphicsOutput->Mode;
+  Info           = Mode->Info;
+
+  //
+  // Dump GraphicsOutput Info:
+  // HorizontalResolution
+  // VerticalResolution
+  // PixelFormat
+  // PixelInformation
+  // PixelPerScanLine
+  // FrameBufferBase
+  // FrameBufferSize
+  //
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_DPROT_HRESOL),
+    HiiEnvHandle,
+    Info->HorizontalResolution
+    );
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_DPROT_VRESOL),
+    HiiEnvHandle,
+    Info->VerticalResolution
+    );
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_DPROT_PIXELFORMAT),
+    HiiEnvHandle
+    );
+  switch (Info->PixelFormat) {
+  case PixelRedGreenBlueReserved8BitPerColor:
+    Print (L"PixelRedGreenBlueReserved8BitPerColor");
+    break;
+  case PixelBlueGreenRedReserved8BitPerColor:
+    Print (L"PixelBlueGreenRedReserved8BitPerColor");
+    break;
+  case PixelBitMask:
+    Print (L"PixelBitMask");
+    PrintToken (
+      STRING_TOKEN (STR_SHELLENV_DPROT_PIXELINFORMATION),
+      HiiEnvHandle,
+      Info->PixelInformation.RedMask,
+      Info->PixelInformation.GreenMask,
+      Info->PixelInformation.BlueMask,
+      Info->PixelInformation.ReservedMask
+      );
+    break;
+  case PixelBltOnly:
+    Print (L"PixelBltOnly");
+    break;
+  default:
+    Print (L"Unknown");
+    break;
+  }
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_DPROT_PIXELSPERSCANLINE),
+    HiiEnvHandle,
+    Info->PixelsPerScanLine
+    );
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_DPROT_FRAMEBUFFERBASE),
+    HiiEnvHandle,
+    Mode->FrameBufferBase
+    );
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_DPROT_FRAMEBUFFERSIZE),
+    HiiEnvHandle,
+    Mode->FrameBufferSize
+    );
 }

@@ -234,15 +234,10 @@ Returns:
   //
   // print editor exit code on screen
   //
-  switch (Status) {
-  case EFI_SUCCESS:
-    break;
-
-  case EFI_OUT_OF_RESOURCES:
+  if (Status == EFI_SUCCESS) {
+  } else if (Status == EFI_OUT_OF_RESOURCES) {
     PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_OUT_RESOURCE), HiiHandle, L"edit");
-    break;
-
-  default:
+  } else {
     if (Buffer != NULL) {
       if (StrCmp (Buffer, L"") != 0) {
         //
@@ -255,8 +250,6 @@ Returns:
     } else {
       PrintToken (STRING_TOKEN (STR_EDIT_MAIN_UNKNOWN_EDITOR_ERR), HiiHandle);
     }
-
-    break;
   }
 
   if (Status != EFI_OUT_OF_RESOURCES) {

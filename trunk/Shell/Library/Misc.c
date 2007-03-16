@@ -95,50 +95,6 @@ KnownGuids[] = {
   NULL
 };
 
-struct {
-  EFI_STATUS  Status;
-  CHAR16      *Message;
-}
-StatusMsgs[] = {
-  EFI_SUCCESS,                          L"Success",
-  EFI_LOAD_ERROR,                       L"Load Error",
-  EFI_INVALID_PARAMETER,                L"Invalid Parameter",
-  EFI_UNSUPPORTED,                      L"Unsupported",
-  EFI_BAD_BUFFER_SIZE,                  L"Bad Buffer Size",
-  EFI_BUFFER_TOO_SMALL,                 L"Buffer Too Small",
-  EFI_NOT_READY,                        L"Not Ready",
-  EFI_DEVICE_ERROR,                     L"Device Error",
-  EFI_WRITE_PROTECTED,                  L"Write Protected",
-  EFI_OUT_OF_RESOURCES,                 L"Out of Resources",
-  EFI_VOLUME_CORRUPTED,                 L"Volume Corrupted",
-  EFI_VOLUME_FULL,                      L"Volume Full",
-  EFI_NO_MEDIA,                         L"No Media",
-  EFI_MEDIA_CHANGED,                    L"Media Changed",
-  EFI_NOT_FOUND,                        L"Not Found",
-  EFI_ACCESS_DENIED,                    L"Access Denied",
-  EFI_NO_RESPONSE,                      L"No Response",
-  EFI_NO_MAPPING,                       L"No Mapping",
-  EFI_TIMEOUT,                          L"Time Out",
-  EFI_NOT_STARTED,                      L"Not Started",
-  EFI_ALREADY_STARTED,                  L"Already Started",
-  EFI_ABORTED,                          L"Aborted",
-  EFI_ICMP_ERROR,                       L"ICMP Error",
-  EFI_TFTP_ERROR,                       L"TFTP Error",
-  EFI_PROTOCOL_ERROR,                   L"Protocol Error",
-  EFI_WARN_UNKNOWN_GLYPH,               L"Warning Unknown Glyph",
-  EFI_WARN_DELETE_FAILURE,              L"Warning Delete Failure",
-  EFI_WARN_WRITE_FAILURE,               L"Warning Write Failure",
-  EFI_WARN_BUFFER_TOO_SMALL,            L"Warning Buffer Too Small",
-  EFI_INCOMPATIBLE_VERSION,             L"Incompatible Version",
-  EFI_SECURITY_VIOLATION,               L"Security Violation",
-  EFI_CRC_ERROR,                        L"CRC Error",
-  EFI_NOT_AVAILABLE_YET,                L"Not Available Yet",
-  EFI_UNLOAD_IMAGE,                     L"Unload Image",
-  EFI_WARN_RETURN_FROM_LONG_JUMP,       L"Warning Return From Long Jump",
-  0,                                    NULL
-};
-
-
 STATIC CHAR8  Hex[] = {
   '0',
   '1',
@@ -418,17 +374,17 @@ Returns:
     Buffer,
     0,
     L"%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-    Guid->Data1,
-    Guid->Data2,
-    Guid->Data3,
-    Guid->Data4[0],
-    Guid->Data4[1],
-    Guid->Data4[2],
-    Guid->Data4[3],
-    Guid->Data4[4],
-    Guid->Data4[5],
-    Guid->Data4[6],
-    Guid->Data4[7]
+    (UINTN) Guid->Data1,
+    (UINTN) Guid->Data2,
+    (UINTN) Guid->Data3,
+    (UINTN) Guid->Data4[0],
+    (UINTN) Guid->Data4[1],
+    (UINTN) Guid->Data4[2],
+    (UINTN) Guid->Data4[3],
+    (UINTN) Guid->Data4[4],
+    (UINTN) Guid->Data4[5],
+    (UINTN) Guid->Data4[6],
+    (UINTN) Guid->Data4[7]
     );
 }
 
@@ -460,21 +416,60 @@ Notes:
   
 --*/
 {
-  UINTN   Index;
+  CHAR16  *Message;
   
   ASSERT (Buffer != NULL);
 
-  for (Index = 0; StatusMsgs[Index].Message != NULL; Index++) {
-    if (StatusMsgs[Index].Status == Status) {
-      StrCpy (Buffer, StatusMsgs[Index].Message);
-      return;
-    }
-  }
+  Message = NULL;
+
+  //
+  // Can't use global Status String Array as UINTN is not constant for EBC
+  //
+  if (Status == EFI_SUCCESS) { Message = L"Success"; } else
+  if (Status == EFI_LOAD_ERROR) { Message = L"Load Error"; } else
+  if (Status == EFI_INVALID_PARAMETER) { Message = L"Invalid Parameter"; } else
+  if (Status == EFI_UNSUPPORTED) { Message = L"Unsupported"; } else
+  if (Status == EFI_BAD_BUFFER_SIZE) { Message = L"Bad Buffer Size"; } else
+  if (Status == EFI_BUFFER_TOO_SMALL) { Message = L"Buffer Too Small"; } else
+  if (Status == EFI_NOT_READY) { Message = L"Not Ready"; } else
+  if (Status == EFI_DEVICE_ERROR) { Message = L"Device Error"; } else
+  if (Status == EFI_WRITE_PROTECTED) { Message = L"Write Protected"; } else
+  if (Status == EFI_OUT_OF_RESOURCES) { Message = L"Out of Resources"; } else
+  if (Status == EFI_VOLUME_CORRUPTED) { Message = L"Volume Corrupted"; } else
+  if (Status == EFI_VOLUME_FULL) { Message = L"Volume Full"; } else
+  if (Status == EFI_NO_MEDIA) { Message = L"No Media"; } else
+  if (Status == EFI_MEDIA_CHANGED) { Message = L"Media Changed"; } else
+  if (Status == EFI_NOT_FOUND) { Message = L"Not Found"; } else
+  if (Status == EFI_ACCESS_DENIED) { Message = L"Access Denied"; } else
+  if (Status == EFI_NO_RESPONSE) { Message = L"No Response"; } else
+  if (Status == EFI_NO_MAPPING) { Message = L"No Mapping"; } else
+  if (Status == EFI_TIMEOUT) { Message = L"Time Out"; } else
+  if (Status == EFI_NOT_STARTED) { Message = L"Not Started"; } else
+  if (Status == EFI_ALREADY_STARTED) { Message = L"Already Started"; } else
+  if (Status == EFI_ABORTED) { Message = L"Aborted"; } else
+  if (Status == EFI_ICMP_ERROR) { Message = L"ICMP Error"; } else
+  if (Status == EFI_TFTP_ERROR) { Message = L"TFTP Error"; } else
+  if (Status == EFI_PROTOCOL_ERROR) { Message = L"Protocol Error"; } else
+  if (Status == EFI_WARN_UNKNOWN_GLYPH) { Message = L"Warning Unknown Glyph"; } else
+  if (Status == EFI_WARN_DELETE_FAILURE) { Message = L"Warning Delete Failure"; } else
+  if (Status == EFI_WARN_WRITE_FAILURE) { Message = L"Warning Write Failure"; } else
+  if (Status == EFI_WARN_BUFFER_TOO_SMALL) { Message = L"Warning Buffer Too Small"; } else
+  if (Status == EFI_INCOMPATIBLE_VERSION) { Message = L"Incompatible Version"; } else
+  if (Status == EFI_SECURITY_VIOLATION) { Message = L"Security Violation"; } else
+  if (Status == EFI_CRC_ERROR) { Message = L"CRC Error"; } else
+  if (Status == EFI_NOT_AVAILABLE_YET) { Message = L"Not Available Yet"; } else
+  if (Status == EFI_UNLOAD_IMAGE) { Message = L"Unload Image"; } else
+  if (Status == EFI_WARN_RETURN_FROM_LONG_JUMP) { Message = L"Warning Return From Long Jump"; }  
+  
   //
   // If we found a match, then copy it to the user's buffer.
   // Otherwise SPrint the hex value into their buffer.
   //
-  SPrint (Buffer, 0, L"%X", Status);
+  if (Message != NULL) {
+    StrCpy (Buffer, Message);
+  } else {
+    SPrint (Buffer, 0, L"%X", Status);
+  }
 }
 
 EFI_STATUS
@@ -1573,11 +1568,11 @@ TimeToString (
     Buffer,
     0,
     L"%02d/%02d/%02d  %02d:%02d%c",
-    Time->Month,
-    Time->Day,
-    Year,
-    Hour,
-    Time->Minute,
+    (UINTN) Time->Month,
+    (UINTN) Time->Day,
+    (UINTN) Year,
+    (UINTN) Hour,
+    (UINTN) Time->Minute,
     AmPm
     );
 }
@@ -1681,3 +1676,155 @@ Returns:
   return FALSE;
 }
 
+UINT16 *
+LibGetMachineTypeString (
+  IN UINT16   MachineType
+  )
+/*++
+
+Routine Description:
+
+  Get Machine Type string according to Machine Type code
+
+Arguments:
+  MachineType      - The Machine Type code
+
+Returns:
+  The Machine Type String
+  
+--*/
+{
+  switch (MachineType) {
+  case EFI_IMAGE_MACHINE_EBC:
+    return L"EBC";
+  case EFI_IMAGE_MACHINE_IA32:
+    return L"IA32";
+  case EFI_IMAGE_MACHINE_X64:
+    return L"X64";
+  case EFI_IMAGE_MACHINE_IA64:
+    return L"IA64";
+  default:
+    return L"UNKNOWN";
+  }
+}
+
+EFI_STATUS
+LibGetImageHeader (
+  IN  EFI_DEVICE_PATH_PROTOCOL    *DevicePath,
+  OUT EFI_IMAGE_DOS_HEADER        *DosHeader,
+  OUT EFI_IMAGE_FILE_HEADER       *ImageHeader,
+  OUT EFI_IMAGE_OPTIONAL_HEADER   *OptionalHeader
+  )
+/*++
+
+Routine Description:
+
+  Get the headers (dos, image, optional header) from an image
+
+Arguments:
+  DevicePath       - Location where the file locates
+  DosHeader        - Pointer to dos header
+  ImageHeader      - Pointer to image header
+  OptionalHeader   - Pointer to optional header
+
+Returns:
+  EFI_SUCCESS           - Successfully get the machine type.
+  EFI_NOT_FOUND         - The file is not found.
+  EFI_LOAD_ERROR        - File is not a valid image file.
+  
+--*/
+{
+  EFI_STATUS           Status;
+  EFI_FILE_HANDLE      ThisFile;
+  UINT32               Signature;
+  UINTN                BufferSize;
+  UINT64               FileSize;
+
+  Status = EFI_SUCCESS;
+
+  ThisFile = LibOpenFilePath (DevicePath, EFI_FILE_MODE_READ);
+  if (ThisFile == NULL) {
+    Status = EFI_NOT_FOUND;
+    goto Done;
+  }
+
+  //
+  // Get the file size
+  //
+  Status = LibGetFileSize (ThisFile, &FileSize);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read dos header
+  //
+  BufferSize = sizeof (EFI_IMAGE_DOS_HEADER);
+  Status = LibReadFile (ThisFile, &BufferSize, DosHeader);
+  if (EFI_ERROR (Status) ||
+      BufferSize < sizeof (EFI_IMAGE_DOS_HEADER) ||
+      FileSize <= DosHeader->e_lfanew ||
+      DosHeader->e_magic != EFI_IMAGE_DOS_SIGNATURE) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Move to PE signature
+  //
+  Status = LibSetPosition (ThisFile, DosHeader->e_lfanew);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read and check PE signature
+  //
+  BufferSize = sizeof (Signature);
+  Status = LibReadFile (ThisFile, &BufferSize, &Signature);
+  if (EFI_ERROR (Status) ||
+      BufferSize < sizeof (Signature) ||
+      Signature != EFI_IMAGE_NT_SIGNATURE) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read image header
+  //
+  BufferSize = EFI_IMAGE_SIZEOF_FILE_HEADER;
+  Status = LibReadFile (ThisFile, &BufferSize, ImageHeader);
+  if (EFI_ERROR (Status) ||
+      BufferSize < EFI_IMAGE_SIZEOF_FILE_HEADER) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Read optional header
+  //
+  BufferSize = ImageHeader->SizeOfOptionalHeader;
+  Status = LibReadFile (ThisFile, &BufferSize, OptionalHeader);
+  if (EFI_ERROR (Status) ||
+      BufferSize < ImageHeader->SizeOfOptionalHeader) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+  //
+  // Check PE32 or PE32+ magic
+  //  
+  if (OptionalHeader->Magic != EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC &&
+      OptionalHeader->Magic != EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+    Status = EFI_LOAD_ERROR;
+    goto Done;
+  }
+
+ Done:
+  if (ThisFile != NULL) {
+    LibCloseFile (ThisFile);
+  }
+  return Status;
+}

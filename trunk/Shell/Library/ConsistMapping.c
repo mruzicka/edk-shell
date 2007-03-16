@@ -170,17 +170,17 @@ AppendCSDGuid (
     Buffer,
     0,
     L"%08x%04x%04x%02x%02x%02x%02x%02x%02x%02x%02x",
-    Guid->Data1,
-    Guid->Data2,
-    Guid->Data3,
-    Guid->Data4[0],
-    Guid->Data4[1],
-    Guid->Data4[2],
-    Guid->Data4[3],
-    Guid->Data4[4],
-    Guid->Data4[5],
-    Guid->Data4[6],
-    Guid->Data4[7]
+    (UINTN) Guid->Data1,
+    (UINTN) Guid->Data2,
+    (UINTN) Guid->Data3,
+    (UINTN) Guid->Data4[0],
+    (UINTN) Guid->Data4[1],
+    (UINTN) Guid->Data4[2],
+    (UINTN) Guid->Data4[3],
+    (UINTN) Guid->Data4[4],
+    (UINTN) Guid->Data4[5],
+    (UINTN) Guid->Data4[6],
+    (UINTN) Guid->Data4[7]
     );
   StrLwr (Buffer);
   AppendCSDStr (MappingItem, Buffer);
@@ -412,7 +412,7 @@ _DevPathSerialMacAddr (
   }
 
   for (Index = 0, PBuffer = Buffer; Index < HwAddressSize; Index++, PBuffer += 2) {
-    SPrint (PBuffer, 0, L"%02x", MAC->MacAddress.Addr[Index]);
+    SPrint (PBuffer, 0, L"%02x", (UINTN) MAC->MacAddress.Addr[Index]);
   }
 
   AppendCSDStr (MappingItem, Buffer);
@@ -434,7 +434,7 @@ _DevPathSerialInfiniBand (
 
   InfiniBand = (INFINIBAND_DEVICE_PATH *) DevicePathNode;
   for (Index = 0, PBuffer = Buffer; Index < 16; Index++, PBuffer += 2) {
-    SPrint (PBuffer, 0, L"%02x", InfiniBand->PortGid[Index]);
+    SPrint (PBuffer, 0, L"%02x", (UINTN) InfiniBand->PortGid[Index]);
   }
 
   AppendCSDStr (MappingItem, Buffer);
@@ -460,10 +460,10 @@ _DevPathSerialIPv4 (
     Buffer,
     0,
     L"%02x%02x%02x%02x",
-    IP->LocalIpAddress.Addr[0],
-    IP->LocalIpAddress.Addr[1],
-    IP->LocalIpAddress.Addr[2],
-    IP->LocalIpAddress.Addr[3]
+    (UINTN) IP->LocalIpAddress.Addr[0],
+    (UINTN) IP->LocalIpAddress.Addr[1],
+    (UINTN) IP->LocalIpAddress.Addr[2],
+    (UINTN) IP->LocalIpAddress.Addr[3]
     );
   AppendCSDStr (MappingItem, Buffer);
   AppendCSDNum (MappingItem, IP->LocalPort);
@@ -471,10 +471,10 @@ _DevPathSerialIPv4 (
     Buffer,
     0,
     L"%02x%02x%02x%02x",
-    IP->RemoteIpAddress.Addr[0],
-    IP->RemoteIpAddress.Addr[1],
-    IP->RemoteIpAddress.Addr[2],
-    IP->RemoteIpAddress.Addr[3]
+    (UINTN) IP->RemoteIpAddress.Addr[0],
+    (UINTN) IP->RemoteIpAddress.Addr[1],
+    (UINTN) IP->RemoteIpAddress.Addr[2],
+    (UINTN) IP->RemoteIpAddress.Addr[3]
     );
   AppendCSDStr (MappingItem, Buffer);
   AppendCSDNum (MappingItem, IP->RemotePort);
@@ -496,13 +496,13 @@ _DevPathSerialIPv6 (
 
   IP = (IPv6_DEVICE_PATH *) DevicePathNode;
   for (Index = 0, PBuffer = Buffer; Index < 16; Index++, PBuffer += 2) {
-    SPrint (PBuffer, 0, L"%02x", IP->LocalIpAddress.Addr[Index]);
+    SPrint (PBuffer, 0, L"%02x", (UINTN) IP->LocalIpAddress.Addr[Index]);
   }
 
   AppendCSDStr (MappingItem, Buffer);
   AppendCSDNum (MappingItem, IP->LocalPort);
   for (Index = 0, PBuffer = Buffer; Index < 16; Index++, PBuffer += 2) {
-    SPrint (PBuffer, 0, L"%02x", IP->RemoteIpAddress.Addr[Index]);
+    SPrint (PBuffer, 0, L"%02x", (UINTN) IP->RemoteIpAddress.Addr[Index]);
   }
 
   AppendCSDStr (MappingItem, Buffer);
@@ -1016,7 +1016,7 @@ ConsistMappingGenMappingName (
     CatPrint (&Str, L"%s", mMTDName[Index].Name);
   }
 
-  CatPrint (&Str, L"%d", MappingInfo.HI);
+  CatPrint (&Str, L"%d", (UINTN) MappingInfo.HI);
   if (MappingInfo.CSD.str != NULL) {
     CatPrint (&Str, L"%s", MappingInfo.CSD.str);
   }
