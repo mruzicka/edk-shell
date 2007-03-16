@@ -75,6 +75,7 @@ MainInputBarCleanup (
   return EFI_SUCCESS;
 }
 
+VOID
 MainInputBarPrintInput (
   VOID
   )

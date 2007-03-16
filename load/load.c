@@ -213,6 +213,8 @@ Returns:
     Status = ShellFileMetaArg (Item->VarStr, &FileList);
     if (EFI_ERROR (Status) && EFI_NOT_FOUND != Status) {
       goto FreeDone;
+    } else if (Status == EFI_NOT_FOUND) {
+      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_FILE_NOT_FOUND), HiiLoadHandle, L"load", Item->VarStr);
     }
 
     Item = GetNextArg (Item);

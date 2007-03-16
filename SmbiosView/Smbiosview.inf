@@ -62,7 +62,6 @@ COMPONENT_TYPE       = APPLICATION
 
 
 [nmake.common]
-  C_STD_INCLUDE=
   IMAGE_ENTRY_POINT=InitializeSmbiosViewApplication
   L_PROJ_FLAGS=/align:4096
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_ARRAY_NAME=$(BASE_NAME)Strings 

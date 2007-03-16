@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -31,7 +31,6 @@ extern UINT8    STRING_ARRAY_NAME[];
 //
 #include STRING_DEFINES_FILE
 
-#include EFI_PROTOCOL_DEFINITION (TianoDecompress)
 #include EFI_PROTOCOL_DEFINITION (decompress)
 
 EFI_HII_HANDLE  HiiDecompressHandle;
@@ -193,7 +192,7 @@ Returns:
   //
   //
   //
-  Status = LibLocateProtocol (&gEfiTianoDecompressProtocolGuid, &Decompress);
+  Status = LibLocateProtocol (&gEfiDecompressProtocolGuid, &Decompress);
   if (EFI_ERROR (Status)) {
     PrintToken (STRING_TOKEN (STR_DECOMPRESS_PROTOCOL_NOT_FOUND), HiiDecompressHandle, L"efidecompress");
     Status = EFI_UNSUPPORTED;

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -23,6 +23,43 @@ Revision History
 --*/
 #ifndef _D_PATH_H
 #define _D_PATH_H
+
+#define NextStrA(a) ((UINT8 *) (((UINT8 *) (a)) + strlena (a) + 1))
+
+#include EFI_GUID_DEFINITION (PcAnsi)
+
+extern EFI_GUID mEfiDevicePathMessagingUartFlowControlGuid;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  UINT32                    HID;
+  UINT32                    UID;
+  UINT32                    CID;
+  CHAR8                     HidUidCidStr[3];
+} ACPI_EXTENDED_HID_DEVICE_PATH_WITH_STR;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  EFI_GUID                  Guid;
+  UINT8                     VendorDefinedData[1];
+} VENDOR_DEVICE_PATH_WITH_DATA;
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+
+extern EFI_GUID mEfiDevicePathMessagingSASGuid;
+
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  UINT16                    NetworkProtocol;
+  UINT16                    LoginOption;
+  UINT16                    Reserved;
+  UINT16                    TargetPortalGroupTag;
+  UINT64                    Lun;
+  CHAR16                    iSCSITargetName[1];
+} ISCSI_DEVICE_PATH_WITH_NAME;
+
+#endif
+
 EFI_DEVICE_PATH_PROTOCOL  *
 DevicePathFromHandle (
   IN EFI_HANDLE           Handle

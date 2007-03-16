@@ -198,6 +198,7 @@ Returns:
 
   if (LibCheckVarGetFlag (&ChkPck, L"-s")) {
     PrintToken (STRING_TOKEN (STR_VER_SHELL_VER), HiiHandle, SE2->MajorVersion, SE2->MinorVersion);
+    PrintToken (STRING_TOKEN (STR_VER_SHELL_MACHINE_TYPE), HiiHandle, LibGetMachineTypeString (EFI_IMAGE_MACHINE_TYPE));
     PrintToken (STRING_TOKEN (STR_VER_SHELL_SIG), HiiHandle, &SE2->SESGuid);
   } else {
     //

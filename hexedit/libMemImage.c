@@ -31,6 +31,8 @@ extern HEFI_EDITOR_GLOBAL_EDITOR  HMainEditor;
 HEFI_EDITOR_MEM_IMAGE             HMemImage;
 HEFI_EDITOR_MEM_IMAGE             HMemImageBackupVar;
 
+EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   DummyPciRootBridgeIo;
+
 //
 // for basic initialization of HDiskImage
 //
@@ -39,6 +41,24 @@ HEFI_EDITOR_MEM_IMAGE             HMemImageConst = {
   0,
   0
 };
+
+EFI_STATUS
+DummyMemRead (
+  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL              * This,
+  IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH    Width,
+  IN     UINT64                                   Address,
+  IN     UINTN                                    Count,
+  IN OUT VOID                                     *Buffer
+  );
+
+EFI_STATUS
+DummyMemWrite (
+  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL              * This,
+  IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH    Width,
+  IN     UINT64                                   Address,
+  IN     UINTN                                    Count,
+  IN OUT VOID                                     *Buffer
+  );
 
 EFI_STATUS
 HMemImageInit (
@@ -73,6 +93,17 @@ Returns:
                 NULL,
                 &HMemImage.IoFncs
                 );
+  if (Status == EFI_NOT_FOUND) {
+    //
+    // For NT32, no EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL is available
+    // Use Dummy PciRootBridgeIo for memory access
+    //
+    ZeroMem (&DummyPciRootBridgeIo, sizeof (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL));
+    DummyPciRootBridgeIo.Mem.Read  = DummyMemRead;
+    DummyPciRootBridgeIo.Mem.Write = DummyMemWrite;
+    HMemImage.IoFncs = &DummyPciRootBridgeIo;
+    Status = EFI_SUCCESS;
+  }
   if (!EFI_ERROR (Status)) {
     return EFI_SUCCESS;
   } else {
@@ -358,4 +389,28 @@ Returns:
   HBufferImage.Modified = FALSE;
 
   return EFI_SUCCESS;
+}
+
+EFI_STATUS
+DummyMemRead (
+  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL              * This,
+  IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH    Width,
+  IN     UINT64                                   Address,
+  IN     UINTN                                    Count,
+  IN OUT VOID                                     *Buffer
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+DummyMemWrite (
+  IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL              * This,
+  IN     EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_WIDTH    Width,
+  IN     UINT64                                   Address,
+  IN     UINTN                                    Count,
+  IN OUT VOID                                     *Buffer
+  )
+{
+  return EFI_UNSUPPORTED;
 }

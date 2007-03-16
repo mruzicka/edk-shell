@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -34,7 +34,7 @@ extern UINTN  EFIDebug;
 #define DEBUG(a)      DbgPrint a
 #define UPDATE_DEBUG_MASK() { \
     VOID  *p; \
-    p = LibGetVariable (L"EFIDebug", &gEfiGlobalVariableGuid); \
+    p = LibGetVariable (L"EFIDebug", &gEfiGenericVariableGuid); \
     if (NULL == p) { \
       EFIDebug = EFI_D_ERROR; \
     } else { \

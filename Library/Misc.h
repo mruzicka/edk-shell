@@ -240,4 +240,17 @@ PrivateDumpHex (
   IN VOID         *UserData
   );
 
+UINT16 *
+LibGetMachineTypeString (
+  IN UINT16   MachineType
+  );
+
+EFI_STATUS
+LibGetImageHeader (
+  IN  EFI_DEVICE_PATH_PROTOCOL    *DevicePath,
+  OUT EFI_IMAGE_DOS_HEADER        *DosHeader,
+  OUT EFI_IMAGE_FILE_HEADER       *ImageHeader,
+  OUT EFI_IMAGE_OPTIONAL_HEADER   *OptionalHeader
+  );
+
 #endif

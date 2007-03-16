@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -126,7 +126,7 @@ Returns:
   UINTN       NewEFIDebug;
 
   DataSize    = sizeof (EFIDebug);
-  Status      = RT->GetVariable (L"EFIDebug", &gEfiGlobalVariableGuid, &Attributes, &DataSize, &NewEFIDebug);
+  Status      = RT->GetVariable (L"EFIDebug", &gEfiGenericVariableGuid, &Attributes, &DataSize, &NewEFIDebug);
   if (!EFI_ERROR (Status)) {
     EFIDebug = NewEFIDebug;
   }

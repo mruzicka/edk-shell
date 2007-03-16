@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -86,7 +86,7 @@ _DumpGlobalMask (
   )
 {
   VOID  *Variable; 
-  Variable = LibGetVariable (L"EFIDebug", &gEfiGlobalVariableGuid); 
+  Variable = LibGetVariable (L"EFIDebug", &gEfiGenericVariableGuid); 
   if (NULL == Variable) { 
     EFIDebug = EFI_D_ERROR; 
   } else { 
@@ -123,7 +123,7 @@ _SetGlobalMask (
       BufSize = sizeof (EFIDebug);
       Status = RT->SetVariable (
                     L"EFIDebug",
-                    &gEfiGlobalVariableGuid,
+                    &gEfiGenericVariableGuid,
                     (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS),
                     BufSize,
                     &DebugLevel

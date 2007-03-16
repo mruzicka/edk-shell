@@ -52,7 +52,7 @@ typedef enum {
 
 EFI_STATUS
 Listing (
-  IN EFI_HANDLE           ParentHandle,
+  IN EFI_FILE_HANDLE      ParentHandle,
   IN CHAR16               *ParentPath,
   IN CHAR16               *Pattern
   );

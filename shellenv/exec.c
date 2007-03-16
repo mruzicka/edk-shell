@@ -213,7 +213,9 @@ SEnvLoadImage (
   IN  EFI_HANDLE               ParentImage,
   IN  CHAR16                   *IName,
   OUT EFI_HANDLE               *pImageHandle,
-  OUT EFI_FILE_HANDLE          *pScriptsHandle
+  OUT EFI_FILE_HANDLE          *pScriptsHandle,
+  OUT UINT16                   *ImageMachineType,
+  OUT BOOLEAN                  *MachineTypeMismatch
   );
 
 //
@@ -1282,6 +1284,8 @@ Returns:
   CHAR16                        *CurrentDir;
   CHAR16                        *OptionsBuffer;
   UINT32                        OptionsSize;
+  UINT16                        MachineType;
+  BOOLEAN                       MachineTypeMismatch;
 
   //
   // Initializing Status to aVOID a level 4 warning
@@ -1431,12 +1435,24 @@ Returns:
   //
   // Load the app, or open the script
   //
-  SEnvLoadImage (ParentImageHandle, Shell->ShellInt.Argv[0], &NewImage, &Script);
+  SEnvLoadImage (ParentImageHandle, Shell->ShellInt.Argv[0], &NewImage, &Script, &MachineType, &MachineTypeMismatch);
   if (!NewImage && !Script) {
     if (Output) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_EXEC_NOT_FOUND), HiiEnvHandle, Shell->ShellInt.Argv[0]);
+      if (MachineTypeMismatch == FALSE) {
+        PrintToken (STRING_TOKEN (STR_SHELLENV_EXEC_NOT_FOUND), HiiEnvHandle, Shell->ShellInt.Argv[0]);
+      } else {
+        //
+        // Image is not loaded successfully because of the machine type mismatch.
+        // Print the error info.
+        //
+        PrintToken (
+          STRING_TOKEN (STR_SHELLENV_EXEC_IMAGE_TYPE_UNSUPPORTED),
+          HiiEnvHandle,
+          LibGetMachineTypeString (MachineType),
+          LibGetMachineTypeString (EFI_IMAGE_MACHINE_TYPE)
+          );
+      }
     }
-
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
@@ -1596,14 +1612,9 @@ Returns:
 Done:
   DEBUG_CODE (
     if (EFI_ERROR (Status) && Output) {
-      switch (Status) {
-      case -1:
-      case -2:
-      case EFI_REDIRECTION_NOT_ALLOWED:
-      case EFI_REDIRECTION_SAME:
-        break;
-  
-      default:
+      if ((Status == -1) || (Status == -2) || (Status == EFI_REDIRECTION_NOT_ALLOWED)
+          || (Status == EFI_REDIRECTION_SAME)) {
+      } else {
         PrintToken (STRING_TOKEN (STR_SHELLENV_EXEC_EXIT_STATUS_CODE), HiiEnvHandle, Status);
       }
     }
@@ -1772,7 +1783,9 @@ SEnvLoadImage (
   IN EFI_HANDLE           ParentImage,
   IN CHAR16               *IName,
   OUT EFI_HANDLE          *pImageHandle,
-  OUT EFI_FILE_HANDLE     *pScriptHandle
+  OUT EFI_FILE_HANDLE     *pScriptHandle,
+  OUT UINT16              *ImageMachineType,
+  OUT BOOLEAN             *MachineTypeMismatch
   )
 /*++
 
@@ -1810,19 +1823,24 @@ Returns:
   UINTN                     Size;
   EFI_FILE_INFO             *Info;
   UINTN                     InfoBufSize;
+  EFI_IMAGE_DOS_HEADER      DosHeader;
+  EFI_IMAGE_FILE_HEADER     ImageHeader;
+  EFI_IMAGE_OPTIONAL_HEADER OptionalHeader;
 
-  PathName        = NULL;
-  FileName        = NULL;
-  DevicePath      = NULL;
-  TempDevicePath  = NULL;
-  ImageHandle     = NULL;
-  ScriptHandle    = NULL;
-  OpenDir         = NULL;
-  OpenDirHead     = NULL;
-  *pImageHandle   = NULL;
-  *pScriptHandle  = NULL;
-  PathNeedFree    = FALSE;
-  Info            = NULL;
+  PathName               = NULL;
+  FileName               = NULL;
+  DevicePath             = NULL;
+  TempDevicePath         = NULL;
+  ImageHandle            = NULL;
+  ScriptHandle           = NULL;
+  OpenDir                = NULL;
+  OpenDirHead            = NULL;
+  *pImageHandle          = NULL;
+  *pScriptHandle         = NULL;
+  PathNeedFree           = FALSE;
+  Info                   = NULL;
+  *MachineTypeMismatch   = FALSE;
+
 
   //
   // Check if IName contains path info
@@ -2060,6 +2078,20 @@ Returns:
                       );
         if (!EFI_ERROR (Status)) {
           goto Done;
+        } else {
+          Status = LibGetImageHeader (
+                     DevicePath,
+                     &DosHeader,
+                     &ImageHeader,
+                     &OptionalHeader
+                     );
+          if (!EFI_ERROR (Status) &&
+              !EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
+              OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
+            *MachineTypeMismatch = TRUE;
+            *ImageMachineType = ImageHeader.Machine;
+            goto Done;
+          }
         }
         //
         // Try as a ".nsh" file

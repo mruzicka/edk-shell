@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -39,6 +39,8 @@ CHAR16              *ShellEnvPathName[] = {
   L"efi\\tools\\shellenv.efi",
   NULL
 };
+
+EFI_CONSOLE_CONTROL_SCREEN_MODE  mOldCurrentMode = EfiConsoleControlScreenText;
 
 EFI_SHELL_INTERFACE *OldSI;
 
@@ -205,9 +207,26 @@ _DoInit (
   IN     EFI_SYSTEM_TABLE       *SystemTable
   )
 {
-  EFI_STATUS        Status;
-  EFI_GUID          EfiLibGuid = EFI_NSHELL_GUID;
+  EFI_STATUS                       Status;
+  EFI_CONSOLE_CONTROL_PROTOCOL     *ConsoleControl;
+  EFI_GUID                         EfiLibGuid = EFI_NSHELL_GUID;
   InitializeShellLib (ImageHandle, SystemTable);
+
+  //
+  // If EFI_CONSOLE_CONTROL_PROTOCOL is available,
+  // use it to switch to text mode first.
+  //
+  Status = LibLocateProtocol (
+             &gEfiConsoleControlProtocolGuid,
+             &ConsoleControl
+             );
+  if (!EFI_ERROR (Status)) {
+    Status = ConsoleControl->GetMode (ConsoleControl, &mOldCurrentMode, NULL, NULL);
+    if (!EFI_ERROR (Status) && mOldCurrentMode != EfiConsoleControlScreenText) {
+      ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenText);
+    }
+  }
+
   //
   // When running under EFI1.1, there is no HII support
   // so we have to provide our embedded HII support
@@ -456,7 +475,10 @@ _CleanUpOnExit (
   IN EFI_SYSTEM_TABLE               *SystemTable
   )
 {
-  EFI_STATUS        Status;
+  EFI_STATUS                       Status;
+  EFI_STATUS                       ConsoleControlStatus;
+  EFI_CONSOLE_CONTROL_PROTOCOL     *ConsoleControl;
+  EFI_CONSOLE_CONTROL_SCREEN_MODE  CurrentMode;
 
   Status = EFI_SUCCESS;
   if (OldSI) {
@@ -499,6 +521,21 @@ _CleanUpOnExit (
   //
   LibUnInitializeStrings ();
   FakeUninstallHiiDatabase();
+
+  //
+  // If EFI_CONSOLE_CONTROL_PROTOCOL is available,
+  // switch back to the original console mode.
+  //
+  ConsoleControlStatus = LibLocateProtocol (
+                           &gEfiConsoleControlProtocolGuid,
+                           &ConsoleControl
+                           );
+  if (!EFI_ERROR (ConsoleControlStatus)) {
+    ConsoleControlStatus = ConsoleControl->GetMode (ConsoleControl, &CurrentMode, NULL, NULL);
+    if (!EFI_ERROR (ConsoleControlStatus) && CurrentMode != mOldCurrentMode) {
+      ConsoleControl->SetMode (ConsoleControl, mOldCurrentMode);
+    }
+  }
   return Status;
 }
 //
@@ -769,7 +806,7 @@ _ShellLoadEnvDriver (
             (VOID *) &Junk
             );
   if (!EFI_ERROR (Status)) {
-    if (!CompareGuid (&Junk->SESGuid, &SESGuid)) {
+    if (CompareGuid (&Junk->SESGuid, &SESGuid) == 0) {
       if (Junk->MajorVersion >= EFI_NSHELL_MAJOR_VERSION) {
         return Status;
       }
@@ -822,7 +859,7 @@ _ShellLoadEnvDriver (
               );
     if (!EFI_ERROR (Status)) {
       Status = EFI_UNSUPPORTED;
-      if (!CompareGuid (&Junk->SESGuid, &SESGuid)) {
+      if (CompareGuid (&Junk->SESGuid, &SESGuid) == 0) {
         if (Junk->MajorVersion >= EFI_NSHELL_MAJOR_VERSION) {
           Status = EFI_SUCCESS;
         }

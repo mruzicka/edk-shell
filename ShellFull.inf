@@ -1,6 +1,6 @@
 #/*++
 #
-# Copyright (c) 2006, Intel Corporation                                                         
+# Copyright (c) 2006 - 2007, Intel Corporation                                                         
 # All rights reserved. This program and the accompanying materials                          
 # are licensed and made available under the terms and conditions of the BSD License         
 # which accompanies this distribution. The full text of the license may be found at         
@@ -41,7 +41,6 @@ COMPONENT_TYPE       = APPLICATION
   Library\ConsistMapping.c
   Library\CRC.c
   Library\Event.c
-  Library\Lock.c
   Library\Perf.c
   Library\VarCheck.c
 
@@ -283,6 +282,7 @@ COMPONENT_TYPE       = APPLICATION
   Library\ipf\salpal.c
 
 [sources.EBC]
+  ver\ebc\verEbc.c
   Library\EBC\math.c
   Library\EBC\initplat.c
 
@@ -304,28 +304,6 @@ COMPONENT_TYPE       = APPLICATION
   $(EDK_SOURCE)\Foundation\FrameWork
   $(EDK_SOURCE)\Foundation\FrameWork\Include
   $(EDK_SOURCE)\Foundation\Core\Dxe
-
-  $(DEST_DIR)\newshell
-  $(DEST_DIR)\lib
-  $(DEST_DIR)\shellenv
-  $(DEST_DIR)\attrib
-  $(DEST_DIR)\cp
-  $(DEST_DIR)\copy
-  $(DEST_DIR)\date
-  $(DEST_DIR)\Load
-  $(DEST_DIR)\ls
-  $(DEST_DIR)\dir
-  $(DEST_DIR)\mkdir
-  $(DEST_DIR)\mv
-  $(DEST_DIR)\reset
-  $(DEST_DIR)\rm
-  $(DEST_DIR)\del
-  $(DEST_DIR)\type
-  $(DEST_DIR)\time
-  $(DEST_DIR)\touch
-  $(DEST_DIR)\vol
-  $(DEST_DIR)\lang
-  $(DEST_DIR)\ver
   $(DEST_DIR)
 
 [libraries.common]
@@ -349,6 +327,11 @@ COMPONENT_TYPE       = APPLICATION
   C_STD_FLAGS = $(C_STD_FLAGS) /DEFI_MONOSHELL /DEFI_FULLSHELL
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_ARRAY_NAME=$(BASE_NAME)Strings 
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_DEFINES_FILE=\"$(BASE_NAME)StrDefs.h\"
+
+[nmake.ebc]
+  EBC_C_STD_FLAGS = $(EBC_C_STD_FLAGS) /DEFI_MONOSHELL /DEFI_FULLSHELL
+  EBC_C_STD_FLAGS = $(EBC_C_STD_FLAGS) /DSTRING_ARRAY_NAME=$(BASE_NAME)Strings 
+  EBC_C_STD_FLAGS = $(EBC_C_STD_FLAGS) /DSTRING_DEFINES_FILE=\"$(BASE_NAME)StrDefs.h\"
 
 
  

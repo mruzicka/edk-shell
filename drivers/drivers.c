@@ -420,7 +420,8 @@ Returns:
       FormattedDriverName[StringIndex] = L' ';
     }
 
-    FormattedDriverName[35] = 0;
+    FormattedDriverName[35] = ' ';
+    FormattedDriverName[36] = 0;
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_ONE_VAR_S_2), HiiHandle, FormattedDriverName);
 
     if (LoadedImage == NULL) {
@@ -433,8 +434,8 @@ Returns:
         FreePool (ImageName);
       } else {
         DriverName = LibDevicePathToStr (LoadedImage->FilePath);
-        if (StrLen (DriverName) > 19) {
-          DriverName[19] = 0;
+        if (StrLen (DriverName) > 18) {
+          DriverName[18] = 0;
         }
 
         PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_ONE_VAR_S), HiiHandle, DriverName);
