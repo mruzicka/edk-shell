@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -435,7 +435,7 @@ DumpMappingItem (
       PrintToken (STRING_TOKEN (STR_SHELLENV_MAP_HANDLE_NOT_FOUND), HiiEnvHandle, SLen + 3);
     } else {
       PrintToken (STRING_TOKEN (STR_SHELLENV_MAP_HANDLE), HiiEnvHandle, SLen + 3, L"");
-      SEnvDHProt (FALSE, FALSE, 0, DeviceHandle, "eng");
+      SEnvDHProt (FALSE, FALSE, 0, DeviceHandle, LanguageCodeEnglish);
     }
 
     PrintToken (STRING_TOKEN (STR_SHELLENV_MAP_MEDIA_TYPE), HiiEnvHandle, SLen, L"", MediaName);
@@ -2482,7 +2482,7 @@ Returns:
       PrintToken (STRING_TOKEN (STR_SHELLENV_MAP_HANDLE_NOT_FOUND), HiiEnvHandle, SLen + 3);
     } else {
       PrintToken (STRING_TOKEN (STR_SHELLENV_MAP_HANDLE), HiiEnvHandle, SLen + 3, L"");
-      SEnvDHProt (FALSE, FALSE, 0, DeviceHandle, "eng");
+      SEnvDHProt (FALSE, FALSE, 0, DeviceHandle, LanguageCodeEnglish);
     }
     //
     // print current directory for this mapping

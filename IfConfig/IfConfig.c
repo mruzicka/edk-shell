@@ -1057,7 +1057,7 @@ Returns:
 
 EFI_STATUS
 EFIAPI
-EfiMain (
+IfConfig (
   IN  EFI_HANDLE                ImageHandle,
   IN  EFI_SYSTEM_TABLE          *SystemTable
   )
@@ -1205,4 +1205,28 @@ Done:
   return Status;
 }
 
-EFI_BOOTSHELL_CODE(EFI_APPLICATION_ENTRY_POINT(EfiMain))
+EFI_BOOTSHELL_CODE(EFI_APPLICATION_ENTRY_POINT(IfConfig))
+
+EFI_STATUS
+EFIAPI
+IfConfigGetLineHelp (
+  OUT CHAR16              **Str
+  )
+/*++
+
+Routine Description:
+
+  Get this command's line help
+
+Arguments:
+
+  Str - The line help
+
+Returns:
+
+  EFI_SUCCESS   - Success
+
+--*/
+{
+  return LibCmdGetStringByToken (STRING_ARRAY_NAME, &EfiIfConfigGuid, STRING_TOKEN (STR_IFCONFIG_LINE_HELP), Str);
+}

@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = err
+BASE_NAME            = Err
 FILE_GUID            = 7ED86F56-5558-4d4f-A972-9307909AE9BA
 COMPONENT_TYPE       = APPLICATION
 

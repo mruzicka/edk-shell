@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = comp
+BASE_NAME            = Comp
 FILE_GUID            = A4810650-EF4E-4ef5-9A9E-9A81FDCAF6C2
 COMPONENT_TYPE       = APPLICATION
 

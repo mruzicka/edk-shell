@@ -1211,11 +1211,11 @@ Exit:
   return Status;
 }
 
-EFI_BOOTSHELL_CODE (EFI_APPLICATION_ENTRY_POINT (EfiMain))
+EFI_BOOTSHELL_CODE (EFI_APPLICATION_ENTRY_POINT (Ping))
 
 EFI_STATUS
 EFIAPI
-EfiMain (
+Ping (
   IN  EFI_HANDLE        ImageHandle,
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
@@ -1350,4 +1350,28 @@ Done:
   LibCheckVarFreeVarList (&ChkPck);
 
   return Status;
+}
+
+EFI_STATUS
+EFIAPI
+PingGetLineHelp (
+  OUT CHAR16              **Str
+  )
+/*++
+
+Routine Description:
+
+  Get this command's line help
+
+Arguments:
+
+  Str - The line help
+
+Returns:
+
+  EFI_SUCCESS   - Success
+
+--*/
+{
+  return LibCmdGetStringByToken (STRING_ARRAY_NAME, &EfiPingGuid, STRING_TOKEN (STR_PING_LINE_HELP), Str);
 }

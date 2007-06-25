@@ -217,7 +217,12 @@ COMPONENT_TYPE       = APPLICATION
   hexedit\libMenuBar.c
   hexedit\libClipBoard.c
   hexedit\libMisc.c
-  
+
+  IfConfig\IfConfigStrings.uni
+  IfConfig\IfConfig.c
+  IfConfig\IfConfig.h
+  IfConfig\ShellNetHelper.c
+
   ipconfig\IpConfigStrings.uni
   ipconfig\IpConfig.c
   
@@ -244,7 +249,10 @@ COMPONENT_TYPE       = APPLICATION
   
   openinfo\OPeninfoStrings.uni
   openinfo\openinfo.c
-  
+
+  Ping\PingStrings.uni
+  Ping\Ping.c
+
   pci\PciStrings.uni
   pci\pci.c
   pci\pci_class.c
@@ -304,6 +312,7 @@ COMPONENT_TYPE       = APPLICATION
   $(EDK_SOURCE)\Foundation\FrameWork
   $(EDK_SOURCE)\Foundation\FrameWork\Include
   $(EDK_SOURCE)\Foundation\Core\Dxe
+  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
   $(DEST_DIR)
 
 [libraries.common]
@@ -314,7 +323,16 @@ COMPONENT_TYPE       = APPLICATION
   EdkGuidLib
   EdkFrameworkGuidLib
   EfiGuidLib
-    
+
+[libraries.Ia32]
+  CpuIA32Lib
+
+[libraries.Ipf]
+  CpuIA64Lib
+
+[Libraries.X64]
+  CpuIA32Lib
+
 [--]
 
 #

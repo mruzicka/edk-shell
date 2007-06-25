@@ -451,7 +451,33 @@ EFIAPI
 InitializeEFIHexEditorGetLineHelp (
   OUT CHAR16              **Str
   );
-  
+
+EFI_STATUS
+EFIAPI
+Ping (
+  IN  EFI_HANDLE        ImageHandle,
+  IN  EFI_SYSTEM_TABLE  *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+PingGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
+EFI_STATUS
+EFIAPI
+IfConfig (
+  IN  EFI_HANDLE                ImageHandle,
+  IN  EFI_SYSTEM_TABLE          *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
+IfConfigGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
 EFI_STATUS
 EFIAPI
 InitializeIpConfig (
@@ -807,6 +833,12 @@ SEnvInternalCommands[] = {
   InitializeEFIHexEditor,
   L"hexedit",
   InitializeEFIHexEditorGetLineHelp,
+  Ping,
+  L"ping",
+  PingGetLineHelp,
+  IfConfig,
+  L"ifconfig",
+  IfConfigGetLineHelp,
   InitializeIpConfig,
   L"ipconfig",
   InitializeIpConfigGetLineHelp,

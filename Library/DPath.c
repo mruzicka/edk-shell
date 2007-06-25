@@ -842,6 +842,27 @@ _DevPathUsbClass (
 }
 
 VOID
+_DevPathSata (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  SATA_DEVICE_PATH *Sata;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  Sata = DevPath;
+  CatPrint (
+    Str,
+    L"Sata(%x,%x,%x)",
+    (UINTN) Sata->HBAPortNumber,
+    (UINTN) Sata->PortMultiplierPortNumber,
+    (UINTN) Sata->Lun
+    );
+}
+
+VOID
 _DevPathI2O (
   IN OUT POOL_PRINT       *Str,
   IN VOID                 *DevPath
@@ -1314,6 +1335,9 @@ DevPathTable[] = {
   MSG_USB_CLASS_DP,
   _DevPathUsbClass,
   MESSAGING_DEVICE_PATH,
+  MSG_SATA_DP,
+  _DevPathSata,
+  MESSAGING_DEVICE_PATH,
   MSG_I2O_DP,
   _DevPathI2O,
   MESSAGING_DEVICE_PATH,
@@ -1354,7 +1378,7 @@ DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_PROTOCOL_DP,
   _DevPathMediaProtocol,
-#if (EFI_SPECIFICATION_VERSION < 0x00020000)
+#if (EFI_SPECIFICATION_VERSION != 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   _DevPathFvFilePath,
@@ -1864,14 +1888,14 @@ Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION != 0x00020000)
   //
   // Use old Device Path that conflicts with UEFI
   //
   FvDevicePathNode->Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Header.SubType  = MEDIA_FV_FILEPATH_DP;
   SetDevicePathNodeLength (&FvDevicePathNode->Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
-  
+
 #else
   //
   // Use the new Device path that does not conflict with the UEFI
@@ -1925,7 +1949,7 @@ Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION < 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION != 0x00020000) 
   //
   // Use old Device Path that conflicts with UEFI
   //

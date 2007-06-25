@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = mem
+BASE_NAME            = Mem
 FILE_GUID            = 1B0B8206-74DC-4681-AA0D-039A9699EA56
 COMPONENT_TYPE       = APPLICATION
 

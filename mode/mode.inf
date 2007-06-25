@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = mode
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = Mode
+FILE_GUID            = 3DF0DCBF-5CA4-4265-B2B5-EB882135F363
 COMPONENT_TYPE       = APPLICATION
 
 

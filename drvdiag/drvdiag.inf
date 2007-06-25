@@ -34,7 +34,7 @@
 --*/
 
 [defines]
-BASE_NAME            = Drvdiag
+BASE_NAME            = DrvDiag
 FILE_GUID            = CF747222-617C-4ef9-B75F-04B150470C8B
 COMPONENT_TYPE       = APPLICATION
 

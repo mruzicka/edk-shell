@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = mm
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = Mm
+FILE_GUID            = C9F33F7C-7D45-4c1b-8FE5-4AEBFF19B8EC
 COMPONENT_TYPE       = APPLICATION
 
 

@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = edit
+BASE_NAME            = Edit
 FILE_GUID            = 51A60577-F1F6-444a-A372-244BED272023
 COMPONENT_TYPE       = APPLICATION
 

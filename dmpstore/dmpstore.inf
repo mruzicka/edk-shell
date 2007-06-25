@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = dmpstore
+BASE_NAME            = DmpStore
 FILE_GUID            = 7185D15A-A0AE-4dd1-A58F-C6EAD28EC9A8
 COMPONENT_TYPE       = APPLICATION
 

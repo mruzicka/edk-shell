@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = pci
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = Pci
+FILE_GUID            = 388DA6C3-3447-4b1f-A0BA-A9E8A287F176
 COMPONENT_TYPE       = APPLICATION
 
 

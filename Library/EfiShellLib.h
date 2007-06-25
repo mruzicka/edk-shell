@@ -57,6 +57,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (ConsoleControl)
 #include EFI_PROTOCOL_DEFINITION (CpuIo)
 #include EFI_PROTOCOL_DEFINITION (DataHub)
@@ -74,6 +75,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (FileSystemInfo)
 #include EFI_PROTOCOL_DEFINITION (FileSystemVolumeLabelInfo)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
+#include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
 #include EFI_PROTOCOL_DEFINITION (FormBrowser)
 #include EFI_PROTOCOL_DEFINITION (FormCallback)
@@ -283,6 +285,19 @@ DivU64x32 (
   IN UINT64   Dividend,
   IN UINTN    Divisor,
   OUT UINTN   *Remainder OPTIONAL
+  );
+
+EFI_STATUS
+LibGetComponentNameProtocol (
+  IN EFI_HANDLE                      DriverBindingHandle,
+  OUT EFI_COMPONENT_NAME_PROTOCOL    **ComponentName,
+  OUT EFI_COMPONENT_NAME2_PROTOCOL   **ComponentName2
+  );
+
+CHAR8 *
+LibConvertComponentName2SupportLanguage (
+  IN EFI_COMPONENT_NAME2_PROTOCOL    *ComponentName,
+  IN CHAR8                           *Language
   );
 
 #endif

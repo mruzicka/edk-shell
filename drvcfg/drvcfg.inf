@@ -34,7 +34,7 @@
 --*/
 
 [defines]
-BASE_NAME            = Drvcfg
+BASE_NAME            = DrvCfg
 FILE_GUID            = D9C14A2E-6CBE-488f-94A2-598CFB605D47
 COMPONENT_TYPE       = APPLICATION
 
