@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = eficompress
+BASE_NAME            = EfiCompress
 FILE_GUID            = A6A236DB-F3FB-4f7f-93BC-0AF7DAA583B9
 COMPONENT_TYPE       = APPLICATION
 

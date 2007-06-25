@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = stall
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = Stall
+FILE_GUID            = C17A7DA5-CF05-4c80-A330-74E644D44E98
 COMPONENT_TYPE       = APPLICATION
 
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -893,6 +893,67 @@ Returns:
   return len;
 }
 
+VOID
+strcpya (
+  IN CHAR8    *Destination,
+  IN CHAR8    *Source
+  )
+/*++
+
+Routine Description:
+  Copy the Ascii string Source to Destination.
+
+Arguments:
+  Destination - Location to copy string
+  Source      - String to copy
+
+Returns:
+  Pointer just pass the end of Destination
+
+--*/
+{
+  while (*Source) {
+    *(Destination++) = *(Source++);
+  }
+  *Destination = 0;
+  return;
+}
+
+VOID
+strncpya (
+  OUT CHAR8    *Dst,
+  IN  CHAR8    *Src,
+  IN  UINTN    Length
+  )
+/*++
+
+Routine Description:
+  Copy the Ascii string from source to destination
+
+Arguments:
+  Dst              Destination string
+  Src              Source string
+  Length           Length of destination string
+
+Returns:
+
+--*/
+{
+  UINTN Index;
+  UINTN SrcLen;
+
+  SrcLen = strlena (Src);
+
+  Index = 0;
+  while (Index < Length && Index < SrcLen) {
+    Dst[Index] = Src[Index];
+    Index++;
+  }
+  for (Index = SrcLen; Index < Length; Index++) {
+    Dst[Index] = 0;
+  }
+}
+
 UINTN
 strcmpa (
   IN CHAR8    *s1,
@@ -961,6 +1022,45 @@ Returns:
   }
 
   return len ? *s1 -*s2 : 0;
+}
+
+CHAR8*
+strstra (
+  IN  CHAR8  *String,
+  IN  CHAR8  *StrCharSet
+  )
+/*++
+
+Routine Description:
+  
+  Find a Ascii substring.
+  
+Arguments: 
+  
+  String      - Null-terminated Ascii string to search.
+  StrCharSet  - Null-terminated Ascii string to search for.
+  
+Returns:
+  The address of the first occurrence of the matching Ascii substring if successful, or NULL otherwise.
+--*/
+{
+  CHAR8 *Src;
+  CHAR8 *Sub;
+   
+  Src = String;
+  Sub = StrCharSet;
+  
+  while ((*String != '\0') && (*StrCharSet != '\0')) {
+    if (*String++ != *StrCharSet++) {
+      String = ++Src;
+      StrCharSet = Sub;
+    }
+  }
+  if (*StrCharSet == '\0') {
+    return Src;
+  } else {
+    return NULL;
+  }
 }
 
 BOOLEAN

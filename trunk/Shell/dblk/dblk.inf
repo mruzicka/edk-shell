@@ -21,7 +21,7 @@
 
 [defines]
 BASE_NAME            = Dblk
-FILE_GUID            = 2D7D935A-49BD-4a12-A396-A6D9496D6D32
+FILE_GUID            = DED389C0-956A-4244-AE98-C97FA081CAD8
 COMPONENT_TYPE       = APPLICATION
 
 [sources.common]

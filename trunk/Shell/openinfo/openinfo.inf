@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = Openinfo
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = OpenInfo
+FILE_GUID            = 1F894D67-0EA9-4581-B761-AC2A77A463F3
 COMPONENT_TYPE       = APPLICATION
 
 

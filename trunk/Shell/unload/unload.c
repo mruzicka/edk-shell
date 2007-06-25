@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -79,10 +79,12 @@ _UnloadGetDriverName (
   )
 
 {
-  EFI_STATUS                  Status;
-  EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
-  EFI_LOADED_IMAGE_PROTOCOL   *Image;
-  EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
+  EFI_STATUS                   Status;
+  EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding;
+  EFI_LOADED_IMAGE_PROTOCOL    *Image;
+  EFI_COMPONENT_NAME_PROTOCOL  *ComponentName;
+  EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
+  CHAR8                        *SupportedLanguage;
 
   *DriverName = NULL;
 
@@ -111,25 +113,32 @@ _UnloadGetDriverName (
       *DriverName = LibDevicePathToStr (Image->FilePath);
     }
   } else {
-    Status = BS->OpenProtocol (
-                  DriverBindingHandle,
-                  &gEfiComponentNameProtocolGuid,
-                  (VOID **) &ComponentName,
-                  NULL,
-                  NULL,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
-    if (!EFI_ERROR (Status)) {
-      //
-      // Make sure the interface has been implemented
-      //
-      if (ComponentName->GetDriverName != NULL) {
-        Status = ComponentName->GetDriverName (
-                                  ComponentName,
-                                  Language,
-                                  DriverName
-                                  );
-      }
+    Status = LibGetComponentNameProtocol(
+               DriverBinding->ImageHandle, 
+               &ComponentName, 
+               &ComponentName2
+               );
+    if (EFI_ERROR(Status)) {
+      return EFI_SUCCESS;
+    }
+
+    //
+    // Make sure the interface has been implemented
+    //
+    if ((ComponentName != NULL) && (ComponentName->GetDriverName != NULL)) {
+      Status = ComponentName->GetDriverName (
+                                 ComponentName,
+                                 Language,
+                                 DriverName
+                                 );
+    } else if ((ComponentName2 != NULL) && (ComponentName2->GetDriverName != NULL)) {
+      SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+      Status = ComponentName2->GetDriverName (
+                                 ComponentName2,
+                                 SupportedLanguage,
+                                 DriverName
+                                 );
+      FreePool(SupportedLanguage);
     }
   }
 
@@ -169,7 +178,6 @@ Returns:
   UINTN                       Index;
   CHAR16                      *DriverName;
   EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
-  EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
   UINTN                       NumberOfChildren;
   UINTN                       HandleIndex;
   UINTN                       ControllerHandleCount;
@@ -397,16 +405,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     return EFI_SUCCESS;
   }
-
-  ComponentName = NULL;
-  Status = BS->OpenProtocol (
-                Handle,
-                &gEfiComponentNameProtocolGuid,
-                (VOID **) &ComponentName,
-                NULL,
-                NULL,
-                EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                );
 
   DiagnosticsStatus = BS->OpenProtocol (
                             Handle,
@@ -874,7 +872,7 @@ Returns:
     Status = EFI_INVALID_PARAMETER;
   } else {
     TargetHandle = ShellHandleFromIndex (Index);
-    _DHProt (Verbose, FALSE, Index + 1, TargetHandle, "eng");
+    _DHProt (Verbose, FALSE, Index + 1, TargetHandle, LanguageCodeEnglish);
     //
     // Make sure it is an image handle to a protocol
     //

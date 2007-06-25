@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1147,13 +1147,15 @@ Returns:
   EFI_DEVICE_PATH_PROTOCOL          *DevPath;
   EFI_DEVICE_PATH_PROTOCOL          *DevPathNode;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *FvFilePath;
-  EFI_FIRMWARE_VOLUME_PROTOCOL      *FV;
   VOID                              *Buffer;
   UINTN                             BufferSize;
   UINT32                            AuthenticationStatus;
   EFI_GUID                          *NameGuid;
+  EFI_FIRMWARE_VOLUME_PROTOCOL      *FV;
+  EFI_FIRMWARE_VOLUME2_PROTOCOL     *FV2;
 
   FV          = NULL;
+  FV2         = NULL;
   Buffer      = NULL;
   BufferSize  = 0;
 
@@ -1169,11 +1171,8 @@ Returns:
     //
     // Find the Fv File path
     //
-//    if (DevicePathType (DevPathNode) == MEDIA_DEVICE_PATH  &&
-//		DevicePathSubType (DevPathNode) == MEDIA_FV_FILEPATH_DP)
-//    if (DevicePathType (DevPathNode) == MEDIA_DEVICE_PATH && DevicePathSubType (DevPathNode) == MEDIA_FV_FILEPATH_DP) {
     NameGuid = GetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)DevPathNode);
-	if (NameGuid != NULL) {
+    if (NameGuid != NULL) {
       FvFilePath = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) DevPathNode;
       Status = BS->HandleProtocol (
                     Image->DeviceHandle,
@@ -1195,6 +1194,28 @@ Returns:
         }
 
         Buffer = NULL;
+      } else {
+        Status = BS->HandleProtocol (
+                      Image->DeviceHandle,
+                      &gEfiFirmwareVolume2ProtocolGuid,
+                      &FV2
+                      );
+        if (!EFI_ERROR (Status)) {
+          Status = FV2->ReadSection (
+                          FV2,
+                          &FvFilePath->NameGuid,
+                          EFI_SECTION_USER_INTERFACE,
+                          0,
+                          &Buffer,
+                          &BufferSize,
+                          &AuthenticationStatus
+                          );
+          if (!EFI_ERROR (Status)) {
+            break;
+          }
+
+          Buffer = NULL;
+        }
       }
     }
     //
@@ -1828,3 +1849,127 @@ Returns:
   }
   return Status;
 }
+
+EFI_STATUS
+LibGetComponentNameProtocol (
+  IN EFI_HANDLE                      DriverBindingHandle,
+  OUT EFI_COMPONENT_NAME_PROTOCOL    **ComponentName,
+  OUT EFI_COMPONENT_NAME2_PROTOCOL   **ComponentName2
+  )
+/*++
+
+  Routine Description:
+
+    Get the ComponentName or ComponentName2 protocol according to the driver binding handle
+
+  Arguments:
+
+    DriverBindingHandle   - The Handle of DriverBinding
+    ComponentName         - Pointer to the ComponentName protocl pointer
+    ComponentName2        - Pointer to the ComponentName2 protocl pointer
+
+  Returns:
+
+    EFI_INVALID_PARAMETER - The ComponentName and ComponentName2 parameters are invalid.
+    EFI_NOT_FOUND         - Neither ComponentName nor ComponentName2 has been installed.
+
+--*/
+{
+  EFI_STATUS                         Status;
+
+  if ((ComponentName == NULL) || (ComponentName2 == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *ComponentName  = NULL;
+  *ComponentName2 = NULL;
+
+  Status = BS->OpenProtocol (
+                 DriverBindingHandle,
+                 &gEfiComponentName2ProtocolGuid,
+                 (VOID **) ComponentName2,
+                 NULL,
+                 NULL,
+                 EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                 );
+  if (EFI_ERROR(Status)) {
+    Status = BS->OpenProtocol (
+                   DriverBindingHandle,
+                   &gEfiComponentNameProtocolGuid,
+                   (VOID **) ComponentName,
+                   NULL,
+                   NULL,
+                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                   );
+  }
+
+  return Status;
+}
+
+CHAR8 *
+LibConvertComponentName2SupportLanguage (
+  IN EFI_COMPONENT_NAME2_PROTOCOL    *ComponentName,
+  IN CHAR8                           *Language
+  )
+/*++
+
+  Routine Description:
+
+    Do some convertion for the ComponentName2 supported language. It do 
+    the convertion just for english language code currently.
+
+  Arguments:
+
+    ComponentName         - Pointer to the ComponentName2 protocl pointer.
+    Language              - The language string.
+
+  Returns:
+
+    Return the duplication of Language if it is not english otherwise return 
+    the supported english language code.
+
+--*/
+{
+  CHAR8                              *SupportedLanguages;
+  CHAR8                              *LangCode;
+  UINTN                              Index;
+
+  LangCode           = NULL;
+  SupportedLanguages = NULL;
+
+  //
+  // treat all the english language code (en-xx or eng) equally
+  //
+  if ((strncmpa(Language, "en-", 3) == 0) || (strcmpa(Language, "eng") == 0)) {
+    SupportedLanguages = strstra(ComponentName->SupportedLanguages, "en-");
+    if (SupportedLanguages == NULL) {
+      SupportedLanguages = strstra(ComponentName->SupportedLanguages, "eng");
+    }
+  }
+
+  //
+  // duplicate the Language if it is not english
+  //
+  if (SupportedLanguages == NULL) {
+    SupportedLanguages = Language;
+  }
+
+  //
+  // duplicate the returned language code.
+  //
+  if (strstra(SupportedLanguages, "-") != NULL) {
+    LangCode = AllocateZeroPool(32);
+    for(Index = 0; (Index < 31) && (SupportedLanguages[Index] != '\0') && (SupportedLanguages[Index] != ';'); Index++) {
+      LangCode[Index] = SupportedLanguages[Index];
+    }
+    LangCode[Index] = '\0';
+  } else {
+    LangCode = AllocateZeroPool(4);
+    for(Index = 0; (Index < 3) && (SupportedLanguages[Index] != '\0'); Index++) {
+      LangCode[Index] = SupportedLanguages[Index];
+    }
+    LangCode[Index] = '\0';
+  }
+  return LangCode;
+}
+

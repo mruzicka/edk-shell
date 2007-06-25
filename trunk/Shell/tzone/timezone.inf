@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = timezone
+BASE_NAME            = TimeZone
 FILE_GUID            = E27B12B9-2647-4af3-ADBC-B5AB5FB50421
 COMPONENT_TYPE       = APPLICATION
 

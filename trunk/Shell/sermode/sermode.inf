@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = sermode
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = SerMode
+FILE_GUID            = 72C4E87D-028E-414c-8634-C3EE4DC984D8
 COMPONENT_TYPE       = APPLICATION
 
 

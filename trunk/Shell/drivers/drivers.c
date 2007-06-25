@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -27,6 +27,7 @@ Revision History
 #include "drivers.h"
 
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
+#include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
 #include EFI_PROTOCOL_DEFINITION (DriverDiagnostics)
 
@@ -120,30 +121,33 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                  Status;
-  EFI_STATUS                  DiagnosticsStatus;
-  EFI_STATUS                  ConfigurationStatus;
-  UINTN                       StringIndex;
-  UINTN                       Index;
-  CHAR8                       *Language;
-  UINTN                       DriverImageHandleCount;
-  EFI_HANDLE                  *DriverImageHandleBuffer;
-  UINTN                       HandleIndex;
-  EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
-  EFI_LOADED_IMAGE_PROTOCOL   *LoadedImage;
-  EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
-  CHAR16                      *DriverName;
-  CHAR16                      FormattedDriverName[40];
-  UINTN                       NumberOfChildren;
-  UINTN                       ControllerHandleCount;
-  EFI_HANDLE                  *ControllerHandleBuffer;
-  UINTN                       ChildControllerHandleCount;
-  CHAR16                      *ImageName;
-  BOOLEAN                     IsHelp;
-  SHELL_VAR_CHECK_CODE        RetCode;
-  CHAR16                      *Useful;
-  SHELL_ARG_LIST              *Item;
-  SHELL_VAR_CHECK_PACKAGE     ChkPck;
+  EFI_STATUS                   Status;
+  EFI_STATUS                   DiagnosticsStatus;
+  EFI_STATUS                   ConfigurationStatus;
+  UINTN                        StringLength;
+  UINTN                        StringIndex;
+  UINTN                        Index;
+  CHAR8                        *Language;
+  UINTN                        DriverImageHandleCount;
+  EFI_HANDLE                   *DriverImageHandleBuffer;
+  UINTN                        HandleIndex;
+  EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding;
+  EFI_LOADED_IMAGE_PROTOCOL    *LoadedImage;
+  EFI_COMPONENT_NAME_PROTOCOL  *ComponentName;
+  EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
+  CHAR8                        *SupportedLanguage;
+  CHAR16                       *DriverName;
+  CHAR16                       FormattedDriverName[40];
+  UINTN                        NumberOfChildren;
+  UINTN                        ControllerHandleCount;
+  EFI_HANDLE                   *ControllerHandleBuffer;
+  UINTN                        ChildControllerHandleCount;
+  CHAR16                       *ImageName;
+  BOOLEAN                      IsHelp;
+  SHELL_VAR_CHECK_CODE         RetCode;
+  CHAR16                       *Useful;
+  SHELL_ARG_LIST               *Item;
+  SHELL_VAR_CHECK_PACKAGE      ChkPck;
 
   Language                = NULL;
   DriverImageHandleCount  = 0;
@@ -237,25 +241,24 @@ Returns:
 
     Language = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
     if (Language == NULL) {
-      Language    = AllocatePool (4);
-      Language[0] = 'e';
-      Language[1] = 'n';
-      Language[2] = 'g';
-      Language[3] = 0;
+      Language = (CHAR8 *)AllocateZeroPool(strlena(LanguageCodeEnglish) + 1);
+      if (Language == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+      strcpya(Language, LanguageCodeEnglish);
     }
 
     Item = LibCheckVarGetFlag (&ChkPck, L"-l");
     if (Item) {
-      if (StrLen (Item->VarStr) != 3) {
-        PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_DRIVERS_BAD_LANG), HiiHandle, L"drivers", Item->VarStr);
-        Status = EFI_INVALID_PARAMETER;
-        goto Done;
+      if (Language != NULL) {
+        FreePool (Language);
       }
 
-      for (StringIndex = 0; StringIndex < 3; StringIndex++) {
+      StringLength = StrLen (Item->VarStr);
+      Language    = AllocatePool (StringLength + 1);
+      for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
         Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
       }
-
       Language[StringIndex] = 0;
     }
   }
@@ -309,15 +312,13 @@ Returns:
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
 
-    ComponentName = NULL;
-    Status = BS->OpenProtocol (
-                  DriverImageHandleBuffer[Index],
-                  &gEfiComponentNameProtocolGuid,
-                  (VOID **) &ComponentName,
-                  NULL,
-                  NULL,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+    ComponentName  = NULL;
+    ComponentName2 = NULL;
+    Status = LibGetComponentNameProtocol (
+               DriverImageHandleBuffer[Index],
+               &ComponentName,
+               &ComponentName2
+               );
 
     DiagnosticsStatus = BS->OpenProtocol (
                               DriverImageHandleBuffer[Index],
@@ -396,9 +397,9 @@ Returns:
       PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_ONE_VAR_D), HiiHandle, NumberOfChildren);
     }
 
+    Status     = EFI_SUCCESS;
     DriverName = L"<UNKNOWN>";
     if (ComponentName != NULL) {
-
       if (ComponentName->GetDriverName != NULL) {
         Status = ComponentName->GetDriverName (
                                   ComponentName,
@@ -406,10 +407,19 @@ Returns:
                                   &DriverName
                                   );
       }
-
-      if (EFI_ERROR (Status)) {
-        DriverName = L"<UNKNOWN>";
+    } else if (ComponentName2 != NULL) {
+      if (ComponentName2->GetDriverName != NULL) {
+        SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+        Status = ComponentName2->GetDriverName (
+                                   ComponentName2,
+                                   SupportedLanguage,
+                                   &DriverName
+                                   );
+        FreePool(SupportedLanguage);
       }
+    }
+    if (EFI_ERROR (Status)) {
+      DriverName = L"<UNKNOWN>";
     }
 
     for (StringIndex = 0; StringIndex < StrLen (DriverName) && StringIndex < 35; StringIndex++) {

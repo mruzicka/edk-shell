@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = hexedit
+BASE_NAME            = HexEdit
 FILE_GUID            = A5A41A42-5B2B-4de6-9556-DDC6DC31231C
 COMPONENT_TYPE       = APPLICATION
 

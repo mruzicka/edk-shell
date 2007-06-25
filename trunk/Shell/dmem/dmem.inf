@@ -20,7 +20,7 @@
 #--*/
 
 [defines]
-BASE_NAME            = dmem
+BASE_NAME            = Dmem
 FILE_GUID            = 644E259E-FF88-4d31-8092-B99D8777F1C4
 COMPONENT_TYPE       = APPLICATION
 

@@ -34,8 +34,8 @@
 --*/
 
 [defines]
-BASE_NAME            = memmap
-FILE_GUID            = CBEB01F8-0912-4d87-8A6B-45D02847A405
+BASE_NAME            = MemMap
+FILE_GUID            = C274DA66-2DC0-4874-9EAF-3087E801AB30
 COMPONENT_TYPE       = APPLICATION
 
 

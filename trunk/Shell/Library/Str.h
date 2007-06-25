@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -97,6 +97,19 @@ strlena (
   IN CHAR8    *s1
   );
 
+VOID
+strcpya (
+  IN CHAR8    *Destination,
+  IN CHAR8    *Source
+  );
+
+VOID
+strncpya (
+  OUT CHAR8    *Dst,
+  IN  CHAR8    *Src,
+  IN  UINTN    Length
+  );
+
 UINTN
 strcmpa (
   IN CHAR8    *s1,
@@ -108,6 +121,12 @@ strncmpa (
   IN CHAR8    *s1,
   IN CHAR8    *s2,
   IN UINTN    len
+  );
+
+CHAR8*
+strstra (
+  IN  CHAR8  *String,
+  IN  CHAR8  *StrCharSet
   );
 
 BOOLEAN

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -406,18 +406,6 @@ SEnvInternalProtocolInfo[] = {
   NULL,
   NULL,
   UNKNOWN_DEVICE_GUID,
-  NULL
-};
-
-//
-// put supported lanuage here.
-//
-struct {
-  CHAR16  *IdString;
-}
-SLanguageTable[] = {
-  L"eng",
-  L"fra",
   NULL
 };
 
@@ -990,10 +978,12 @@ GetDriverName (
   )
 
 {
-  EFI_STATUS                  Status;
-  EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
-  EFI_LOADED_IMAGE_PROTOCOL   *Image;
-  EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
+  EFI_STATUS                    Status;
+  EFI_DRIVER_BINDING_PROTOCOL   *DriverBinding;
+  EFI_LOADED_IMAGE_PROTOCOL     *Image;
+  EFI_COMPONENT_NAME_PROTOCOL   *ComponentName;
+  EFI_COMPONENT_NAME2_PROTOCOL  *ComponentName2;
+  CHAR8                         *SupportedLanguage;
 
   *DriverName = NULL;
 
@@ -1022,24 +1012,29 @@ GetDriverName (
       *DriverName = LibDevicePathToStr (Image->FilePath);
     }
   } else {
-    Status = BS->OpenProtocol (
-                  DriverBindingHandle,
-                  &gEfiComponentNameProtocolGuid,
-                  (VOID **) &ComponentName,
-                  NULL,
-                  NULL,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+    Status = LibGetComponentNameProtocol (
+               DriverBindingHandle, 
+               &ComponentName,
+               &ComponentName2
+               );
     if (!EFI_ERROR (Status)) {
       //
       // Make sure the interface has been implemented
       //
-      if (ComponentName->GetDriverName != NULL) {
+      if ((ComponentName != NULL) && (ComponentName->GetDriverName != NULL)) {
         Status = ComponentName->GetDriverName (
                                   ComponentName,
                                   Language,
                                   DriverName
                                   );
+      } else if ((ComponentName2 != NULL) && (ComponentName2->GetDriverName != NULL)) {
+        SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+        Status = ComponentName2->GetDriverName (
+                                   ComponentName2,
+                                   SupportedLanguage,
+                                   DriverName
+                                   );
+        FreePool(SupportedLanguage);
       }
     }
   }
@@ -1078,6 +1073,8 @@ SEnvGetDeviceName (
   EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
   CHAR16                      *ControllerName;
   EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
+  EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
+  CHAR8                       *SupportedLanguage;
   UINTN                       Index;
   BOOLEAN                     First;
 
@@ -1131,21 +1128,18 @@ SEnvGetDeviceName (
       *DiagnosticsStatus = EFI_SUCCESS;
     }
 
-    Status = BS->OpenProtocol (
-                  DriverBindingHandleBuffer[HandleIndex],
-                  &gEfiComponentNameProtocolGuid,
-                  (VOID **) &ComponentName,
-                  NULL,
-                  NULL,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
+    Status = LibGetComponentNameProtocol (
+               DriverBindingHandleBuffer[HandleIndex], 
+               &ComponentName,
+               &ComponentName2
+               );
     if (EFI_ERROR (Status)) {
       continue;
     }
     //
     // Make sure this interface has been implemented
     //
-    if (ComponentName->GetControllerName != NULL) {
+    if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
       Status = ComponentName->GetControllerName (
                                 ComponentName,
                                 DeviceHandle,
@@ -1153,6 +1147,16 @@ SEnvGetDeviceName (
                                 Language,
                                 &ControllerName
                                 );
+    } else if ((ComponentName2 != NULL) && (ComponentName2->GetControllerName != NULL)) {
+      SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+      Status = ComponentName2->GetControllerName (
+                                 ComponentName2,
+                                 DeviceHandle,
+                                 NULL,
+                                 SupportedLanguage,
+                                 &ControllerName
+                                 );
+      FreePool(SupportedLanguage);
     } else {
       Status = EFI_UNSUPPORTED;
     }
@@ -1230,21 +1234,18 @@ SEnvGetDeviceName (
             *DiagnosticsStatus = EFI_SUCCESS;
           }
 
-          Status = BS->OpenProtocol (
-                        ParentDriverBindingHandleBuffer[ParentDriverIndex],
-                        &gEfiComponentNameProtocolGuid,
-                        (VOID **) &ComponentName,
-                        NULL,
-                        NULL,
-                        EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                        );
+          Status = LibGetComponentNameProtocol (
+                     ParentDriverBindingHandleBuffer[ParentDriverIndex], 
+                     &ComponentName,
+                     &ComponentName2
+                     );
           if (EFI_ERROR (Status)) {
             continue;
           }
           //
           // Make sure this interface has been implemented
           //
-          if (ComponentName->GetControllerName != NULL) {
+          if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
             Status = ComponentName->GetControllerName (
                                       ComponentName,
                                       ParentControllerHandleBuffer[HandleIndex],
@@ -1252,6 +1253,16 @@ SEnvGetDeviceName (
                                       Language,
                                       &ControllerName
                                       );
+          } else if ((ComponentName2 != NULL) && (ComponentName2->GetControllerName != NULL)) {
+            SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+            Status = ComponentName2->GetControllerName (
+                                       ComponentName2,
+                                       ParentControllerHandleBuffer[HandleIndex],
+                                       DeviceHandle,
+                                       SupportedLanguage,
+                                       &ControllerName
+                                       );
+            FreePool(SupportedLanguage);
           } else {
             Status = EFI_UNSUPPORTED;
           }
@@ -1353,7 +1364,6 @@ Returns:
   UINTN                       Index;
   CHAR16                      *DriverName;
   EFI_DRIVER_BINDING_PROTOCOL *DriverBinding;
-  EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
   UINTN                       NumberOfChildren;
   UINTN                       HandleIndex;
   UINTN                       ControllerHandleCount;
@@ -1582,16 +1592,6 @@ Returns:
   if (EFI_ERROR (Status)) {
     return EFI_SUCCESS;
   }
-
-  ComponentName = NULL;
-  Status = BS->OpenProtocol (
-                Handle,
-                &gEfiComponentNameProtocolGuid,
-                (VOID **) &ComponentName,
-                NULL,
-                NULL,
-                EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                );
 
   DiagnosticsStatus = BS->OpenProtocol (
                             Handle,
@@ -1954,11 +1954,8 @@ Returns:
   }
 
   if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
+    Language = (CHAR8 *) AllocatePool(strlena(LanguageCodeEnglish) + 1);
+    strcpya (Language, LanguageCodeEnglish);
   }
 
   RetCode = LibCheckVariables (SI, DHCheckList, &ChkPck, &Useful);
@@ -2031,20 +2028,12 @@ Returns:
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item) {
-    for (Index = 0; SLanguageTable[Index].IdString; Index++) {
-      if (StriCmp (Item->VarStr, SLanguageTable[Index].IdString) == 0) {
-        break;
-      }
+    if (Language != NULL) {
+      FreePool(Language);
     }
-
-    if (SLanguageTable[Index].IdString == NULL) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_DH_BAD_LANG), HiiEnvHandle, L"dh", Item->VarStr);
-      Status = EFI_INVALID_PARAMETER;
-      goto Done;
-    } else {
-      for (StringIndex = 0; StringIndex < 3; StringIndex++) {
-        Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
-      }
+    Language = (CHAR8 *) AllocateZeroPool(StrLen(Item->VarStr));
+    for (StringIndex = 0; Item->VarStr[StringIndex] != L'\0'; StringIndex++) {
+      Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
     }
   }
 

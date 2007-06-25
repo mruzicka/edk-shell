@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -26,7 +26,6 @@ Revision History
 #include "EfiShellLib.h"
 #include "drvcfg.h"
 
-#include EFI_PROTOCOL_DEFINITION (ComponentName)
 #include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
 
 extern UINT8  STRING_ARRAY_NAME[];
@@ -402,7 +401,7 @@ Returns:
     DriverImageHandleBuffer[0] = DriverImageHandle;
   }
   //
-  // MARMAR:  We need to look at getting the component name exporters to support more than just "eng"
+  // MARMAR:  We need to look at getting the component name exporters to support more than just LANGUAGE_CODE_ENGLISH
   //
   for (Index = 0; Index < DriverImageHandleCount; Index++) {
     Status = BS->OpenProtocol (
@@ -1000,7 +999,7 @@ Returns:
     DriverImageHandleBuffer[0] = DriverImageHandle;
   }
   //
-  // MARMAR:  We need to look at getting the component name exporters to support more than just "eng"
+  // MARMAR:  We need to look at getting the component name exporters to support more than just LANGUAGE_CODE_ENGLISH
   //
   for (Index = 0; Index < DriverImageHandleCount; Index++) {
     Status = BS->OpenProtocol (
