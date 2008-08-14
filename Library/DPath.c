@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1248,6 +1248,10 @@ _DevPathBssBss (
     Type = L"Net";
     break;
 
+  case BBS_TYPE_BEV:
+    Type = L"BEV";
+    break;
+
   default:
     Type = L"?";
     break;
@@ -1277,6 +1281,23 @@ _DevPathNodeUnknown (
 
   CatPrint (Str, L"?");
 }
+
+#if (EFI_SPECIFICATION_VERSION > 0x00020000)
+VOID
+_DevPathFvPath (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  MEDIA_FW_VOL_DEVICE_PATH *FvPath;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  FvPath = DevPath;
+  CatPrint (Str, L"Fv(%g)", &FvPath->NameGuid);
+}
+#endif
 
 struct {
   UINT8 Type;
@@ -1378,6 +1399,11 @@ DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_PROTOCOL_DP,
   _DevPathMediaProtocol,
+#if (EFI_SPECIFICATION_VERSION > 0x00020000)
+  MEDIA_DEVICE_PATH,
+  MEDIA_FV_DP,
+  _DevPathFvPath,
+#endif
 #if (EFI_SPECIFICATION_VERSION != 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
@@ -1419,11 +1445,30 @@ Returns:
   UINTN Index;
   UINTN NewSize;
 
+  EFI_STATUS                       Status;
+  CHAR16                           *ToText;
+  EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *DevPathToText;
+
   ZeroMem (&Str, sizeof (Str));
 
   if (DevPath == NULL) {
     goto Done;
   }
+  
+  Status = LibLocateProtocol (
+             &gEfiDevicePathToTextProtocolGuid,
+             &DevPathToText
+             );
+  if (!EFI_ERROR (Status)) {
+    ToText = DevPathToText->ConvertDevicePathToText (
+                              DevPath,
+                              FALSE,
+                              TRUE
+                              );
+    ASSERT (ToText != NULL);
+    return ToText;
+  }
+
   //
   // Unpacked the device path
   //
@@ -1949,18 +1994,36 @@ Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION != 0x00020000) 
+#if (EFI_SPECIFICATION_VERSION > 0x00020000)
+  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_EFI_2_00 *FvDevicePathNodeUefi_2_00;
+  
+  if (ST->Hdr.Revision != 0x00020000) {
+    if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
+        DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
+      return &FvDevicePathNode->NameGuid;
+    }    
+  } else {
+    FvDevicePathNodeUefi_2_00 = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_EFI_2_00 *)FvDevicePathNode;
+    if (DevicePathType (&FvDevicePathNodeUefi_2_00->Piwg.Header) == MEDIA_DEVICE_PATH &&
+        DevicePathSubType (&FvDevicePathNodeUefi_2_00->Piwg.Header) == MEDIA_VENDOR_DP) {
+      if (CompareMem (&gEfiFrameworkDevicePathGuid, &FvDevicePathNodeUefi_2_00->Piwg.PiwgSpecificDevicePath, sizeof(EFI_GUID)) == 0) {
+        if (FvDevicePathNodeUefi_2_00->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
+          return &FvDevicePathNodeUefi_2_00->NameGuid;
+        }
+      }
+    }    
+  }
+#elif (EFI_SPECIFICATION_VERSION < 0x00020000) 
   //
-  // Use old Device Path that conflicts with UEFI
+  // Use old Device Path that conflicts with UEFI2.0
   //
   if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
     return &FvDevicePathNode->NameGuid;
   }
-
 #else
   //
-  // Use the new Device path that does not conflict with the UEFI
+  // Use the new Device path that does not conflict with the UEFI2.0
   //
   if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Piwg.Header) == MEDIA_VENDOR_DP) {

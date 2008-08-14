@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -449,14 +449,16 @@ Returns:
   VA_LIST           args;
   CHAR16            *StringPtr;
   UINTN             StringSize;
-  EFI_HII_PROTOCOL  *Hii;
   UINTN             Value;
   EFI_STATUS        Status;
-
-  Hii         = NULL;
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
+  EFI_HII_PROTOCOL  *Hii = NULL;
+#endif
+  
   StringPtr   = NULL;
   StringSize  = 0x1000;
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   //
   // There should only be one HII protocol
   //
@@ -464,10 +466,10 @@ Returns:
             &gEfiHiiProtocolGuid,
             (VOID **) &Hii
             );
-
   if (EFI_ERROR (Status)) {
     return 0;
   }
+#endif
   //
   // Allocate BufferSize amount of memory
   //
@@ -479,7 +481,11 @@ Returns:
   //
   // Retrieve string from HII
   //
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   Status = Hii->GetString (Hii, Handle, Token, FALSE, NULL, &StringSize, StringPtr);
+#else
+  Status = LibGetString (Handle, Token, StringPtr, &StringSize);
+#endif
 
   if (EFI_ERROR (Status)) {
     if (Status == EFI_BUFFER_TOO_SMALL) {
@@ -489,7 +495,11 @@ Returns:
       //
       // Retrieve string from HII
       //
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
       Status = Hii->GetString (Hii, Handle, Token, FALSE, NULL, &StringSize, StringPtr);
+#else
+      Status = LibGetString (Handle, Token, StringPtr, &StringSize);
+#endif
 
       if (EFI_ERROR (Status)) {
         return 0;

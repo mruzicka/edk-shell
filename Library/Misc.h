@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -39,25 +39,14 @@ LibExtractDataFromHiiHandle (
   OUT     EFI_GUID            *Guid
   );
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 EFI_STATUS
 LibGetHiiInterface (
   OUT     EFI_HII_PROTOCOL    **Hii
   );
+#endif
 
-VOID                                  *
-LibGetVariable (
-  IN CHAR16               *Name,
-  IN EFI_GUID             *VendorGuid
-  );
-
-VOID                                  *
-LibGetVariableAndSize (
-  IN CHAR16               *Name,
-  IN EFI_GUID             *VendorGuid,
-  OUT UINTN               *VarSize
-  );
-
-void
+VOID
 ValueToHex (
   IN CHAR16   *Buffer,
   IN UINT64   v
@@ -112,6 +101,11 @@ LibMemoryMap (
   OUT UINTN                         *MapKey,
   OUT UINTN                         *DescriptorSize,
   OUT UINT32                        *DescriptorVersion
+  );
+
+VOID *
+LibGetVariableLang (
+  VOID
   );
 
 VOID                              *

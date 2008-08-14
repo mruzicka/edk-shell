@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -253,14 +253,16 @@ Returns:
 
 --*/
 {
-  EFI_STATUS            Status;
-  EFI_FILE_HANDLE       LastHandle;
-  FILEPATH_DEVICE_PATH  *FilePathNode;
+  EFI_STATUS                Status;
+  EFI_FILE_HANDLE           LastHandle;
+  FILEPATH_DEVICE_PATH      *FilePathNode;
+  EFI_DEVICE_PATH_PROTOCOL  *AlignedFilePath;
 
   ASSERT (FilePath != NULL);
   ASSERT (DeviceHandle != NULL);
   ASSERT (FileHandle != NULL);
-  
+
+  AlignedFilePath = NULL;
   //
   // File the file system for this file path
   //
@@ -274,12 +276,26 @@ Returns:
   *FileHandle = LibOpenRoot (*DeviceHandle);
   Status      = *FileHandle ? EFI_SUCCESS : EFI_UNSUPPORTED;
 
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Duplicate FilePath to make sure it is aligned so that
+  // FilePathNode->PathName below is 16-bit aligned.
+  //
+  AlignedFilePath = DuplicateDevicePath(*FilePath);
+  if (AlignedFilePath == NULL) {
+    (*FileHandle)->Close (*FileHandle);
+    *FileHandle = NULL;
+    return EFI_OUT_OF_RESOURCES;
+  }
+  FilePathNode = (FILEPATH_DEVICE_PATH *)AlignedFilePath;
   //
   // To access as a file system, the file path should only
   // contain file path components.  Follow the file path nodes
   // and find the target file
   //
-  FilePathNode = (FILEPATH_DEVICE_PATH *) *FilePath;
   while (!IsDevicePathEnd (&FilePathNode->Header)) {
     //
     // For file system access each node should be a file path component
@@ -332,6 +348,7 @@ Returns:
   if (EFI_ERROR (Status)) {
     *FileHandle = NULL;
   }
+  FreePool(AlignedFilePath);
 
   return Status;
 }

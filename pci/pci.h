@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -46,6 +46,7 @@ typedef enum {
 #define MAX_FUNCTION_NUMBER           7
 
 #define EFI_PCI_CAPABILITY_ID_PCIEXP  0x10
+#define EFI_PCI_CAPABILITY_ID_PCIX    0x07
 
 #define EFI_PCI_STATUS_CAPABILITY     0x0010
 
@@ -74,6 +75,265 @@ typedef enum {
 #define PCI_BIT_13                                    0x00002000
 #define PCI_BIT_14                                    0x00004000
 #define PCI_BIT_15                                    0x00008000
+
+//
+// PCIE device/port types
+//
+#define PCIE_PCIE_ENDPOINT                            0
+#define PCIE_LEGACY_PCIE_ENDPOINT                     1
+#define PCIE_ROOT_COMPLEX_ROOT_PORT                   4
+#define PCIE_SWITCH_UPSTREAM_PORT                     5
+#define PCIE_SWITCH_DOWNSTREAM_PORT                   6
+#define PCIE_PCIE_TO_PCIX_BRIDGE                      7
+#define PCIE_PCIX_TO_PCIE_BRIDGE                      8
+#define PCIE_ROOT_COMPLEX_INTEGRATED_PORT             9
+#define PCIE_ROOT_COMPLEX_EVENT_COLLECTOR             10
+#define PCIE_DEVICE_PORT_TYPE_MAX                     11
+
+#define IS_PCIE_ENDPOINT(DevicePortType) \
+    ((DevicePortType) == PCIE_PCIE_ENDPOINT || \
+     (DevicePortType) == PCIE_LEGACY_PCIE_ENDPOINT || \
+     (DevicePortType) == PCIE_ROOT_COMPLEX_INTEGRATED_PORT)
+
+#define IS_PCIE_SWITCH(DevicePortType) \
+    ((DevicePortType == PCIE_SWITCH_UPSTREAM_PORT) || \
+     (DevicePortType == PCIE_SWITCH_DOWNSTREAM_PORT))
+
+//
+// Capabilities Register
+//
+#define PCIE_CAP_VERSION(PcieCapReg) \
+    ((PcieCapReg) & 0x0f)
+#define PCIE_CAP_DEVICEPORT_TYPE(PcieCapReg) \
+    (((PcieCapReg) >> 4) & 0x0f)
+#define PCIE_CAP_SLOT_IMPLEMENTED(PcieCapReg) \
+    (((PcieCapReg) >> 8) & 0x1)
+#define PCIE_CAP_INT_MSG_NUM(PcieCapReg) \
+    (((PcieCapReg) >> 9) & 0x1f)
+//
+// Device Capabilities Register
+//
+#define PCIE_CAP_MAX_PAYLOAD(PcieDeviceCap) \
+    ((PcieDeviceCap) & 0x7)
+#define PCIE_CAP_PHANTOM_FUNC(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 3) & 0x3)
+#define PCIE_CAP_EXTENDED_TAG(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 5) & 0x1)
+#define PCIE_CAP_L0sLatency(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 6) & 0x7)
+#define PCIE_CAP_L1Latency(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 9) & 0x7)
+#define PCIE_CAP_ERR_REPORTING(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 15) & 0x1)
+#define PCIE_CAP_SLOT_POWER_VALUE(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 18) & 0x0ff)
+#define PCIE_CAP_SLOT_POWER_SCALE(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 26) & 0x3)
+#define PCIE_CAP_FUNC_LEVEL_RESET(PcieDeviceCap) \
+    (((PcieDeviceCap) >> 28) & 0x1)
+//
+// Device Control Register
+//
+#define PCIE_CAP_COR_ERR_REPORTING_ENABLE(PcieDeviceControl) \
+    ((PcieDeviceControl) & 0x1)
+#define PCIE_CAP_NONFAT_ERR_REPORTING_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 1) & 0x1)
+#define PCIE_CAP_FATAL_ERR_REPORTING_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 2) & 0x1)
+#define PCIE_CAP_UNSUP_REQ_REPORTING_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 3) & 0x1)
+#define PCIE_CAP_RELAXED_ORDERING_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 4) & 0x1)
+#define PCIE_CAP_MAX_PAYLOAD_SIZE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 5) & 0x7)
+#define PCIE_CAP_EXTENDED_TAG_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 8) & 0x1)
+#define PCIE_CAP_PHANTOM_FUNC_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 9) & 0x1)
+#define PCIE_CAP_AUX_PM_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 10) & 0x1)
+#define PCIE_CAP_NO_SNOOP_ENABLE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 11) & 0x1)
+#define PCIE_CAP_MAX_READ_REQ_SIZE(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 12) & 0x7)
+#define PCIE_CAP_BRG_CONF_RETRY(PcieDeviceControl) \
+    (((PcieDeviceControl) >> 15) & 0x1)
+//
+// Device Status Register
+//
+#define PCIE_CAP_COR_ERR_DETECTED(PcieDeviceStatus) \
+    ((PcieDeviceStatus) & 0x1)
+#define PCIE_CAP_NONFAT_ERR_DETECTED(PcieDeviceStatus) \
+    (((PcieDeviceStatus) >> 1) & 0x1)
+#define PCIE_CAP_FATAL_ERR_DETECTED(PcieDeviceStatus) \
+    (((PcieDeviceStatus) >> 2) & 0x1)
+#define PCIE_CAP_UNSUP_REQ_DETECTED(PcieDeviceStatus) \
+    (((PcieDeviceStatus) >> 3) & 0x1)
+#define PCIE_CAP_AUX_POWER_DETECTED(PcieDeviceStatus) \
+    (((PcieDeviceStatus) >> 4) & 0x1)
+#define PCIE_CAP_TRANSACTION_PENDING(PcieDeviceStatus) \
+    (((PcieDeviceStatus) >> 5) & 0x1)
+//
+// Link Capabilities Register
+//
+#define PCIE_CAP_SUP_LINK_SPEEDS(PcieLinkCap) \
+    ((PcieLinkCap) & 0x0f)
+#define PCIE_CAP_MAX_LINK_WIDTH(PcieLinkCap) \
+    (((PcieLinkCap) >> 4) & 0x3f)
+#define PCIE_CAP_ASPM_SUPPORT(PcieLinkCap) \
+    (((PcieLinkCap) >> 10) & 0x3)
+#define PCIE_CAP_L0s_LATENCY(PcieLinkCap) \
+    (((PcieLinkCap) >> 12) & 0x7)
+#define PCIE_CAP_L1_LATENCY(PcieLinkCap) \
+    (((PcieLinkCap) >> 15) & 0x7)
+#define PCIE_CAP_CLOCK_PM(PcieLinkCap) \
+    (((PcieLinkCap) >> 18) & 0x1)
+#define PCIE_CAP_SUP_DOWN_ERR_REPORTING(PcieLinkCap) \
+    (((PcieLinkCap) >> 19) & 0x1)
+#define PCIE_CAP_LINK_ACTIVE_REPORTING(PcieLinkCap) \
+    (((PcieLinkCap) >> 20) & 0x1)
+#define PCIE_CAP_LINK_BWD_NOTIF_CAP(PcieLinkCap) \
+    (((PcieLinkCap) >> 21) & 0x1)
+#define PCIE_CAP_PORT_NUMBER(PcieLinkCap) \
+    (((PcieLinkCap) >> 24) & 0x0ff)
+//
+// Link Control Register
+//
+#define PCIE_CAP_ASPM_CONTROL(PcieLinkControl) \
+    ((PcieLinkControl) & 0x3)
+#define PCIE_CAP_RCB(PcieLinkControl) \
+    (((PcieLinkControl) >> 3) & 0x1)
+#define PCIE_CAP_LINK_DISABLE(PcieLinkControl) \
+    (((PcieLinkControl) >> 4) & 0x1)
+#define PCIE_CAP_COMMON_CLK_CONF(PcieLinkControl) \
+    (((PcieLinkControl) >> 6) & 0x1)
+#define PCIE_CAP_EXT_SYNC(PcieLinkControl) \
+    (((PcieLinkControl) >> 7) & 0x1)
+#define PCIE_CAP_CLK_PWR_MNG(PcieLinkControl) \
+    (((PcieLinkControl) >> 8) & 0x1)
+#define PCIE_CAP_HW_AUTO_WIDTH_DISABLE(PcieLinkControl) \
+    (((PcieLinkControl) >> 9) & 0x1)
+#define PCIE_CAP_LINK_BDW_MNG_INT_EN(PcieLinkControl) \
+    (((PcieLinkControl) >> 10) & 0x1)
+#define PCIE_CAP_LINK_AUTO_BDW_INT_EN(PcieLinkControl) \
+    (((PcieLinkControl) >> 11) & 0x1)
+//
+// Link Status Register
+//
+#define PCIE_CAP_CUR_LINK_SPEED(PcieLinkStatus) \
+    ((PcieLinkStatus) & 0x0f)
+#define PCIE_CAP_NEGO_LINK_WIDTH(PcieLinkStatus) \
+    (((PcieLinkStatus) >> 4) & 0x3f)
+#define PCIE_CAP_LINK_TRAINING(PcieLinkStatus) \
+    (((PcieLinkStatus) >> 11) & 0x1)
+#define PCIE_CAP_SLOT_CLK_CONF(PcieLinkStatus) \
+    (((PcieLinkStatus) >> 12) & 0x1)
+#define PCIE_CAP_DATA_LINK_ACTIVE(PcieLinkStatus) \
+    (((PcieLinkStatus) >> 13) & 0x1)
+#define PCIE_CAP_LINK_BDW_MNG_STAT(PcieLinkStatus) \
+    (((PcieLinkStatus) >> 14) & 0x1)
+#define PCIE_CAP_LINK_AUTO_BDW_STAT(PcieLinkStatus) \
+    (((PcieLinkStatus) >> 15) & 0x1)
+//
+// Slot Capabilities Register
+//
+#define PCIE_CAP_ATT_BUT_PRESENT(PcieSlotCap) \
+    ((PcieSlotCap) & 0x1)
+#define PCIE_CAP_PWR_CTRLLER_PRESENT(PcieSlotCap) \
+    (((PcieSlotCap) >> 1) & 0x1)
+#define PCIE_CAP_MRL_SENSOR_PRESENT(PcieSlotCap) \
+    (((PcieSlotCap) >> 2) & 0x1)
+#define PCIE_CAP_ATT_IND_PRESENT(PcieSlotCap) \
+    (((PcieSlotCap) >> 3) & 0x1)
+#define PCIE_CAP_PWD_IND_PRESENT(PcieSlotCap) \
+    (((PcieSlotCap) >> 4) & 0x1)
+#define PCIE_CAP_HOTPLUG_SUPPRISE(PcieSlotCap) \
+    (((PcieSlotCap) >> 5) & 0x1)
+#define PCIE_CAP_HOTPLUG_CAPABLE(PcieSlotCap) \
+    (((PcieSlotCap) >> 6) & 0x1)
+#define PCIE_CAP_SLOT_PWR_LIMIT_VALUE(PcieSlotCap) \
+    (((PcieSlotCap) >> 7) & 0x0ff)
+#define PCIE_CAP_SLOT_PWR_LIMIT_SCALE(PcieSlotCap) \
+    (((PcieSlotCap) >> 15) & 0x3)
+#define PCIE_CAP_ELEC_INTERLOCK_PRESENT(PcieSlotCap) \
+    (((PcieSlotCap) >> 17) & 0x1)
+#define PCIE_CAP_NO_COMM_COMPLETED_SUP(PcieSlotCap) \
+    (((PcieSlotCap) >> 18) & 0x1)
+#define PCIE_CAP_PHY_SLOT_NUM(PcieSlotCap) \
+    (((PcieSlotCap) >> 19) & 0x1fff)
+//
+// Slot Control Register
+//
+#define PCIE_CAP_ATT_BUT_ENABLE(PcieSlotControl) \
+    ((PcieSlotControl) & 0x1)
+#define PCIE_CAP_PWR_FLT_DETECT_ENABLE(PcieSlotControl) \
+    (((PcieSlotControl) >> 1) & 0x1)
+#define PCIE_CAP_MRL_SENSOR_CHANGE_ENABLE(PcieSlotControl) \
+    (((PcieSlotControl) >> 2) & 0x1)
+#define PCIE_CAP_PRES_DETECT_CHANGE_ENABLE(PcieSlotControl) \
+    (((PcieSlotControl) >> 3) & 0x1)
+#define PCIE_CAP_COMM_CMPL_INT_ENABLE(PcieSlotControl) \
+    (((PcieSlotControl) >> 4) & 0x1)
+#define PCIE_CAP_HOTPLUG_INT_ENABLE(PcieSlotControl) \
+    (((PcieSlotControl) >> 5) & 0x1)
+#define PCIE_CAP_ATT_IND_CTRL(PcieSlotControl) \
+    (((PcieSlotControl) >> 6) & 0x3)
+#define PCIE_CAP_PWR_IND_CTRL(PcieSlotControl) \
+    (((PcieSlotControl) >> 8) & 0x3)
+#define PCIE_CAP_PWR_CTRLLER_CTRL(PcieSlotControl) \
+    (((PcieSlotControl) >> 10) & 0x1)
+#define PCIE_CAP_ELEC_INTERLOCK_CTRL(PcieSlotControl) \
+    (((PcieSlotControl) >> 11) & 0x1)
+#define PCIE_CAP_DLINK_STAT_CHANGE_ENABLE(PcieSlotControl) \
+    (((PcieSlotControl) >> 12) & 0x1)
+//
+// Slot Status Register
+//
+#define PCIE_CAP_ATT_BUT_PRESSED(PcieSlotStatus) \
+    ((PcieSlotStatus) & 0x1)
+#define PCIE_CAP_PWR_FLT_DETECTED(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 1) & 0x1)
+#define PCIE_CAP_MRL_SENSOR_CHANGED(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 2) & 0x1)
+#define PCIE_CAP_PRES_DETECT_CHANGED(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 3) & 0x1)
+#define PCIE_CAP_COMM_COMPLETED(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 4) & 0x1)
+#define PCIE_CAP_MRL_SENSOR_STATE(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 5) & 0x1)
+#define PCIE_CAP_PRES_DETECT_STATE(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 6) & 0x1)
+#define PCIE_CAP_ELEC_INTERLOCK_STATE(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 7) & 0x1)
+#define PCIE_CAP_DLINK_STAT_CHANGED(PcieSlotStatus) \
+    (((PcieSlotStatus) >> 8) & 0x1)
+//
+// Root Control Register
+//
+#define PCIE_CAP_SYSERR_ON_CORERR_EN(PcieRootControl) \
+    ((PcieRootControl) & 0x1)
+#define PCIE_CAP_SYSERR_ON_NONFATERR_EN(PcieRootControl) \
+    (((PcieRootControl) >> 1) & 0x1)
+#define PCIE_CAP_SYSERR_ON_FATERR_EN(PcieRootControl) \
+    (((PcieRootControl) >> 2) & 0x1)
+#define PCIE_CAP_PME_INT_ENABLE(PcieRootControl) \
+    (((PcieRootControl) >> 3) & 0x1)
+#define PCIE_CAP_CRS_SW_VIS_ENABLE(PcieRootControl) \
+    (((PcieRootControl) >> 4) & 0x1)
+//
+// Root Capabilities Register
+//
+#define PCIE_CAP_CRS_SW_VIS(PcieRootCap) \
+    ((PcieRootCap) & 0x1)
+//
+// Root Status Register
+//
+#define PCIE_CAP_PME_REQ_ID(PcieRootStatus) \
+    ((PcieRootStatus) & 0x0ffff)
+#define PCIE_CAP_PME_STATUS(PcieRootStatus) \
+    (((PcieRootStatus) >> 16) & 0x1)
+#define PCIE_CAP_PME_PENDING(PcieRootStatus) \
+    (((PcieRootStatus) >> 17) & 0x1)
 
 #pragma pack(1)
 //

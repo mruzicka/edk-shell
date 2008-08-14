@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -124,6 +124,7 @@ Returns:
   EFI_STATUS              Status;
   UINTN                   Index;
   UINTN                   StringIndex;
+  UINTN                   StringLength;
   UINTN                   HandleNumber;
   EFI_HANDLE              Handle;
   SHELL_VAR_CHECK_CODE    RetCode;
@@ -217,7 +218,7 @@ Returns:
     goto Done;
   }
 
-  Language = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language = LibGetVariableLang ();
   if (Language == NULL) {
     Language    = AllocatePool (4);
     Language[0] = 'e';
@@ -228,13 +229,13 @@ Returns:
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item) {
-    if (StrLen (Item->VarStr) != 3) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_DEVTREE_BAD_LANG), HiiHandle, L"devtree", Item->VarStr);
-      Status = EFI_INVALID_PARAMETER;
-      goto Done;
+    if (Language != NULL) {
+      FreePool (Language);
     }
 
-    for (StringIndex = 0; StringIndex < 3; StringIndex++) {
+    StringLength = StrLen (Item->VarStr);
+    Language = AllocatePool (StringLength + 1);
+    for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
       Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
     }
 
@@ -555,11 +556,12 @@ Returns:
   EFI_STATUS  Status;
   UINTN       Index;
   UINTN       StringIndex;
+  UINTN       StringLength;
   BOOLEAN     PrtHelp;
 
   Status    = EFI_SUCCESS;
   PrtHelp   = FALSE;
-  Language  = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language  = LibGetVariableLang ();
   if (Language == NULL) {
     Language    = AllocatePool (4);
     Language[0] = 'e';
@@ -580,7 +582,13 @@ Returns:
       case 'l':
       case 'L':
         if (*(Ptr + 2) != 0) {
-          for (StringIndex = 0; StringIndex < 3 && Ptr[StringIndex + 2] != 0; StringIndex++) {
+          if (Language != NULL) {
+            FreePool (Language);
+          }
+
+          StringLength = StrLen (Ptr + 2);
+          Language = AllocatePool (StringLength + 1);
+          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
             Language[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
           }
 

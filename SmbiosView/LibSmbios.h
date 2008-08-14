@@ -1,5 +1,5 @@
 /*++
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -63,6 +63,11 @@ typedef struct {
   SMBIOS_STRING BiosReleaseDate;
   UINT8         BiosSize;
   UINT64        BiosCharacteristics;
+  UINT8         BIOSCharacteristicsExtensionBytes[2];
+  UINT8         SystemBiosMajorRelease;
+  UINT8         SystemBiosMinorRelease;
+  UINT8         EmbeddedControllerFirmwareMajorRelease;
+  UINT8         EmbeddedControllerFirmwareMinorRelease;
 } SMBIOS_TYPE0;
 
 typedef struct {
@@ -73,6 +78,8 @@ typedef struct {
   SMBIOS_STRING SerialNumber;
   EFI_GUID      Uuid;
   UINT8         WakeUpType;
+  SMBIOS_STRING SKUNumber;
+  SMBIOS_STRING Family;
 } SMBIOS_TYPE1;
 
 typedef struct {
@@ -81,7 +88,20 @@ typedef struct {
   SMBIOS_STRING ProductName;
   SMBIOS_STRING Version;
   SMBIOS_STRING SerialNumber;
+  SMBIOS_STRING AssetTag;
+  UINT8         FeatureFlag;
+  SMBIOS_STRING LocationInChassis;
+  UINT16        ChassisHandle;
+  UINT8         BoardType;
+  UINT8         NumberOfContainedObjectHandles;
+  UINT16        ContainedObjectHandles[1];
 } SMBIOS_TYPE2;
+
+typedef struct {
+  UINT8         ContainedElementType;
+  UINT8         ContainedElementMinimum;
+  UINT8         ContainedElementMaximum;
+} CONTAINED_ELEMENT;
 
 typedef struct {
   SMBIOS_HEADER Hdr;
@@ -95,6 +115,11 @@ typedef struct {
   UINT8         ThermalState;
   UINT8         SecurityStatus;
   UINT8         OemDefined[4];
+  UINT8         Height;
+  UINT8         NumberofPowerCords;
+  UINT8         ContainedElementCount;
+  UINT8         ContainedElementRecordLength;
+  CONTAINED_ELEMENT     ContainedElements[1];
 } SMBIOS_TYPE3;
 
 typedef struct {
@@ -117,6 +142,17 @@ typedef struct {
   SMBIOS_STRING SerialNumber;
   SMBIOS_STRING AssetTag;
   SMBIOS_STRING PartNumber;
+  //
+  // Add for smbios 2.5
+  //  
+  UINT8         CoreCount;
+  UINT8         EnabledCoreCount;
+  UINT8         ThreadCount;
+  UINT16        ProcessorCharacteristics;
+  //
+  // Add for smbios 2.6
+  //  
+  UINT16        ProcessorFamily2;
 } SMBIOS_TYPE4;
 
 typedef struct {
@@ -130,6 +166,7 @@ typedef struct {
   UINT16        SupportMemoryType;
   UINT8         MemoryModuleVoltage;
   UINT8         AssociatedMemorySlotNum;
+  UINT16        MemoryModuleConfigHandles[1];
 } SMBIOS_TYPE5;
 
 typedef struct {
@@ -176,6 +213,12 @@ typedef struct {
   UINT16        SlotID;
   UINT8         SlotCharacteristics1;
   UINT8         SlotCharacteristics2;
+  //
+  // Add for smbios 2.6
+  //  
+  UINT16        SegmentGroupNum;
+  UINT8         BusNum;
+  UINT8         DevFuncNum;  
 } SMBIOS_TYPE9;
 
 typedef struct DeviceStruct {
@@ -261,6 +304,10 @@ typedef struct {
   SMBIOS_STRING SerialNumber;
   SMBIOS_STRING AssetTag;
   SMBIOS_STRING PartNumber;
+  //
+  // Add for smbios 2.6
+  //    
+  UINT8         Attributes;
 } SMBIOS_TYPE17;
 
 typedef struct {
@@ -398,6 +445,13 @@ typedef struct {
 
 typedef struct {
   SMBIOS_HEADER Hdr;
+  UINT8                 Checksum;
+  UINT8                 Reserved1;
+  UINT16                Reserved2;
+  UINT32                BisEntry16;
+  UINT32                BisEntry32;
+  UINT64                Reserved3;
+  UINT32                Reserved4;
 } SMBIOS_TYPE31;
 
 typedef struct {
@@ -438,7 +492,7 @@ typedef struct {
   UINT16        LowerThresholdNonCritical;
   UINT16        UpperThresholdNonCritical;
   UINT16        LowerThresholdCritical;
-  UINT16        UpperThreaholdCritical;
+  UINT16        UpperThresholdCritical;
   UINT16        LowerThresholdNonRecoverable;
   UINT16        UpperThresholdNonRecoverable;
 } SMBIOS_TYPE36;
@@ -481,6 +535,33 @@ typedef struct {
   UINT16        CoolingDeviceHandle;
   UINT16        InputCurrentProbeHandle;
 } SMBIOS_TYPE39;
+
+//
+// Add type 40 and type 41 for smbios 2.6
+//
+typedef struct {                       
+  UINT8                   EntryLength; 
+  UINT16                  ReferencedHandle;
+  UINT8                   ReferencedOffset;
+  SMBIOS_STRING           EntryString;
+  UINT8                   Value[1];
+} ADDITIONAL_INFORMATION_ENTRY;
+
+typedef struct {
+  SMBIOS_HEADER                   Hdr;
+  UINT8                           NumberOfAdditionalInformationEntries;
+  ADDITIONAL_INFORMATION_ENTRY    AdditionalInfoEntries[1];
+} SMBIOS_TYPE40;
+
+typedef struct {
+  SMBIOS_HEADER     Hdr;
+  SMBIOS_STRING     ReferenceDesignation;
+  UINT8             DeviceType;
+  UINT8             DeviceTypeInstance;
+  UINT16            SegmentGroupNum;
+  UINT8             BusNum;
+  UINT8             DevFuncNum;  
+} SMBIOS_TYPE41;
 
 typedef struct {
   SMBIOS_HEADER Hdr;
@@ -538,6 +619,8 @@ typedef union {
   SMBIOS_TYPE37   *Type37;
   SMBIOS_TYPE38   *Type38;
   SMBIOS_TYPE39   *Type39;
+  SMBIOS_TYPE40   *Type40;
+  SMBIOS_TYPE41   *Type41;
   SMBIOS_TYPE126  *Type126;
   SMBIOS_TYPE127  *Type127;
   UINT8           *Raw;

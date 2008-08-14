@@ -38,8 +38,7 @@ Revision History
 
 #define PING_MAX_BUFFER_SIZE    32768
 
-#define EFI_IP4(IpAddr)         (*(UINT32 *) ((IpAddr).Addr))
-#define EFI_IP4_EQUAL(Ip1, Ip2) (EFI_IP4(Ip1) == EFI_IP4(Ip2))
+#define EFI_IP4_EQUAL(Ip1, Ip2) (CompareMem (&(Ip1), &(Ip2), sizeof (EFI_IPv4_ADDRESS)) == 0)
 
 #pragma pack(1)
 typedef struct _EFI_ICMP_ECHO_REQUEST {

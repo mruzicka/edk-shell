@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -54,7 +54,11 @@ STATIC CHAR16 *SEnvDP_MessageStr[] = {
   L"IPv4",
   L"IPv6",
   L"UART",
-  L"USB Class"
+  L"USB Class",
+  L"USB WWID",
+  L"Device Logical Unit",
+  L"SATA",
+  L"iSCSI"
 };
 
 STATIC CHAR16 *SEnvDP_MediaStr[] = {
@@ -63,7 +67,9 @@ STATIC CHAR16 *SEnvDP_MediaStr[] = {
   L"CD-ROM",
   L"Vender-Defined",
   L"File Path",
-  L"Media Protocol"
+  L"Media Protocol",
+  L"PIWG FV",
+  L"PIWG Firmware File",
 };
 
 STATIC CHAR16 *SEnvDP_BBS_Str[] = { L"Illegal", L"BIOS Boot Spec" };
@@ -668,12 +674,12 @@ struct DevicePathTypes  SEnvDP_Strings[] = {
   SEnvDP_ACPI_Str,
   SEnvAcpiDevicePathEntry,
   0x03,
-  0x0f,
+  0x13,
   L"Messaging",
   SEnvDP_MessageStr,
   SEnvMessagingDevicePathEntry,
   0x04,
-  0x05,
+  0x07,
   L"Media",
   SEnvDP_MediaStr,
   SEnvMediaDevicePathEntry,
@@ -825,6 +831,54 @@ Returns:
   }
 
   PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_DEVPATH), HiiEnvHandle, Disp);
+
+  if (Str) {
+    FreePool (Str);
+  }
+}
+
+VOID
+EFIAPI
+SEnvImageDPathTok (
+  IN EFI_HANDLE   h,
+  IN VOID         *Interface
+  )
+/*++
+
+Routine Description:
+
+Arguments:
+
+  h         - An EFI handle
+  Interface - The interface
+
+Returns:
+
+--*/
+{
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  CHAR16                    *Str;
+  CHAR16                    *Disp;
+  UINTN                     Len;
+
+  DevicePath  = Interface;
+  Str         = LibDevicePathToStr (DevicePath);
+  Disp        = L"";
+
+  //
+  // Print device path token
+  //
+  if (Str) {
+    Len   = StrLen (Str);
+    Disp  = Str;
+    if (Len > 30) {
+      Disp    = Str + Len - 30;
+      Disp[0] = '.';
+      Disp[1] = '.';
+    }
+  }
+
+  PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_IMAGE_DEVPATH), HiiEnvHandle, Disp);
 
   if (Str) {
     FreePool (Str);
@@ -1614,5 +1668,39 @@ SEnvGraphicsOutput (
     STRING_TOKEN (STR_SHELLENV_DPROT_FRAMEBUFFERSIZE),
     HiiEnvHandle,
     Mode->FrameBufferSize
+    );
+}
+
+VOID
+EFIAPI
+SEnvDriverEFIVersion (
+  IN EFI_HANDLE      h,
+  IN VOID            *Interface
+  )
+{
+  EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL *DriverEfiVersion;
+
+  DriverEfiVersion = (EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL *) Interface;
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_PROTID_DRV_EFI_VER),
+    HiiEnvHandle,
+    DriverEfiVersion->FirmwareVersion
+    );
+}
+
+VOID
+EFIAPI
+SEnvDriverEFIVersionTok (
+  IN EFI_HANDLE      h,
+  IN VOID            *Interface
+  )
+{
+  EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL *DriverEfiVersion;
+
+  DriverEfiVersion = (EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL *) Interface;
+  PrintToken (
+    STRING_TOKEN (STR_SHELLENV_PROTID_DRV_EFI_VER_TOK),
+    HiiEnvHandle,
+    DriverEfiVersion->FirmwareVersion
     );
 }

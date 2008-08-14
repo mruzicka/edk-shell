@@ -366,12 +366,101 @@ _DevPathSerialVendor (
   )
 {
   VENDOR_DEVICE_PATH  *Vendor;
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  SAS_DEVICE_PATH     *Sas;
+  EFI_GUID            SasVendorGuid = DEVICE_PATH_MESSAGING_SAS;
+#endif
 
   ASSERT(DevicePathNode != NULL);
   ASSERT(MappingItem != NULL);
 
   Vendor = (VENDOR_DEVICE_PATH *) DevicePathNode;
   AppendCSDGuid (MappingItem, &Vendor->Guid);
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  if (CompareGuid (&SasVendorGuid, &Vendor->Guid) == 0) {
+    Sas = (SAS_DEVICE_PATH *) Vendor;
+    AppendCSDNum (MappingItem, Sas->SasAddress);
+    AppendCSDNum (MappingItem, Sas->Lun);
+    AppendCSDNum (MappingItem, Sas->DeviceTopology);
+    AppendCSDNum (MappingItem, Sas->RelativeTargetPort);
+  }
+#endif
+}
+
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+VOID
+_DevPathSerialLUN (
+  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
+  )
+{
+  DEVICE_LOGICAL_UNIT_DEVICE_PATH *Lun;
+
+  ASSERT(DevicePathNode != NULL);
+  ASSERT(MappingItem != NULL);
+
+  Lun = (DEVICE_LOGICAL_UNIT_DEVICE_PATH *) DevicePathNode;
+  AppendCSDNum (MappingItem, Lun->Lun);
+}
+#endif
+
+VOID
+_DevPathSerialSata (
+  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
+  )
+{
+  SATA_DEVICE_PATH  *Sata;
+
+  ASSERT(DevicePathNode != NULL);
+  ASSERT(MappingItem != NULL);
+
+  Sata = (SATA_DEVICE_PATH  *) DevicePathNode;
+  AppendCSDNum (MappingItem, Sata->HBAPortNumber);
+  AppendCSDNum (MappingItem, Sata->PortMultiplierPortNumber);
+  AppendCSDNum (MappingItem, Sata->Lun);
+}
+
+VOID
+_DevPathSerialIScsi (
+  IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
+  IN DEVICE_CONSIST_MAPPING_INFO  *MappingItem
+  )
+{
+//
+// As CSD of ISCSI node is quite long, we comment
+// the code below to keep the consistent mapping
+// short. Uncomment if you really need it.
+//
+/*
+  ISCSI_DEVICE_PATH  *IScsi;
+  UINT8              *IScsiTargetName;
+  CHAR16             *TargetName;
+  UINTN              TargetNameLength;
+  UINTN              Index;
+
+  ASSERT(DevicePathNode != NULL);
+  ASSERT(MappingItem != NULL);
+
+  IScsi = (ISCSI_DEVICE_PATH  *) DevicePathNode;
+  AppendCSDNum (MappingItem, IScsi->NetworkProtocol);
+  AppendCSDNum (MappingItem, IScsi->LoginOption);
+  AppendCSDNum (MappingItem, IScsi->Lun);
+  AppendCSDNum (MappingItem, IScsi->TargetPortalGroupTag);
+  TargetNameLength = DevicePathNodeLength (DevicePathNode) - sizeof (ISCSI_DEVICE_PATH);
+  if (TargetNameLength > 0) {
+    TargetName = AllocateZeroPool ((TargetNameLength + 1) * sizeof (CHAR16));
+    if (TargetName != NULL) {
+      IScsiTargetName = (UINT8 *) (IScsi + 1);
+      for (Index = 0; Index < TargetNameLength; Index++) {
+        TargetName[Index] = (CHAR16) IScsiTargetName[Index];
+      }
+      AppendCSDStr (MappingItem, TargetName);
+      FreePool (TargetName);
+    }
+  }
+ */
 }
 
 VOID
@@ -575,22 +664,6 @@ DEV_PATH_CONSIST_MAPPING_TABLE  DevPathConsistMappingTable[] = {
   HW_PCI_DP,
   _DevPathSerialDefault,
   _DevPathComparePci,
-  HARDWARE_DEVICE_PATH,
-  HW_PCCARD_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-  HARDWARE_DEVICE_PATH,
-  HW_MEMMAP_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-  HARDWARE_DEVICE_PATH,
-  HW_VENDOR_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-  HARDWARE_DEVICE_PATH,
-  HW_CONTROLLER_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
   ACPI_DEVICE_PATH,
   ACPI_DP,
   _DevPathSerialAcpi,
@@ -614,10 +687,6 @@ DEV_PATH_CONSIST_MAPPING_TABLE  DevPathConsistMappingTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_USB_DP,
   _DevPathSerialUsb,
-  _DevPathCompareDefault,
-  MESSAGING_DEVICE_PATH,
-  MSG_USB_CLASS_DP,
-  _DevPathSerialDefault,
   _DevPathCompareDefault,
   MESSAGING_DEVICE_PATH,
   MSG_I2O_DP,
@@ -647,6 +716,20 @@ DEV_PATH_CONSIST_MAPPING_TABLE  DevPathConsistMappingTable[] = {
   MSG_VENDOR_DP,
   _DevPathSerialVendor,
   _DevPathCompareDefault,
+#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
+  MESSAGING_DEVICE_PATH,
+  MSG_DEVICE_LOGICAL_UNIT_DP,
+  _DevPathSerialLUN,
+  _DevPathCompareDefault,
+#endif
+  MESSAGING_DEVICE_PATH,
+  MSG_SATA_DP,
+  _DevPathSerialSata,
+  _DevPathCompareDefault,
+  MESSAGING_DEVICE_PATH,
+  MSG_ISCSI_DP,
+  _DevPathSerialIScsi,
+  _DevPathCompareDefault,
   MEDIA_DEVICE_PATH,
   MEDIA_HARDDRIVE_DP,
   _DevPathSerialHardDrive,
@@ -658,28 +741,6 @@ DEV_PATH_CONSIST_MAPPING_TABLE  DevPathConsistMappingTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_VENDOR_DP,
   _DevPathSerialVendor,
-  _DevPathCompareDefault,
-  MEDIA_DEVICE_PATH,
-  MEDIA_FILEPATH_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-  MEDIA_DEVICE_PATH,
-  MEDIA_PROTOCOL_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-#if (EFI_SPECIFICATION_VERSION != 0x00020000)
-  MEDIA_DEVICE_PATH,
-  MEDIA_FV_FILEPATH_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-#endif
-  BBS_DEVICE_PATH,
-  BBS_BBS_DP,
-  _DevPathSerialDefault,
-  _DevPathCompareDefault,
-  END_DEVICE_PATH_TYPE,
-  END_INSTANCE_DEVICE_PATH_SUBTYPE,
-  _DevPathSerialDefault,
   _DevPathCompareDefault,
   0,
   0,

@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -113,6 +113,7 @@ Returns:
   EFI_STATUS              ConfigurationStatus;
   EFI_STATUS              DiagnosticsStatus;
   UINTN                   StringIndex;
+  UINTN                   StringLength;
   UINTN                   Index;
   CHAR8                   *Language;
   UINTN                   DeviceHandleCount;
@@ -160,7 +161,7 @@ Returns:
   // Setup Handle and Protocol Globals
   //
   ShellInitProtocolInfoEnumerator ();
-  Language = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language = LibGetVariableLang ();
 
   if (Language == NULL) {
     Language    = AllocatePool (4);
@@ -222,13 +223,13 @@ Returns:
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item != NULL) {
-    if (StrLen (Item->VarStr) != 3) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_DEVICES_BAD_LANG), HiiHandle, L"devices", Item->VarStr);
-      Status = EFI_INVALID_PARAMETER;
-      goto Done;
+    if (Language != NULL) {
+      FreePool (Language);
     }
 
-    for (StringIndex = 0; StringIndex < 3; StringIndex++) {
+    StringLength = StrLen (Item->VarStr);
+    Language = AllocatePool (StringLength + 1);
+    for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
       Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
     }
 
@@ -374,6 +375,8 @@ Returns:
 
   FreePool (DeviceHandleBuffer);
 
+  Status = EFI_SUCCESS;
+
 Done:
   if (Language != NULL) {
     FreePool (Language);
@@ -435,6 +438,7 @@ Returns:
   EFI_STATUS  DiagnosticsStatus;
   CHAR16      *Ptr;
   UINTN       StringIndex;
+  UINTN       StringLength;
   UINTN       Index;
   CHAR8       *Language;
   UINTN       DeviceHandleCount;
@@ -449,7 +453,7 @@ Returns:
   BOOLEAN     PrtHelp;
 
   PrtHelp   = FALSE;
-  Language  = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language  = LibGetVariableLang ();
   if (Language == NULL) {
     Language    = AllocatePool (4);
     Language[0] = 'e';
@@ -465,7 +469,13 @@ Returns:
       case 'l':
       case 'L':
         if (*(Ptr + 2) != 0) {
-          for (StringIndex = 0; StringIndex < 3 && Ptr[StringIndex + 2] != 0; StringIndex++) {
+          if (Language != NULL) {
+            FreePool (Language);
+          }
+
+          StringLength = StrLen (Ptr + 2);
+          Language = AllocatePool (StringLength + 1);
+          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
             Language[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
           }
 

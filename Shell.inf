@@ -43,6 +43,7 @@ COMPONENT_TYPE       = APPLICATION
   Library\Event.c
   Library\Perf.c
   Library\VarCheck.c
+  Library\HiiSupport.c  
 
   newshell\NshellStrings.uni
   newshell\init.c

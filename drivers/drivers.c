@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -29,7 +29,9 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
 #include EFI_PROTOCOL_DEFINITION (ComponentName2)
 #include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
+#include EFI_PROTOCOL_DEFINITION (DriverConfiguration2)
 #include EFI_PROTOCOL_DEFINITION (DriverDiagnostics)
+#include EFI_PROTOCOL_DEFINITION (DriverDiagnostics2)
 
 extern UINT8  STRING_ARRAY_NAME[];
 
@@ -239,7 +241,7 @@ Returns:
       goto Done;
     }
 
-    Language = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+    Language = LibGetVariableLang ();
     if (Language == NULL) {
       Language = (CHAR8 *)AllocateZeroPool(strlena(LanguageCodeEnglish) + 1);
       if (Language == NULL) {
@@ -322,21 +324,41 @@ Returns:
 
     DiagnosticsStatus = BS->OpenProtocol (
                               DriverImageHandleBuffer[Index],
-                              &gEfiDriverDiagnosticsProtocolGuid,
+                              &gEfiDriverDiagnostics2ProtocolGuid,
                               NULL,
                               NULL,
                               NULL,
                               EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                               );
-
-    ConfigurationStatus = BS->OpenProtocol (
+    if (EFI_ERROR (DiagnosticsStatus)) {
+      DiagnosticsStatus = BS->OpenProtocol (
                                 DriverImageHandleBuffer[Index],
-                                &gEfiDriverConfigurationProtocolGuid,
+                                &gEfiDriverDiagnosticsProtocolGuid,
                                 NULL,
                                 NULL,
                                 NULL,
                                 EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                                 );
+    }
+
+    ConfigurationStatus = BS->OpenProtocol (
+                                DriverImageHandleBuffer[Index],
+                                &gEfiDriverConfiguration2ProtocolGuid,
+                                NULL,
+                                NULL,
+                                NULL,
+                                EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                                );
+    if (EFI_ERROR (ConfigurationStatus)) {
+      ConfigurationStatus = BS->OpenProtocol (
+                                  DriverImageHandleBuffer[Index],
+                                  &gEfiDriverConfigurationProtocolGuid,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                                  );
+    }
 
     NumberOfChildren = 0;
     Status = LibGetManagedControllerHandles (
@@ -399,25 +421,30 @@ Returns:
 
     Status     = EFI_SUCCESS;
     DriverName = L"<UNKNOWN>";
+    SupportedLanguage = NULL;
     if (ComponentName != NULL) {
       if (ComponentName->GetDriverName != NULL) {
+        SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
         Status = ComponentName->GetDriverName (
                                   ComponentName,
-                                  Language,
+                                  SupportedLanguage,
                                   &DriverName
                                   );
       }
     } else if (ComponentName2 != NULL) {
       if (ComponentName2->GetDriverName != NULL) {
-        SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+        SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
         Status = ComponentName2->GetDriverName (
                                    ComponentName2,
                                    SupportedLanguage,
                                    &DriverName
                                    );
-        FreePool(SupportedLanguage);
       }
     }
+    if (SupportedLanguage != NULL) {
+      FreePool (SupportedLanguage);
+    }
+
     if (EFI_ERROR (Status)) {
       DriverName = L"<UNKNOWN>";
     }
@@ -507,9 +534,10 @@ DriversSyntaxOld (
   EFI_STATUS  Status;
   UINTN       Index;
   UINTN       StringIndex;
+  UINTN       StringLength;
   CHAR16      *Ptr;
 
-  *Language = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  *Language = LibGetVariableLang ();
   if (*Language == NULL) {
     *Language       = AllocatePool (4);
     (*Language)[0]  = 'e';
@@ -525,7 +553,13 @@ DriversSyntaxOld (
       case 'l':
       case 'L':
         if (*(Ptr + 2) != 0) {
-          for (StringIndex = 0; StringIndex < 3 && Ptr[StringIndex + 2] != 0; StringIndex++) {
+          if (*Language != NULL) {
+            FreePool (*Language);
+          }
+
+          StringLength = StrLen (Ptr + 2);
+          *Language = AllocatePool (StringLength + 1);
+          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
             (*Language)[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
           }
           (*Language)[StringIndex] = 0;

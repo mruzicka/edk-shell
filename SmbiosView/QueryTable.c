@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006 Intel Corporation                                                         
+Copyright (c) 2005 - 2007 Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -158,6 +158,26 @@ TABLE_ITEM  SystemEnclosureTypeTable[] = {
   {
     0x18,
     L"  Sealed-case PC"
+  },
+  {
+    0x19,
+    L"  Multi-system Chassis"
+  },
+  {
+    0x1A,
+    L"  CompactPCI"
+  },
+  {
+    0x1B,
+    L"  AdvancedTCA"
+  },
+  {
+    0x1C,
+    L"  Blade"
+  }, 
+  {
+    0x1D,
+    L"  Blade Enclosure"
   },
 };
 
@@ -768,6 +788,10 @@ TABLE_ITEM  PortConnectorTypeTable[] = {
     L"1394"
   },
   {
+    0x22,
+    L"SAS/SATA Plug Receptacle"
+  },  
+  {
     0xA0,
     L"PC-98"
   },
@@ -923,6 +947,14 @@ TABLE_ITEM  PortTypeTable[] = {
     L"Network Port"
   },
   {
+    0x20,
+    L"SATA Port"
+  },
+  {
+    0x21,
+    L"SAS Port"
+  },      
+  {
     0xA0,
     L"8251 Compatible"
   },
@@ -1033,6 +1065,26 @@ TABLE_ITEM  SystemSlotTypeTable[] = {
     0xA5,
     L"PCI Express "
   },
+  {
+    0xA6,
+    L"PCI Express X1"
+  },
+  {
+    0xA7,
+    L"PCI Express X2"
+  },
+  {
+    0xA8,
+    L"PCI Express X4"
+  },
+  {
+    0xA9,
+    L"PCI Express X8"
+  },
+  {
+    0xAA,
+    L"PCI Express X16"
+  },    
 };
 
 TABLE_ITEM  SystemSlotDataBusWidthTable[] = {
@@ -1184,6 +1236,18 @@ TABLE_ITEM  OnboardDeviceTypesTable[] = {
     0x07,
     L"  Sound"
   },
+  {
+    0x08,
+    L"  Pata Controller"
+  },
+  {
+    0x09,
+    L"  Sata Controller"
+  },
+  {
+    0x0A,
+    L"  Sas Controller"
+  },         
 };
 
 TABLE_ITEM  SELTypesTable[] = {
