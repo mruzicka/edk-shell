@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -28,6 +28,41 @@ Revision History
 
 EFI_HANDLE mFakeHiiHandle = NULL;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+STATIC EFI_FAKE_HII_DATA mFakeHiiData = {
+  EFI_FAKE_HII_DATA_SIGNATURE,
+  0,
+  {
+    (struct _EFI_LIST_ENTRY *) NULL,
+    (struct _EFI_LIST_ENTRY *) NULL
+  },
+  {
+    (struct _EFI_LIST_ENTRY *) NULL,
+    (struct _EFI_LIST_ENTRY *) NULL
+  },
+  {
+    FakeHiiNewString,
+    FakeHiiGetString,
+    FakeHiiSetString,
+    FakeHiiGetLanguages,
+    FakeHiiGetSecondaryLanguages    
+  },
+  {
+    FakeHiiNewPackageList,
+    FakeHiiRemovePackageList,
+    FakeHiiUpdatePackageList,
+    FakeHiiListPackageLists,
+    FakeHiiExportPackageLists,
+    FakeHiiRegisterPackageNotify,
+    FakeHiiUnregisterPackageNotify,
+    FakeHiiFindKeyboardLayouts,
+    FakeHiiGetKeyboardLayout,
+    FakeHiiSetKeyboardLayout,
+    FakeHiiGetPackageListHandle    
+  }  
+};
+#endif
+
 EFI_STATUS
 FakeInitializeHiiDatabase (
   IN     EFI_HANDLE                         ImageHandle,
@@ -49,14 +84,19 @@ Returns:
 --*/
 {
   EFI_STATUS            Status;
+  BOOLEAN               HiiInstalled;
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   UINTN                 HandleCount;
   EFI_HANDLE            *HandleBuffer;
   EFI_FAKE_HII_DATA     *HiiData;
-  EFI_HANDLE            Handle;
-  BOOLEAN               HiiInstalled;
+#endif
 
   HiiInstalled = FALSE;
+  
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
+
   HiiData = NULL;
+
   Status = LibLocateHandle (
             ByProtocol,
             &gEfiHiiProtocolGuid,
@@ -86,8 +126,19 @@ Returns:
     HiiData->Hii.GetPrimaryLanguages  = FakeHiiGetPrimaryLanguages;
     HiiData->Hii.GetString            = FakeHiiGetString;
     HiiData->Hii.GetForms             = FakeHiiGetForms;
+    
+    HiiData->Hii.ExportDatabase        = FakeHiiExportDatabase;
+    HiiData->Hii.GetDefaultImage       = FakeHiiGetDefaultImage;
+    HiiData->Hii.GetGlyph              = FakeHiiGetGlyph;
+    HiiData->Hii.GetKeyboardLayout     = FakeHiiGetKeyboardLayout;
+    HiiData->Hii.GetLine               = FakeHiiGetLine;
+    HiiData->Hii.GetSecondaryLanguages = FakeHiiGetSecondaryLanguages;
+    HiiData->Hii.GlyphToBlt            = FakeHiiGlyphToBlt;
+    HiiData->Hii.NewString             = FakeHiiNewString;
+    HiiData->Hii.ResetStrings          = FakeHiiResetStrings;
+    HiiData->Hii.TestString            = FakeHiiTestString;
+    HiiData->Hii.UpdateForm            = FakeHiiUpdateForm;
   
-    Handle = NULL;
     Status = BS->InstallProtocolInterface (
                   &mFakeHiiHandle,
                   &gEfiHiiProtocolGuid,
@@ -99,8 +150,32 @@ Returns:
       FreePool (HiiData);
       return Status;
     } 
+  }  
+  
+#else
+
+  Status = LocateHiiProtocols ();
+  if (!EFI_ERROR (Status)) {
+    HiiInstalled = TRUE;
+  }
+
+             
+  if (!HiiInstalled) {
+    InitializeListHead (&mFakeHiiData.DatabaseList);
+    InitializeListHead (&mFakeHiiData.HiiHandleList);
+    return BS->InstallMultipleProtocolInterfaces (
+                 &mFakeHiiHandle,
+                 &gEfiHiiStringProtocolGuid,
+                 &mFakeHiiData.HiiString,
+                 &gEfiHiiDatabaseProtocolGuid,
+                 &mFakeHiiData.HiiDatabase,
+                 NULL
+                 );
+    
   }
   
+#endif  
+
   return Status;
 }
 
@@ -110,11 +185,14 @@ FakeUninstallHiiDatabase (
   VOID
   )
 {                                    
-  EFI_STATUS              Status;
-  EFI_HII_PROTOCOL        *FakeHii;
-  EFI_FAKE_HII_DATA       *HiiData;
+  EFI_STATUS                Status;  
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
+  EFI_HII_PROTOCOL          *FakeHii;
+  EFI_FAKE_HII_DATA         *HiiData;
+#endif  
   
   if (mFakeHiiHandle != NULL) {
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
     Status = BS->HandleProtocol (
                   mFakeHiiHandle,
                   &gEfiHiiProtocolGuid,
@@ -126,12 +204,643 @@ FakeUninstallHiiDatabase (
                   FakeHii
                   );
     HiiData = EFI_FAKE_HII_DATA_FROM_THIS (FakeHii);
-    mFakeHiiHandle = NULL;
     FreePool (HiiData);
+#else
+    Status = LocateHiiProtocols ();
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    Status =  BS->UninstallMultipleProtocolInterfaces (
+                    mFakeHiiHandle,
+                    &gEfiHiiStringProtocolGuid,
+                    gLibHiiString,
+                    &gEfiHiiDatabaseProtocolGuid,
+                    gLibHiiDatabase,
+                    NULL
+                    );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+#endif    
+    mFakeHiiHandle = NULL;
   }
   
   return EFI_SUCCESS;
 }
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+
+STATIC
+VOID
+GetStringTextSize (
+  IN  UINT8            *StringSrc,
+  IN  OUT UINTN        *BufferSize
+  )
+/*++
+
+  Routine Description:
+    Calculate the size of StringSrc and output it. 
+    
+  Arguments:          
+    StringSrc              - Points to current null-terminated string.
+    BufferSize             - Length of the buffer.
+
+  Returns:
+    None.
+                             
+--*/    
+  
+{
+  UINTN  StringSize;
+  CHAR16 Zero;
+  UINT8  *StringPtr;
+  
+  ASSERT (StringSrc != NULL && BufferSize != NULL);
+
+  ZeroMem (&Zero, sizeof (CHAR16));
+  StringSize = sizeof (CHAR16);
+  StringPtr  = StringSrc;
+  while (CompareMem (StringPtr, &Zero, sizeof (CHAR16)) != 0) {
+    StringSize += sizeof (CHAR16);
+    StringPtr += sizeof (CHAR16);
+  }
+  
+  *BufferSize = StringSize;
+}
+
+STATIC
+EFI_STATUS
+InsertStringPackage (
+  IN     UINT8                       *PackageHdr,
+  IN OUT FAKE_HII_DATABASE_RECORD    *PackageList
+  )
+/*++
+
+  Routine Description:
+    This function insert a String package to the specified package list node.
+    
+  Arguments:          
+    PackageHdr        - Pointer to a buffer stored with String package information.
+    PackageList       - Pointer to a package list which will be inserted to.
+    
+  Returns:
+    EFI_SUCCESS            - String Package is inserted successfully.             
+    EFI_OUT_OF_RESOURCES   - Unable to allocate necessary resources for the
+                             new String package.
+    EFI_INVALID_PARAMETER  - PackageHdr is NULL or PackageList is NULL.
+    EFI_UNSUPPORTED        - A string package with the same language already exists
+                             in current package list.
+     
+--*/  
+  
+{
+  FAKE_HII_STRING_PACKAGE     *StringPackage;
+  UINT32                      HeaderSize;
+  UINT32                      StringInfoOffset;
+  UINT8                       *Pointer;
+  CHAR8                       *Language;
+  UINT32                      LanguageSize;
+  EFI_LIST_ENTRY              *Link;
+  FAKE_HII_STRING_BLOCK       *Block;
+  UINTN                       StrSize;
+  EFI_STRING_ID               CurrentStringId;
+  UINT16                      SkipCount;
+
+  Pointer = PackageHdr + sizeof (EFI_HII_PACKAGE_HEADER);
+  CopyMem (&HeaderSize, Pointer, sizeof (UINT32));
+  Pointer += sizeof (UINT32);
+  CopyMem (&StringInfoOffset, Pointer, sizeof (UINT32));
+
+  //
+  // It is illegal to have two string packages with same language within one packagelist
+  // since the stringid will be duplicate if so. Check it to avoid this potential issue.
+  //
+  LanguageSize = HeaderSize - sizeof (EFI_HII_STRING_PACKAGE_HDR) + sizeof (CHAR8);
+  Language = (CHAR8 *) AllocateZeroPool (LanguageSize);
+  if (Language == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  strcpya (Language, (UINT8 *) PackageHdr + HeaderSize - LanguageSize);
+  for (Link = PackageList->StringPkgHdr.Flink; Link != &PackageList->StringPkgHdr; Link = Link->Flink) {
+    StringPackage = CR (Link, FAKE_HII_STRING_PACKAGE, Entry, FAKE_HII_STRING_PACKAGE_SIGNATURE);
+    if (CompareLanguage (Language, StringPackage->StringPkgHdr->Language)) {
+      FreePool (Language);
+      return EFI_UNSUPPORTED;
+    }    
+  }  
+  FreePool (Language);
+  
+  //
+  // Create a String package node
+  //
+  StringPackage = AllocateZeroPool (sizeof (FAKE_HII_STRING_PACKAGE));
+  if (StringPackage == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }  
+  StringPackage->Signature = FAKE_HII_STRING_PACKAGE_SIGNATURE;
+  StringPackage->StringPkgHdr = AllocateZeroPool (HeaderSize);
+  if (StringPackage->StringPkgHdr == NULL) {
+    FreePool (StringPackage);    
+    return EFI_OUT_OF_RESOURCES;
+  }   
+  InitializeListHead (&StringPackage->StringBlockHdr);
+  
+  //
+  // Copy the String package header.
+  //
+  CopyMem (StringPackage->StringPkgHdr, PackageHdr, HeaderSize);
+
+  //
+  // Copy the String blocks
+  //
+  Pointer = PackageHdr + StringInfoOffset;
+  CurrentStringId = 1;
+  while (*Pointer != EFI_HII_SIBT_END) {
+    switch (*Pointer) {
+      case EFI_HII_SIBT_STRING_UCS2:
+        Block = AllocateZeroPool (sizeof (FAKE_HII_STRING_BLOCK));
+        if (Block == NULL) {
+          FreePool (StringPackage->StringPkgHdr);
+          FreePool (StringPackage);
+          return EFI_OUT_OF_RESOURCES;
+        }
+        Block->Signature = FAKE_HII_STRING_BLOCK_SIGNATURE;
+        
+        Pointer += sizeof (EFI_HII_STRING_BLOCK);
+        GetStringTextSize (Pointer, &StrSize);
+        Block->StringBlock = AllocateZeroPool (StrSize);
+        if (Block->StringBlock == NULL) {
+          FreePool (Block);
+          FreePool (StringPackage->StringPkgHdr);
+          FreePool (StringPackage);
+          return EFI_OUT_OF_RESOURCES;
+        }
+        
+        CopyMem (Block->StringBlock, Pointer, StrSize);
+        Block->StringId  = CurrentStringId;
+        Block->BlockSize = StrSize;
+        InsertTailList (&StringPackage->StringBlockHdr, &Block->Entry);
+        
+        Pointer += StrSize;
+        CurrentStringId++;
+        break;
+        
+      case EFI_HII_SIBT_SKIP1:
+        Pointer += sizeof (EFI_HII_STRING_BLOCK);
+        CurrentStringId = CurrentStringId + *Pointer;
+        Pointer += sizeof (UINT8);
+        break;
+        
+      case EFI_HII_SIBT_SKIP2:
+        Pointer += sizeof (EFI_HII_STRING_BLOCK);
+        CopyMem (&SkipCount, Pointer, sizeof (UINT16));
+        CurrentStringId = CurrentStringId + SkipCount;
+        Pointer += sizeof (UINT16);
+        break;
+        
+      default:
+        FreePool (StringPackage->StringPkgHdr);
+        FreePool (StringPackage);
+        return EFI_UNSUPPORTED;      
+    }
+  }
+  
+  //
+  // Insert to String package array
+  //
+  InsertTailList (&PackageList->StringPkgHdr, &StringPackage->Entry); 
+  return EFI_SUCCESS;
+}
+
+STATIC
+VOID
+RemoveStringPackages (
+  IN EFI_LIST_ENTRY            *ListHead
+  )
+/*++
+
+  Routine Description:
+    This function deletes all String packages from a package list node.
+    
+  Arguments:          
+    ListHead       - Array header of all string packages to be removed.
+    
+  Returns:
+     
+--*/   
+{
+  FAKE_HII_STRING_PACKAGE     *Package;
+  FAKE_HII_STRING_BLOCK       *Block;  
+  
+  while (!IsListEmpty (ListHead)) {
+    Package = CR (
+                ListHead->Flink, 
+                FAKE_HII_STRING_PACKAGE, 
+                Entry, 
+                FAKE_HII_STRING_PACKAGE_SIGNATURE
+                );
+    //
+    // Remove all string blocks
+    //
+    while (!IsListEmpty (&Package->StringBlockHdr)) {
+      Block = CR (
+                Package->StringBlockHdr.Flink, 
+                FAKE_HII_STRING_BLOCK, 
+                Entry, 
+                FAKE_HII_STRING_BLOCK_SIGNATURE
+                );
+      RemoveEntryList (&Block->Entry);
+      FreePool (Block->StringBlock);
+      FreePool (Block);
+    }    
+    
+    RemoveEntryList (&Package->Entry);    
+    FreePool (Package->StringPkgHdr);    
+    FreePool (Package);    
+  }
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiNewPackageList (
+  IN CONST EFI_HII_DATABASE_PROTOCOL    *This,
+  IN CONST EFI_HII_PACKAGE_LIST_HEADER  *PackageList,
+  IN CONST EFI_HANDLE                   DriverHandle,
+  OUT EFI_HII_HANDLE                    *Handle
+  )
+{
+  EFI_STATUS                            Status;
+  EFI_FAKE_HII_DATA                     *Private;
+  FAKE_HII_DATABASE_RECORD              *DatabaseRecord;
+  EFI_LIST_ENTRY                        *Link;
+  EFI_GUID                              PackageListGuid;  
+  FAKE_HII_HANDLE                       *HiiHandle; 
+  UINT8                                 *PackageListPtr;
+  EFI_HII_PACKAGE_HEADER                PackageHeader;  
+
+  if (This == NULL || PackageList == NULL || Handle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = EFI_FAKE_HII_DATA_FROM_THIS (This);
+  CopyMem (&PackageListGuid, (VOID *) PackageList, sizeof (EFI_GUID));
+
+  //
+  // Check the Package list GUID to guarantee this GUID is unique in database.
+  //
+  for (Link = Private->DatabaseList.Flink; Link != &Private->DatabaseList; Link = Link->Flink) {
+    DatabaseRecord = CR (Link, FAKE_HII_DATABASE_RECORD, Entry, FAKE_HII_DATABASE_RECORD_SIGNATURE);
+    if (CompareGuid (&(DatabaseRecord->PackageListHdr.PackageListGuid), &PackageListGuid) == 0) {
+      return EFI_INVALID_PARAMETER;
+    }       
+  }
+  //
+  // Build a PackageList node
+  //  
+  DatabaseRecord = AllocateZeroPool (sizeof (FAKE_HII_DATABASE_RECORD));
+  if (DatabaseRecord == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+  DatabaseRecord->Signature = FAKE_HII_DATABASE_RECORD_SIGNATURE;
+  InitializeListHead (&DatabaseRecord->StringPkgHdr);
+  CopyMem (&DatabaseRecord->PackageListHdr, (VOID *) PackageList, sizeof (EFI_HII_PACKAGE_LIST_HEADER));
+   
+  //
+  // Insert the string packages if any.
+  //
+  PackageListPtr = (UINT8 *) PackageList + sizeof (EFI_HII_PACKAGE_LIST_HEADER);
+  CopyMem (&PackageHeader, PackageListPtr, sizeof (EFI_HII_PACKAGE_HEADER));
+  while (PackageHeader.Type != EFI_HII_PACKAGE_END) {
+    switch (PackageHeader.Type) {
+    case EFI_HII_PACKAGE_STRINGS:
+      Status = InsertStringPackage (PackageListPtr, DatabaseRecord);
+      if (EFI_ERROR (Status)) {
+        FreePool (DatabaseRecord);
+        return Status;
+      }      
+      break;
+    default:
+      FreePool (DatabaseRecord);
+      return EFI_UNSUPPORTED;
+    }
+    PackageListPtr += PackageHeader.Length;
+    CopyMem (&PackageHeader, PackageListPtr, sizeof (EFI_HII_PACKAGE_HEADER));
+  }
+
+  //
+  // Create a new hii handle
+  //
+  HiiHandle = AllocateZeroPool (sizeof (FAKE_HII_HANDLE));
+  if (HiiHandle == NULL) {
+    FreePool (DatabaseRecord);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  HiiHandle->Signature = FAKE_HII_HANDLE_SIGNATURE;
+  Private->HiiHandleCount++;
+  HiiHandle->Key = Private->HiiHandleCount;
+  InsertTailList (&Private->HiiHandleList, &HiiHandle->Handle);
+
+  DatabaseRecord->Handle = (EFI_HII_HANDLE) HiiHandle;  
+  InsertTailList (&Private->DatabaseList, &DatabaseRecord->Entry);
+
+  *Handle = DatabaseRecord->Handle;
+ 
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiRemovePackageList (
+  IN CONST EFI_HII_DATABASE_PROTOCOL    *This,
+  IN EFI_HII_HANDLE                     Handle
+  )
+{
+  EFI_FAKE_HII_DATA                     *Private;
+  EFI_LIST_ENTRY                        *Link;
+  FAKE_HII_DATABASE_RECORD              *Node;
+  FAKE_HII_HANDLE                       *HiiHandle;
+  BOOLEAN                               Matched = FALSE;
+  
+  if (This == NULL || Handle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  HiiHandle = (FAKE_HII_HANDLE *) Handle;
+  if (HiiHandle->Signature != FAKE_HII_HANDLE_SIGNATURE) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = EFI_FAKE_HII_DATA_FROM_THIS (This);
+  
+  Node = NULL;
+  for (Link = Private->DatabaseList.Flink; Link != &Private->DatabaseList; Link = Link->Flink) {
+    Node = CR (Link, FAKE_HII_DATABASE_RECORD, Entry, FAKE_HII_DATABASE_RECORD_SIGNATURE);
+    if (Node->Handle == Handle) {
+      Matched = TRUE;
+      break;
+    }    
+  }
+
+  if (!Matched) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Free resources: recorded string packages and corresponding hii handle.
+  //
+  RemoveStringPackages (&Node->StringPkgHdr);
+  RemoveEntryList (&HiiHandle->Handle);      
+  Private->HiiHandleCount--;
+  FreePool (HiiHandle);
+  RemoveEntryList (&Node->Entry);  
+  FreePool (Node);
+  
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiUpdatePackageList (
+  IN CONST EFI_HII_DATABASE_PROTOCOL    *This,
+  IN EFI_HII_HANDLE                     Handle,
+  IN CONST EFI_HII_PACKAGE_LIST_HEADER  *PackageList
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiListPackageLists (
+  IN  CONST EFI_HII_DATABASE_PROTOCOL   *This,
+  IN  UINT8                             PackageType,
+  IN  CONST EFI_GUID                    *PackageGuid,
+  IN  OUT UINTN                         *HandleBufferLength,
+  OUT EFI_HII_HANDLE                    *Handle
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiExportPackageLists (
+  IN  CONST EFI_HII_DATABASE_PROTOCOL   *This,
+  IN  EFI_HII_HANDLE                    Handle,
+  IN  OUT UINTN                         *BufferSize,
+  OUT EFI_HII_PACKAGE_LIST_HEADER       *Buffer
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiRegisterPackageNotify (
+  IN  CONST EFI_HII_DATABASE_PROTOCOL   *This,
+  IN  UINT8                             PackageType,
+  IN  CONST EFI_GUID                    *PackageGuid,
+  IN  CONST EFI_HII_DATABASE_NOTIFY     PackageNotifyFn,
+  IN  EFI_HII_DATABASE_NOTIFY_TYPE      NotifyType,
+  OUT EFI_HANDLE                        *NotifyHandle
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiUnregisterPackageNotify (
+  IN CONST EFI_HII_DATABASE_PROTOCOL    *This,
+  IN EFI_HANDLE                         NotificationHandle
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiFindKeyboardLayouts (
+  IN  EFI_HII_DATABASE_PROTOCOL         *This,
+  IN  OUT UINT16                        *KeyGuidBufferLength,
+  OUT EFI_GUID                          *KeyGuidBuffer
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiGetKeyboardLayout (
+  IN  EFI_HII_DATABASE_PROTOCOL         *This,
+  IN  EFI_GUID                          *KeyGuid,
+  IN OUT UINT16                         *KeyboardLayoutLength,
+  OUT EFI_HII_KEYBOARD_LAYOUT           *KeyboardLayout
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiSetKeyboardLayout (
+  IN EFI_HII_DATABASE_PROTOCOL          *This,
+  IN EFI_GUID                           *KeyGuid
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiGetPackageListHandle (
+  IN  EFI_HII_DATABASE_PROTOCOL         *This,
+  IN  EFI_HII_HANDLE                    PackageListHandle,
+  OUT EFI_HANDLE                        *DriverHandle
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiNewString (
+  IN  CONST EFI_HII_STRING_PROTOCOL   *This,
+  IN  EFI_HII_HANDLE                  PackageList,
+  OUT EFI_STRING_ID                   *StringId,
+  IN  CONST CHAR8                     *Language,
+  IN  CONST CHAR16                    *LanguageName, OPTIONAL
+  IN  CONST EFI_STRING                String,
+  IN  CONST EFI_FONT_INFO             *StringFontInfo OPTIONAL
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiGetString (
+  IN  CONST EFI_HII_STRING_PROTOCOL   *This,
+  IN  CONST CHAR8                     *Language,
+  IN  EFI_HII_HANDLE                  PackageList,
+  IN  EFI_STRING_ID                   StringId,
+  OUT EFI_STRING                      String,
+  IN  OUT UINTN                       *StringSize,
+  OUT EFI_FONT_INFO                   **StringFontInfo OPTIONAL
+  )
+{
+  EFI_FAKE_HII_DATA                     *Private;
+  FAKE_HII_DATABASE_RECORD              *DatabaseRecord;
+  EFI_LIST_ENTRY                        *Link;
+  FAKE_HII_STRING_PACKAGE               *StringPackage;  
+  FAKE_HII_STRING_BLOCK                 *Block;  
+  BOOLEAN                               Matched = FALSE; 
+ 
+  if (This == NULL || Language == NULL || PackageList == NULL || StringSize == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if (StringId < 1 || (String == NULL && *StringSize != 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+  if (((FAKE_HII_HANDLE *) PackageList)->Signature != FAKE_HII_HANDLE_SIGNATURE) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Get the specified package list.
+  //
+  Private = EFI_STRING_FAKE_HII_DATA_FROM_THIS (This);
+  DatabaseRecord = NULL;
+  for (Link = Private->DatabaseList.Flink; Link != &Private->DatabaseList; Link = Link->Flink) {
+    DatabaseRecord = CR (Link, FAKE_HII_DATABASE_RECORD, Entry, FAKE_HII_DATABASE_RECORD_SIGNATURE);
+    if (DatabaseRecord->Handle == PackageList) {
+      Matched = TRUE;
+      break;
+    }
+  }
+
+  if (!Matched) {
+    return EFI_NOT_FOUND;
+  }
+  
+  //
+  // Get the string package by language.
+  //
+  Matched = FALSE;
+  StringPackage = NULL;
+  for (Link = DatabaseRecord->StringPkgHdr.Flink; Link != &DatabaseRecord->StringPkgHdr; Link = Link->Flink) {
+    StringPackage = CR (Link, FAKE_HII_STRING_PACKAGE, Entry, FAKE_HII_STRING_PACKAGE_SIGNATURE);
+    if (CompareLanguage (StringPackage->StringPkgHdr->Language, (UINT8 *) Language)) {
+      Matched = TRUE;
+      break;
+    }
+  }
+
+  if (!Matched) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Get the string block by stringid.
+  //
+  for (Link = StringPackage->StringBlockHdr.Flink; Link != &StringPackage->StringBlockHdr; Link = Link->Flink) {
+    Block = CR (Link, FAKE_HII_STRING_BLOCK, Entry, FAKE_HII_STRING_BLOCK_SIGNATURE);
+    if (Block->StringId == StringId) {
+      if (*StringSize < Block->BlockSize) {
+        *StringSize = Block->BlockSize;
+        return EFI_BUFFER_TOO_SMALL;
+      }
+      if (String != NULL) {
+        CopyMem (String, Block->StringBlock, Block->BlockSize);
+      }
+      *StringSize = Block->BlockSize;
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiSetString (
+  IN CONST EFI_HII_STRING_PROTOCOL    *This,
+  IN EFI_HII_HANDLE                   PackageList,
+  IN EFI_STRING_ID                    StringId,
+  IN CONST CHAR8                      *Language,
+  IN CONST EFI_STRING                 String,
+  IN CONST EFI_FONT_INFO              *StringFontInfo OPTIONAL
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI
+FakeHiiGetLanguages (
+  IN CONST EFI_HII_STRING_PROTOCOL    *This,
+  IN EFI_HII_HANDLE                   PackageList,
+  IN OUT CHAR8                        *Languages,
+  IN OUT UINTN                        *LanguagesSize
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+EFIAPI 
+FakeHiiGetSecondaryLanguages (
+  IN CONST EFI_HII_STRING_PROTOCOL   *This,
+  IN EFI_HII_HANDLE                  PackageList,
+  IN CONST CHAR8                     *FirstLanguage,
+  IN OUT CHAR8                       *SecondLanguages,
+  IN OUT UINTN                       *SecondLanguagesSize
+  )
+{
+  return EFI_UNSUPPORTED;
+}  
+
+#else
 
 EFI_STATUS
 FakeGetPackSize (
@@ -1477,3 +2186,136 @@ Returns:
 
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+FakeHiiExportDatabase (
+  IN     EFI_HII_PROTOCOL *This,
+  IN     EFI_HII_HANDLE   Handle,
+  IN OUT UINTN            *BufferSize,
+  OUT    VOID             *Buffer
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiGetDefaultImage (
+  IN     EFI_HII_PROTOCOL           *This,
+  IN     EFI_HII_HANDLE             Handle,
+  IN     UINTN                      DefaultMask,
+  OUT    EFI_HII_VARIABLE_PACK_LIST **VariablePackList
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiGetGlyph (
+  IN     EFI_HII_PROTOCOL  *This,
+  IN     CHAR16            *Source,
+  IN OUT UINT16            *Index,
+  OUT    UINT8             **GlyphBuffer,
+  OUT    UINT16            *BitWidth,
+  IN OUT UINT32            *InternalStatus
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiGetKeyboardLayout (
+  IN     EFI_HII_PROTOCOL    * This,
+  OUT    UINT16              *DescriptorCount,
+  OUT    EFI_KEY_DESCRIPTOR  * Descriptor
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiGetLine (
+  IN     EFI_HII_PROTOCOL  *This,
+  IN     EFI_HII_HANDLE    Handle,
+  IN     STRING_REF        Token,
+  IN OUT UINT16            *Index,
+  IN     UINT16            LineWidth,
+  IN     CHAR16            *LanguageString,
+  IN OUT UINT16            *BufferLength,
+  OUT    EFI_STRING        StringBuffer
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiGetSecondaryLanguages (
+  IN  EFI_HII_PROTOCOL    *This,
+  IN  EFI_HII_HANDLE      Handle,
+  IN  CHAR16              *PrimaryLanguage,
+  OUT EFI_STRING          *LanguageString
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiGlyphToBlt (
+  IN     EFI_HII_PROTOCOL               *This,
+  IN     UINT8                          *GlyphBuffer,
+  IN     EFI_GRAPHICS_OUTPUT_BLT_PIXEL  Foreground,
+  IN     EFI_GRAPHICS_OUTPUT_BLT_PIXEL  Background,
+  IN     UINTN                          Count,
+  IN     UINTN                          Width,
+  IN     UINTN                          Height,
+  IN OUT EFI_GRAPHICS_OUTPUT_BLT_PIXEL  *BltBuffer
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiNewString (
+  IN     EFI_HII_PROTOCOL      *This,
+  IN     CHAR16                *Language,
+  IN     EFI_HII_HANDLE        Handle,
+  IN OUT STRING_REF            *Reference,
+  IN     CHAR16                *NewString
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiResetStrings (
+  IN     EFI_HII_PROTOCOL   *This,
+  IN     EFI_HII_HANDLE     Handle
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiTestString (
+  IN     EFI_HII_PROTOCOL  *This,
+  IN     CHAR16            *StringToTest,
+  IN OUT UINT32            *FirstMissing,
+  OUT    UINT32            *GlyphBufferSize
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+EFI_STATUS
+FakeHiiUpdateForm (
+  IN EFI_HII_PROTOCOL     *This,
+  IN EFI_HII_HANDLE       Handle,
+  IN EFI_FORM_LABEL       Label,
+  IN BOOLEAN              AddData,
+  IN EFI_HII_UPDATE_DATA  *Data
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+#endif
+

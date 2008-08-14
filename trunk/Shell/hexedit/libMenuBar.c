@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -9,10 +9,10 @@ http://opensource.org/licenses/bsd-license.php
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
-  Module Name:
+Module Name:
   libMenuBar.c
 
-  Abstract:
+Abstract:
   Definition of the Menu Bar for the text editor
 
 --*/
@@ -254,7 +254,11 @@ Returns:
     NameString        = AllocatePool (BufferSize);
     FunctionKeyString = AllocatePool (BufferSize);
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
     Status            = Hii->GetString (Hii, HiiHandle, Item->NameToken, FALSE, NULL, &BufferSize, NameString);
+#else
+    Status            = LibGetString (HiiHandle, Item->NameToken, NameString, &BufferSize);
+#endif
 
     Width             = max ((StrLen (NameString) + 6), 18);
     if (((Col + Width) > MAX_TEXT_COLUMNS)) {
@@ -262,8 +266,11 @@ Returns:
       Col = 1;
     }
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
     Status = Hii->GetString (Hii, HiiHandle, Item->FunctionKeyToken, FALSE, NULL, &BufferSize, FunctionKeyString);
-
+#else
+    Status = LibGetString (HiiHandle, Item->FunctionKeyToken, FunctionKeyString, &BufferSize);
+#endif
     if (Index >= 10) {
       PrintAt (Col - 1, Row - 1, L"%E%s%N %H%s%N  ", FunctionKeyString, NameString);
     } else {

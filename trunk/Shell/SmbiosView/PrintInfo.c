@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006 Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -47,6 +47,15 @@ Revision History
     APrint (": %a\n", StringBuf); \
   } while (0);
 
+#define PrintSmbiosString(pStruct, stringnumber, element) \
+  do { \
+    CHAR8 StringBuf[64]; \
+    SetMem (StringBuf, sizeof (StringBuf), 0x00); \
+    SmbiosGetPendingString ((pStruct), (stringnumber), StringBuf); \
+    APrint (#element); \
+    APrint (": %a\n", StringBuf); \
+  } while (0);
+
 #define PrintStructValue(pStruct, type, element) \
   do { \
     APrint (#element); \
@@ -65,6 +74,14 @@ Revision History
     APrint (#element); \
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SIZE), HiiHandle, size); \
     DumpHex (0, 0, size, &(pStruct->type->element)); \
+  } while (0);
+
+#define PrintSmbiosBitField(pStruct, startaddress, element, size) \
+  do { \
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DUMP), HiiHandle); \
+    APrint (#element); \
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SIZE), HiiHandle, size); \
+    DumpHex (0, 0, size, startaddress); \
   } while (0);
 
 //
@@ -246,7 +263,7 @@ Returns:
     PrintPendingString (pStruct, Type0, BiosVersion);
     PrintStructValue (pStruct, Type0, BiosSegment);
     PrintPendingString (pStruct, Type0, BiosReleaseDate);
-    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BIOS_SIZE), 64 * (pStruct->Type0->BiosSize + 1));
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BIOS_SIZE), HiiHandle, 64 * (pStruct->Type0->BiosSize + 1));
 
     if (Option < SHOW_DETAIL) {
       PrintStructValueH (pStruct, Type0, BiosCharacteristics);
@@ -325,7 +342,15 @@ Returns:
   case 4:
     PrintStructValue (pStruct, Type4, Socket);
     DisplayProcessorType (pStruct->Type4->ProcessorType, Option);
-    DisplayProcessorFamily (pStruct->Type4->ProcessorFamily, Option);
+    if ((SmbiosMajorVersion > 0x2 || (SmbiosMajorVersion == 0x2 && SmbiosMinorVersion >= 0x6)) && 
+        (pStruct->Type4->ProcessorFamily == 0xFE)) {
+      //
+      // Get family from ProcessorFamily2 field
+      //
+      DisplayProcessorFamily2 (pStruct->Type4->ProcessorFamily2, Option);
+    } else {
+      DisplayProcessorFamily (pStruct->Type4->ProcessorFamily, Option);
+    }
     PrintPendingString (pStruct, Type4, ProcessorManufacture);
     PrintBitField (pStruct, Type4, ProcessorId, 8);
     PrintPendingString (pStruct, Type4, ProcessorVersion);
@@ -341,6 +366,12 @@ Returns:
     PrintPendingString (pStruct, Type4, SerialNumber);
     PrintPendingString (pStruct, Type4, AssetTag);
     PrintPendingString (pStruct, Type4, PartNumber);
+    if (SmbiosMajorVersion > 0x2 || (SmbiosMajorVersion == 0x2 && SmbiosMinorVersion >= 0x5)) {
+      PrintStructValue (pStruct, Type4, CoreCount);
+      PrintStructValue (pStruct, Type4, EnabledCoreCount);
+      PrintStructValue (pStruct, Type4, ThreadCount);
+      PrintStructValueH (pStruct, Type4, ProcessorCharacteristics);
+    }
     break;
 
   //
@@ -431,6 +462,11 @@ Returns:
       );
     DisplaySlotCharacteristics1 (pStruct->Type9->SlotCharacteristics1, Option);
     DisplaySlotCharacteristics2 (pStruct->Type9->SlotCharacteristics2, Option);
+    if (SmbiosMajorVersion > 0x2 || (SmbiosMajorVersion == 0x2 && SmbiosMinorVersion >= 0x6)) {
+      PrintStructValueH (pStruct, Type9, SegmentGroupNum);
+      PrintStructValueH (pStruct, Type9, BusNum);
+      PrintStructValueH (pStruct, Type9, DevFuncNum);
+    }
     break;
 
   //
@@ -592,6 +628,9 @@ Returns:
     PrintPendingString (pStruct, Type17, SerialNumber);
     PrintPendingString (pStruct, Type17, AssetTag);
     PrintPendingString (pStruct, Type17, PartNumber);
+    if (SmbiosMajorVersion > 0x2 || (SmbiosMajorVersion == 0x2 && SmbiosMinorVersion >= 0x6)) { 
+      PrintStructValueH (pStruct, Type17, Attributes);
+    }
     break;
 
   //
@@ -791,7 +830,7 @@ Returns:
     PrintStructValueH (pStruct, Type36, LowerThresholdNonCritical);
     PrintStructValueH (pStruct, Type36, UpperThresholdNonCritical);
     PrintStructValueH (pStruct, Type36, LowerThresholdCritical);
-    PrintStructValueH (pStruct, Type36, UpperThreaholdCritical);
+    PrintStructValueH (pStruct, Type36, UpperThresholdCritical);
     PrintStructValueH (pStruct, Type36, LowerThresholdNonRecoverable);
     PrintStructValueH (pStruct, Type36, UpperThresholdNonRecoverable);
     break;
@@ -848,6 +887,45 @@ Returns:
     PrintStructValueH (pStruct, Type39, InputVoltageProbeHandle);
     PrintStructValueH (pStruct, Type39, CoolingDeviceHandle);
     PrintStructValueH (pStruct, Type39, InputCurrentProbeHandle);
+    break;
+
+  //
+  // Additional Information (Type 40)
+  //
+  case 40:
+    {
+      UINT8                          NumberOfEntries;
+      UINT8                          EntryLength;
+      ADDITIONAL_INFORMATION_ENTRY   *Entries;
+      
+      EntryLength     = 0;
+      Entries         = pStruct->Type40->AdditionalInfoEntries;
+      NumberOfEntries = pStruct->Type40->NumberOfAdditionalInformationEntries;
+    
+      PrintStructValueH (pStruct, Type40, NumberOfAdditionalInformationEntries);
+      
+      for (Index = 0; Index < NumberOfEntries; Index++) {
+        EntryLength = Entries->EntryLength;
+        PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_SMBIOSVIEW_ENTRYLEN), HiiHandle, EntryLength);
+        PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_SMBIOSVIEW_REFERENCEDHANDLE), HiiHandle, Entries->ReferencedHandle);
+        PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_SMBIOSVIEW_REFERENCEDOFFSET), HiiHandle, Entries->ReferencedOffset);
+        PrintSmbiosString (pStruct, Entries->EntryString, String);
+        PrintSmbiosBitField (pStruct, Entries->Value, Value, EntryLength - 5);
+        Entries = (ADDITIONAL_INFORMATION_ENTRY *) ((UINT8 *)Entries + EntryLength);
+      }
+    }
+    break;
+    
+  //
+  // Onboard Devices Extended Information (Type 41)
+  //
+  case 41:   
+    PrintPendingString (pStruct, Type41, ReferenceDesignation);
+    PrintStructValueH (pStruct, Type41, DeviceType);
+    PrintStructValueH (pStruct, Type41, DeviceTypeInstance);
+    PrintStructValueH (pStruct, Type41, SegmentGroupNum);
+    PrintStructValueH (pStruct, Type41, BusNum);
+    PrintStructValueH (pStruct, Type41, DevFuncNum);
     break;
 
   case 126:
@@ -1182,6 +1260,10 @@ DisplayProcessorFamily (
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_M1_FAMILY), HiiHandle);
     break;
 
+  case 0x18:
+    Print (L"AMD Duron\n");
+    break;
+
   case 0x19:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_K5_FAMILY), HiiHandle);
     break;
@@ -1206,16 +1288,108 @@ DisplayProcessorFamily (
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_POWER_PC_604), HiiHandle);
     break;
 
+  case 0x25:
+    Print (L"Power PC 620\n");
+    break;
+
+  case 0x26:
+    Print (L"Power PC 704\n");
+    break;
+
+  case 0x27:
+    Print (L"Power PC 750\n");
+    break;
+
   case 0x30:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ALPHA_FAMILY_2), HiiHandle);
+    break;
+
+  case 0x31:
+    Print (L"Alpha 21064\n");
+    break;
+
+  case 0x32:
+    Print (L"Alpha 21066\n");
+    break;
+
+  case 0x33:
+    Print (L"Alpha 21164\n");
+    break;
+
+  case 0x34:
+    Print (L"Alpha 21164PC\n");
+    break;
+
+  case 0x35:
+    Print (L"Alpha 21164a\n");
+    break;
+
+  case 0x36:
+    Print (L"Alpha 21264\n");
+    break;
+
+  case 0x37:
+    Print (L"Alpha 21364\n");
     break;
 
   case 0x40:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_MIPS_FAMILY), HiiHandle);
     break;
 
+  case 0x41:
+    Print (L"MIPS R4000\n");
+    break;
+
+  case 0x42:
+    Print (L"MIPS R4200\n");
+    break;
+
+  case 0x43:
+    Print (L"MIPS R4400\n");
+    break;
+
+  case 0x44:
+    Print (L"MIPS R4600\n");
+    break;
+
+  case 0x45:
+    Print (L"MIPS R10000\n");
+    break;
+
   case 0x50:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SPARC_FAMILY), HiiHandle);
+    break;
+
+  case 0x51:
+    Print (L"SuperSparc\n");
+    break;
+
+  case 0x52:
+    Print (L"microSparc II\n");
+    break;
+
+  case 0x53:
+    Print (L"microSparc IIep\n");
+    break;
+
+  case 0x54:
+    Print (L"UltraSparc\n");
+    break;
+
+  case 0x55:
+    Print (L"UltraSparc II\n");
+    break;
+
+  case 0x56:
+    Print (L"UltraSparcIIi\n");
+    break;
+
+  case 0x57:
+    Print (L"UltraSparcIII\n");
+    break;
+
+  case 0x58:
+    Print (L"UltraSparcIIIi\n");
     break;
 
   case 0x60:
@@ -1246,8 +1420,52 @@ DisplayProcessorFamily (
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_HOBBIT_FAMILY), HiiHandle);
     break;
 
+  case 0x78:
+    Print (L"Crusoe TM5000\n");
+    break;
+
+  case 0x79:
+    Print (L"Crusoe TM3000\n");
+    break;
+
+  case 0x7A:
+    Print (L"Efficeon TM8000\n");
+    break;
+
   case 0x80:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_WEITEK), HiiHandle);
+    break;
+
+  case 0x82:
+    Print (L"Itanium\n");
+    break;
+
+  case 0x83:
+    Print (L"AMD Athlon64\n");
+    break;
+
+  case 0x84:
+    Print (L"AMD Opteron\n");
+    break;
+
+  case 0x85:
+    Print (L"AMD Sempron\n");
+    break;
+
+  case 0x86:
+    Print (L"AMD Turion64 Mobile\n");
+    break;
+
+  case 0x87:
+    Print (L"Dual-Core AMD Opteron\n");
+    break;
+
+  case 0x88:
+    Print (L"AMD Athlon 64X2 DualCore\n");
+    break;
+
+  case 0x89:
+    Print (L"AMD Turion 64X2 Mobile\n");
     break;
 
   case 0x90:
@@ -1262,6 +1480,50 @@ DisplayProcessorFamily (
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_PENTIUM_III_XEON), HiiHandle);
     break;
 
+  case 0xC8:
+    Print (L"IBM 390\n");
+    break;
+
+  case 0xC9:
+    Print (L"G4\n");
+    break;
+
+  case 0xCA:
+    Print (L"G5\n");
+    break;
+
+  case 0xCB:
+    Print (L"G6\n");
+    break;
+
+  case 0xCC:
+    Print (L"zArchitectur\n");
+    break;
+
+  case 0xD2:
+    Print (L"ViaC7M\n");
+    break;
+
+  case 0xD3:
+    Print (L"ViaC7D\n");
+    break;
+
+  case 0xD4:
+    Print (L"ViaC7\n");
+    break;
+
+  case 0xD5:
+    Print (L"Eden\n");
+    break;
+
+  case 0xFA:
+    Print (L"i860\n");
+    break;
+
+  case 0xFB:
+    Print (L"i960\n");
+    break;
+
   default:
     //
     // In order to reduce code quality notice of
@@ -1269,7 +1531,7 @@ DisplayProcessorFamily (
     // move multiple case into the else part and
     // use if/else to check value.
     //
-    if (Family >= 0x13 && Family <= 0x18) {
+    if (Family >= 0x13 && Family <= 0x17) {
       PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_RSVD_FOR_SPEC_M1), HiiHandle);
     } else if (Family >= 0x1A && Family <= 0x1F) {
       PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_RSVD_FOR_SPEC_K5), HiiHandle);
@@ -1282,6 +1544,72 @@ DisplayProcessorFamily (
   //
   // end switch
   //
+}
+
+VOID
+DisplayProcessorFamily2 (
+  UINT16 Family2,
+  UINT8  Option
+  )
+{
+  //
+  // Print prompt message
+  //
+  PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_PROCESSOR_FAMILY), HiiHandle);
+  
+  //
+  // Print option
+  //
+  PRINT_INFO_OPTION (Family2, Option);
+
+  //
+  // Use switch to check
+  //
+  switch (Family2) {
+    case 0x104:
+      Print (L"SH-3\n");
+      break;
+    
+    case 0x105:
+      Print (L"SH-4\n");
+      break;
+      
+    case 0x118:
+      Print (L"ARM\n");
+      break;
+
+    case 0x119:
+      Print (L"StrongARM\n");
+      break; 
+
+    case 0x12C:
+      Print (L"6x86\n");
+      break;
+
+    case 0x12D:
+      Print (L"MediaGX\n");
+      break;
+ 
+    case 0x12E:
+      Print (L"MII\n");
+      break; 
+      
+    case 0x140:
+      Print (L"WinChip\n");
+      break;
+
+    case 0x15E:
+      Print (L"DSP\n");
+      break;
+
+    case 0x1F4:
+      Print (L"Video Processor\n");
+      break;
+    
+    default:
+     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_UNDEFINED_PROC_FAMILY), HiiHandle);
+  }
+  
 }
 
 VOID

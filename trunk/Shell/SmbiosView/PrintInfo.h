@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -25,6 +25,9 @@ Revision History
 #define _SMBIOS_PRINT_INFO_H
 
 #include "LibSmbios.h"
+
+extern UINT8  SmbiosMajorVersion;
+extern UINT8  SmbiosMinorVersion;
 
 #define SHOW_NONE     0x00
 #define SHOW_OUTLINE  0x01
@@ -79,6 +82,13 @@ DisplayProcessorFamily (
   UINT8 Family,
   UINT8 Option
   );
+
+VOID
+DisplayProcessorFamily2 (
+  UINT16 Family2,
+  UINT8  Option
+  );  
+  
 VOID
 DisplayProcessorVoltage (
   UINT8 Voltage,

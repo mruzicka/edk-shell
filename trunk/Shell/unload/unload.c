@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -125,20 +125,24 @@ _UnloadGetDriverName (
     //
     // Make sure the interface has been implemented
     //
+    SupportedLanguage = NULL;
     if ((ComponentName != NULL) && (ComponentName->GetDriverName != NULL)) {
+      SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
       Status = ComponentName->GetDriverName (
                                  ComponentName,
-                                 Language,
+                                 SupportedLanguage,
                                  DriverName
                                  );
     } else if ((ComponentName2 != NULL) && (ComponentName2->GetDriverName != NULL)) {
-      SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+      SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
       Status = ComponentName2->GetDriverName (
                                  ComponentName2,
                                  SupportedLanguage,
                                  DriverName
                                  );
-      FreePool(SupportedLanguage);
+    }
+    if (SupportedLanguage != NULL) {
+      FreePool (SupportedLanguage);
     }
   }
 
@@ -408,21 +412,41 @@ Returns:
 
   DiagnosticsStatus = BS->OpenProtocol (
                             Handle,
-                            &gEfiDriverDiagnosticsProtocolGuid,
+                            &gEfiDriverDiagnostics2ProtocolGuid,
                             NULL,
                             NULL,
                             NULL,
                             EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                             );
-
-  ConfigurationStatus = BS->OpenProtocol (
+  if (EFI_ERROR (DiagnosticsStatus)) {
+    DiagnosticsStatus = BS->OpenProtocol (
                               Handle,
-                              &gEfiDriverConfigurationProtocolGuid,
+                              &gEfiDriverDiagnosticsProtocolGuid,
                               NULL,
                               NULL,
                               NULL,
                               EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                               );
+  }
+
+  ConfigurationStatus = BS->OpenProtocol (
+                              Handle,
+                              &gEfiDriverConfiguration2ProtocolGuid,
+                              NULL,
+                              NULL,
+                              NULL,
+                              EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                              );
+  if (EFI_ERROR (DiagnosticsStatus)) {
+    ConfigurationStatus = BS->OpenProtocol (
+                                Handle,
+                                &gEfiDriverConfigurationProtocolGuid,
+                                NULL,
+                                NULL,
+                                NULL,
+                                EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                                );
+  }
 
   NumberOfChildren        = 0;
   ControllerHandleBuffer  = NULL;

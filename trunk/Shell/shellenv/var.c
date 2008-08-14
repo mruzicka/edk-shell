@@ -389,8 +389,15 @@ Returns:
 {
   UINTN       Size;
   VARIABLE_ID *Var;
+  UINTN       RoundUpValueSize;
 
-  Size  = sizeof (VARIABLE_ID) + StrSize (Name) + ValueSize;
+  //
+  // Variable buffer layout: VARIABLE_ID + Value + Name
+  // We need to round up the variable size to make sure Name is aligned (for IPF).
+  //
+  RoundUpValueSize = (ValueSize % 2) ? (ValueSize + 1) : ValueSize; 
+
+  Size  = sizeof (VARIABLE_ID) + StrSize (Name) + RoundUpValueSize;
   Var   = AllocateZeroPool (Size);
   if (Var == NULL) {
     return NULL;
@@ -398,7 +405,7 @@ Returns:
 
   Var->Signature  = VARIABLE_SIGNATURE;
   Var->u.Value    = ((UINT8 *) Var) + sizeof (VARIABLE_ID);
-  Var->Name       = (CHAR16 *) (Var->u.Value + ValueSize);
+  Var->Name       = (CHAR16 *) (Var->u.Value + RoundUpValueSize);
   Var->ValueSize  = ValueSize;
   CopyMem (Var->u.Value, Value, ValueSize);
   StrCpy (Var->Name, Name);

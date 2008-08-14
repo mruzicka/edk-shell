@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -50,22 +50,98 @@ struct {
   EFI_GUID                    ProtocolId;
 }
 SEnvInternalProtocolInfo[] = {
-  L"DevIo",
+  //
+  // Loaded Image
+  //
+  L"Image",
+  SEnvImage,
+  SEnvImageTok,
+  EFI_LOADED_IMAGE_PROTOCOL_GUID,
+  //
+  // Device Path
+  //
+  L"Dpath",
+  SEnvDPath,
+  SEnvDPathTok,
+  EFI_DEVICE_PATH_PROTOCOL_GUID,
+  L"ImageDpath",
+  SEnvDPath,
+  SEnvImageDPathTok,
+  EFI_LOADED_IMAGE_DEVICE_PATH_PROTOCOL_GUID,
+  L"DpathUtil",
   NULL,
   NULL,
-  EFI_DEVICE_IO_PROTOCOL_GUID,
-  L"Fs",
+  EFI_DEVICE_PATH_UTILITIES_PROTOCOL_GUID,
+  L"DpathToText",
   NULL,
   NULL,
-  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID,
-  L"DiskIo",
+  EFI_DEVICE_PATH_TO_TEXT_PROTOCOL_GUID,
+  L"DpathFromText",
   NULL,
   NULL,
-  EFI_DISK_IO_PROTOCOL_GUID,
-  L"BlkIo",
-  SEnvBlkIo,
+  EFI_DEVICE_PATH_FROM_TEXT_PROTOCOL_GUID,
+  L"PcAnsi",
   NULL,
-  EFI_BLOCK_IO_PROTOCOL_GUID,
+  NULL,
+  DEVICE_PATH_MESSAGING_PC_ANSI,
+  L"Vt100",
+  NULL,
+  NULL,
+  DEVICE_PATH_MESSAGING_VT_100,
+  L"Vt100+",
+  NULL,
+  NULL,
+  DEVICE_PATH_MESSAGING_VT_100_PLUS,
+  L"VtUtf8",
+  NULL,
+  NULL,
+  DEVICE_PATH_MESSAGING_VT_UTF8,
+  //
+  // Driver Model
+  //
+  L"DriverBinding",
+  NULL,
+  NULL,
+  EFI_DRIVER_BINDING_PROTOCOL_GUID,
+  L"PlatformOverride",
+  NULL,
+  NULL,
+  EFI_PLATFORM_DRIVER_OVERRIDE_PROTOCOL_GUID,
+  L"BusSpecificDriverOverride",
+  SEnvBusSpecificDriverOverride,
+  NULL,
+  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL_GUID,
+  L"Diagnostics",
+  NULL,
+  NULL,
+  EFI_DRIVER_DIAGNOSTICS_PROTOCOL_GUID,
+  L"Diagnostics2",
+  NULL,
+  NULL,
+  EFI_DRIVER_DIAGNOSTICS2_PROTOCOL_GUID,
+  L"ComponentName",
+  NULL,
+  NULL,
+  EFI_COMPONENT_NAME_PROTOCOL_GUID,
+  L"ComponentName2",
+  NULL,
+  NULL,
+  EFI_COMPONENT_NAME2_PROTOCOL_GUID,
+  L"PlatformDriverConfig",
+  NULL,
+  NULL,
+  EFI_PLATFORM_TO_DRIVER_CONFIGURATION_PROTOCOL_GUID,
+  L"DriverEFIVersion",
+  SEnvDriverEFIVersion,
+  SEnvDriverEFIVersionTok,
+  EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL_GUID,
+  //
+  // Console Support
+  //
+  L"TxtinEx",
+  NULL,
+  NULL,
+  EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID,
   L"Txtin",
   NULL,
   NULL,
@@ -74,54 +150,18 @@ SEnvInternalProtocolInfo[] = {
   SEnvTextOut,
   NULL,
   EFI_SIMPLE_TEXT_OUT_PROTOCOL_GUID,
-  L"Load",
+  L"SimplePointer",
   NULL,
   NULL,
-  LOAD_FILE_PROTOCOL_GUID,
-  L"Image",
-  SEnvImage,
-  SEnvImageTok,
-  EFI_LOADED_IMAGE_PROTOCOL_GUID,
-  L"UnicodeCollation",
+  EFI_SIMPLE_POINTER_PROTOCOL_GUID,
+  L"AbsolutePointer",
   NULL,
   NULL,
-  EFI_UNICODE_COLLATION_PROTOCOL_GUID,
-  //
-  //  L"LegacyBoot",          NULL,                 NULL,           EFI_LEGACY_BOOT_PROTOCOL_GUID,
-  //
+  EFI_ABSOLUTE_POINTER_PROTOCOL_GUID,
   L"SerialIo",
   NULL,
   NULL,
   EFI_SERIAL_IO_PROTOCOL_GUID,
-  L"Pxebc",
-  NULL,
-  NULL,
-  EFI_PXE_BASE_CODE_PROTOCOL_GUID,
-  L"Tcp",
-  NULL,
-  NULL,
-  EFI_TCP_PROTOCOL_GUID,
-  L"Net",
-  NULL,
-  NULL,
-  EFI_SIMPLE_NETWORK_PROTOCOL_GUID,
-  //
-  //  L"TxtOutSplit",         NULL,                 NULL,           TEXT_OUT_SPLITER_PROTOCOL,
-  //  L"ErrOutSplit",         NULL,                 NULL,           ERROR_OUT_SPLITER_PROTOCOL,
-  //  L"TxtInSplit",          NULL,                 NULL,           TEXT_IN_SPLITER_PROTOCOL,
-  //
-  L"Nii",
-  NULL,
-  NULL,
-  EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_GUID,
-  L"UgaDraw",
-  NULL,
-  NULL,
-  EFI_UGA_DRAW_PROTOCOL_GUID,
-  L"UgaIo",
-  NULL,
-  NULL,
-  EFI_UGA_IO_PROTOCOL_GUID,
   L"GraphicsOutput",
   SEnvGraphicsOutput,
   NULL,
@@ -138,8 +178,294 @@ SEnvInternalProtocolInfo[] = {
   NULL,
   NULL,
   EFI_EDID_OVERRIDE_PROTOCOL_GUID,
+  L"ConIn",
+  NULL,
+  NULL,
+  EFI_CONSOLE_IN_DEVICE_GUID,
+  L"ConOut",
+  NULL,
+  NULL,
+  EFI_CONSOLE_OUT_DEVICE_GUID,
+  L"StdErr",
+  NULL,
+  NULL,
+  EFI_STANDARD_ERROR_DEVICE_GUID,
   //
-  // just plain old protocol ids
+  // Media Access
+  //
+  L"Load",
+  NULL,
+  NULL,
+  LOAD_FILE_PROTOCOL_GUID,
+  L"Fs",
+  NULL,
+  NULL,
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID,
+  L"GenFileInfo",
+  NULL,
+  NULL,
+  EFI_FILE_INFO_ID,
+  L"TapeIo",
+  NULL,
+  NULL,
+  EFI_TAPE_IO_PROTOCOL_GUID,
+  L"DiskIo",
+  NULL,
+  NULL,
+  EFI_DISK_IO_PROTOCOL_GUID,
+  L"BlkIo",
+  SEnvBlkIo,
+  NULL,
+  EFI_BLOCK_IO_PROTOCOL_GUID,
+  L"UnicodeCollation",
+  NULL,
+  NULL,
+  EFI_UNICODE_COLLATION_PROTOCOL_GUID,
+  L"UnicodeCollation2",
+  NULL,
+  NULL,
+  EFI_UNICODE_COLLATION2_PROTOCOL_GUID,
+  //
+  // PCI Bus Support
+  //
+  L"PciRootBridgeIo",
+  SEnvPciRootBridgeIo,
+  NULL,
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_GUID,
+  L"PciIo",
+  SEnvPciIo,
+  NULL,
+  EFI_PCI_IO_PROTOCOL_GUID,
+  //
+  // SCSI Bus Support
+  //
+  L"ScsiPassThru",
+  NULL,
+  NULL,
+  EFI_SCSI_PASS_THRU_PROTOCOL_GUID,
+  L"ScsiIo",
+  NULL,
+  NULL,
+  EFI_SCSI_IO_PROTOCOL_GUID,
+  L"ExtScsiPassThru",
+  NULL,
+  NULL,
+  EFI_EXT_SCSI_PASS_THRU_PROTOCOL_GUID,
+  //
+  // iSCSI
+  //
+  L"IScsiInitName",
+  NULL,
+  NULL,
+  EFI_ISCSI_INITIATOR_NAME_PROTOCOL_GUID,
+  //
+  // USB Support
+  //
+  L"UsbIo",
+  SEnvUsbIo,
+  NULL,
+  EFI_USB_IO_PROTOCOL_GUID,
+  L"UsbHc",
+  NULL,
+  NULL,
+  EFI_USB_HC_PROTOCOL_GUID,
+  L"UsbHc2",
+  NULL,
+  NULL,
+  EFI_USB2_HC_PROTOCOL_GUID,
+  //
+  // Debugger Support
+  //
+  L"DebugSupport",
+  SEnvDebugSupport,
+  NULL,
+  EFI_DEBUG_SUPPORT_PROTOCOL_GUID,
+  L"DebugPort",
+  NULL,
+  NULL,
+  EFI_DEBUGPORT_PROTOCOL_GUID,
+  //
+  // Decompression Algorithm
+  //
+  L"Decompress",
+  NULL,
+  NULL,
+  EFI_DECOMPRESS_PROTOCOL_GUID,
+  //
+  // ACPI
+  //
+  L"AcpiTable",
+  NULL,
+  NULL,
+  EFI_ACPI_TABLE_PROTOCOL_GUID,
+  //
+  // EBC
+  //
+  L"EbcInterp",
+  NULL,
+  NULL,
+  EFI_EBC_INTERPRETER_PROTOCOL_GUID,
+  //
+  // SNP, PXE, BIS
+  //
+  L"Net",
+  NULL,
+  NULL,
+  EFI_SIMPLE_NETWORK_PROTOCOL_GUID,
+  L"Nii",
+  NULL,
+  NULL,
+  EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL_GUID,
+  L"Pxebc",
+  NULL,
+  NULL,
+  EFI_PXE_BASE_CODE_PROTOCOL_GUID,
+  L"PxebcCallback",
+  NULL,
+  NULL,
+  EFI_PXE_BASE_CODE_CALLBACK_PROTOCOL_GUID,
+  L"Bis",
+  NULL,
+  NULL,
+  EFI_BIS_PROTOCOL_GUID,
+  //
+  // Managed Network
+  //
+  L"MNPSb",
+  NULL,
+  NULL,
+  EFI_MANAGED_NETWORK_SERVICE_BINDING_PROTOCOL_GUID,
+  L"MNP",
+  NULL,
+  NULL,
+  EFI_MANAGED_NETWORK_PROTOCOL_GUID,
+  //
+  // ARP, DHCPv4
+  //
+  L"ARPSb",
+  NULL,
+  NULL,
+  EFI_ARP_SERVICE_BINDING_PROTOCOL_GUID,
+  L"ARP",
+  NULL,
+  NULL,
+  EFI_ARP_PROTOCOL_GUID,
+  L"DHCPv4Sb",
+  NULL,
+  NULL,
+  EFI_DHCP4_SERVICE_BINDING_PROTOCOL_GUID,
+  L"DHCPv4",
+  NULL,
+  NULL,
+  EFI_DHCP4_PROTOCOL_GUID,
+  //
+  // TCPv4, IPv4 and Configuration
+  //
+  L"TCPv4Sb",
+  NULL,
+  NULL,
+  EFI_TCP4_SERVICE_BINDING_PROTOCOL_GUID,
+  L"TCPv4",
+  NULL,
+  NULL,
+  EFI_TCP4_PROTOCOL_GUID,
+  L"IPv4Sb",
+  NULL,
+  NULL,
+  EFI_IP4_SERVICE_BINDING_PROTOCOL_GUID,
+  L"IPv4",
+  NULL,
+  NULL,
+  EFI_IP4_PROTOCOL_GUID,
+  L"IPv4Config",
+  NULL,
+  NULL,
+  EFI_IP4_CONFIG_PROTOCOL_GUID,
+  //
+  // UDPv4, MTFTPv4
+  //
+  L"UDPv4Sb",
+  NULL,
+  NULL,
+  EFI_UDP4_SERVICE_BINDING_PROTOCOL_GUID,
+  L"UDPv4",
+  NULL,
+  NULL,
+  EFI_UDP4_PROTOCOL_GUID,
+  L"MTFTPv4Sb",
+  NULL,
+  NULL,
+  EFI_MTFTP4_SERVICE_BINDING_PROTOCOL_GUID,
+  L"MTFTPv4",
+  NULL,
+  NULL,
+  EFI_MTFTP4_PROTOCOL_GUID,
+  //
+  // Security
+  //
+  L"AuthInfo",
+  NULL,
+  NULL,
+  EFI_AUTHENTICATION_INFO_PROTOCOL_GUID,
+  L"HashSb",
+  NULL,
+  NULL,
+  EFI_HASH_SERVICE_BINDING_PROTOCOL,
+  L"Hash",
+  NULL,
+  NULL,
+  EFI_HASH_PROTOCOL_GUID,
+  //
+  // HII 
+  //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  L"HiiFont",
+  NULL,
+  NULL,
+  EFI_HII_FONT_PROTOCOL_GUID,
+  L"HiiString",
+  NULL,
+  NULL,
+  EFI_HII_STRING_PROTOCOL_GUID,
+  L"HiiImage",
+  NULL,
+  NULL,
+  EFI_HII_IMAGE_PROTOCOL_GUID,
+  L"HiiDatabase",
+  NULL,
+  NULL,
+  EFI_HII_DATABASE_PROTOCOL_GUID,
+  //
+  // HII Configuration Processing and Browser
+  //
+  L"HiiConfRouting",
+  NULL,
+  NULL,
+  EFI_HII_CONFIG_ROUTING_PROTOCOL_GUID,
+  L"HiiConfAccess",
+  NULL,
+  NULL,
+  EFI_HII_CONFIG_ACCESS_PROTOCOL_GUID,
+  L"FormBrowser2",
+  NULL,
+  NULL,
+  EFI_FORM_BROWSER2_PROTOCOL_GUID,
+#else
+  L"Hii",
+  NULL,
+  NULL,
+  EFI_HII_PROTOCOL_GUID,
+  L"FormBrowser",
+  NULL,
+  NULL,
+  EFI_FORM_BROWSER_PROTOCOL_GUID,
+  L"FormCallback",
+  NULL,
+  NULL,
+  EFI_FORM_CALLBACK_PROTOCOL_GUID,
+#endif
+  //
+  // Shell Specific
   //
   L"ShellInt",
   NULL,
@@ -161,9 +487,6 @@ SEnvInternalProtocolInfo[] = {
   NULL,
   NULL,
   ALIAS_ID,
-  //
-  // ID guids
-  //
   L"G0",
   NULL,
   NULL,
@@ -180,34 +503,33 @@ SEnvInternalProtocolInfo[] = {
     0,
     0
   },
+  //
+  // Deprecated
+  //
+  L"DevIo",
+  NULL,
+  NULL,
+  EFI_DEVICE_IO_PROTOCOL_GUID,
+  L"Tcp",
+  NULL,
+  NULL,
+  EFI_TCP_PROTOCOL_GUID,
+  L"UgaDraw",
+  NULL,
+  NULL,
+  EFI_UGA_DRAW_PROTOCOL_GUID,
+  L"UgaIo",
+  NULL,
+  NULL,
+  EFI_UGA_IO_PROTOCOL_GUID,
   L"Efi",
   NULL,
   NULL,
   EFI_GLOBAL_VARIABLE_GUID,
-  L"GenFileInfo",
-  NULL,
-  NULL,
-  EFI_FILE_INFO_ID,
   L"FileSysInfo",
   NULL,
   NULL,
   EFI_FILE_SYSTEM_INFO_ID_GUID,
-  L"PcAnsi",
-  NULL,
-  NULL,
-  DEVICE_PATH_MESSAGING_PC_ANSI,
-  L"Vt100",
-  NULL,
-  NULL,
-  DEVICE_PATH_MESSAGING_VT_100,
-  L"Vt100+",
-  NULL,
-  NULL,
-  DEVICE_PATH_MESSAGING_VT_100_PLUS,
-  L"VtUtf8",
-  NULL,
-  NULL,
-  DEVICE_PATH_MESSAGING_VT_UTF8,
   L"ESP",
   NULL,
   NULL,
@@ -216,22 +538,25 @@ SEnvInternalProtocolInfo[] = {
   NULL,
   NULL,
   EFI_PART_TYPE_LEGACY_MBR_GUID,
-  L"DriverBinding",
-  NULL,
-  NULL,
-  EFI_DRIVER_BINDING_PROTOCOL_GUID,
-  L"ComponentName",
-  NULL,
-  NULL,
-  EFI_COMPONENT_NAME_PROTOCOL_GUID,
   L"Configuration",
   NULL,
   NULL,
   EFI_DRIVER_CONFIGURATION_PROTOCOL_GUID,
-  L"Diagnostics",
+  L"Configuration2",
   NULL,
   NULL,
-  EFI_DRIVER_DIAGNOSTICS_PROTOCOL_GUID,
+  EFI_DRIVER_CONFIGURATION2_PROTOCOL_GUID,
+  L"IsaIo",
+  SEnvIsaIo,
+  NULL,
+  EFI_ISA_IO_PROTOCOL_GUID,
+  L"IsaAcpi",
+  NULL,
+  NULL,
+  EFI_ISA_ACPI_PROTOCOL_GUID,
+  //
+  // NT32
+  //
 #if (PLATFORM == NT32)
   L"WinNtThunk",
   NULL,
@@ -246,161 +571,6 @@ SEnvInternalProtocolInfo[] = {
   NULL,
   LOCAL_EFI_WIN_NT_SERIAL_PORT_GUID,
 #endif
-  L"PciRootBridgeIo",
-  SEnvPciRootBridgeIo,
-  NULL,
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_GUID,
-  L"PciIo",
-  SEnvPciIo,
-  NULL,
-  EFI_PCI_IO_PROTOCOL_GUID,
-  L"IsaIo",
-  SEnvIsaIo,
-  NULL,
-  EFI_ISA_IO_PROTOCOL_GUID,
-  L"UsbIo",
-  SEnvUsbIo,
-  NULL,
-  EFI_USB_IO_PROTOCOL_GUID,
-  L"IsaAcpi",
-  NULL,
-  NULL,
-  EFI_ISA_ACPI_PROTOCOL_GUID,
-  L"SimplePointer",
-  NULL,
-  NULL,
-  EFI_SIMPLE_POINTER_PROTOCOL_GUID,
-  L"ConIn",
-  NULL,
-  NULL,
-  EFI_CONSOLE_IN_DEVICE_GUID,
-  L"ConOut",
-  NULL,
-  NULL,
-  EFI_CONSOLE_OUT_DEVICE_GUID,
-  L"StdErr",
-  NULL,
-  NULL,
-  EFI_STANDARD_ERROR_DEVICE_GUID,
-  L"Decompress",
-  NULL,
-  NULL,
-  EFI_DECOMPRESS_PROTOCOL_GUID,
-  L"DebugPort",
-  NULL,
-  NULL,
-  EFI_DEBUGPORT_PROTOCOL_GUID,
-  L"DebugSupport",
-  SEnvDebugSupport,
-  NULL,
-  EFI_DEBUG_SUPPORT_PROTOCOL_GUID,
-  L"ScsiPassThru",
-  NULL,
-  NULL,
-  EFI_SCSI_PASS_THRU_PROTOCOL_GUID,
-  L"ScsiIo",
-  NULL,
-  NULL,
-  EFI_SCSI_IO_PROTOCOL_GUID,
-  L"BusSpecificDriverOverride",
-  SEnvBusSpecificDriverOverride,
-  NULL,
-  EFI_BUS_SPECIFIC_DRIVER_OVERRIDE_PROTOCOL_GUID,
-
-  L"UsbHc",
-  NULL,
-  NULL,
-  EFI_USB_HC_PROTOCOL_GUID,
-
-  L"UsbHc2",
-  NULL,
-  NULL,
-  EFI_USB2_HC_PROTOCOL_GUID,
-
-  L"ExtScsiPassThru",
-  NULL,
-  NULL,
-  EFI_EXT_SCSI_PASS_THRU_PROTOCOL_GUID,
-
-  L"MNPSb",
-  NULL,
-  NULL,
-  EFI_MANAGED_NETWORK_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"MNP",
-  NULL,
-  NULL,
-  EFI_MANAGED_NETWORK_PROTOCOL_GUID,
-
-  L"ARPSb",
-  NULL,
-  NULL,
-  EFI_ARP_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"ARP",
-  NULL,
-  NULL,
-  EFI_ARP_PROTOCOL_GUID,
-
-  L"DHCPv4Sb",
-  NULL,
-  NULL,
-  EFI_DHCP4_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"DHCPv4",
-  NULL,
-  NULL,
-  EFI_DHCP4_PROTOCOL_GUID,
-
-  L"TCPv4Sb",
-  NULL,
-  NULL,
-  EFI_TCP4_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"TCPv4",
-  NULL,
-  NULL,
-  EFI_TCP4_PROTOCOL_GUID,
-
-  L"IPv4Sb",
-  NULL,
-  NULL,
-  EFI_IP4_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"IPv4",
-  NULL,
-  NULL,
-  EFI_IP4_PROTOCOL_GUID,
-
-  L"IPv4Config",
-  NULL,
-  NULL,
-  EFI_IP4_CONFIG_PROTOCOL_GUID,
-
-  L"UDPv4Sb",
-  NULL,
-  NULL,
-  EFI_UDP4_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"UDPv4",
-  NULL,
-  NULL,
-  EFI_UDP4_PROTOCOL_GUID,
-
-  L"MTFTPv4Sb",
-  NULL,
-  NULL,
-  EFI_MTFTP4_SERVICE_BINDING_PROTOCOL_GUID,
-
-  L"MTFTPv4",
-  NULL,
-  NULL,
-  EFI_MTFTP4_PROTOCOL_GUID,
-
-  L"Dpath",
-  SEnvDPath,
-  SEnvDPathTok,
-  EFI_DEVICE_PATH_PROTOCOL_GUID,
 
   L"Unknown Device",
   NULL,
@@ -1021,20 +1191,24 @@ GetDriverName (
       //
       // Make sure the interface has been implemented
       //
+      SupportedLanguage = NULL;
       if ((ComponentName != NULL) && (ComponentName->GetDriverName != NULL)) {
+        SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
         Status = ComponentName->GetDriverName (
                                   ComponentName,
-                                  Language,
+                                  SupportedLanguage,
                                   DriverName
                                   );
       } else if ((ComponentName2 != NULL) && (ComponentName2->GetDriverName != NULL)) {
-        SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+        SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
         Status = ComponentName2->GetDriverName (
                                    ComponentName2,
                                    SupportedLanguage,
                                    DriverName
                                    );
-        FreePool(SupportedLanguage);
+      }
+      if (SupportedLanguage != NULL) {
+        FreePool (SupportedLanguage);
       }
     }
   }
@@ -1118,7 +1292,31 @@ SEnvGetDeviceName (
 
     Status = BS->OpenProtocol (
                   DriverBindingHandleBuffer[HandleIndex],
+                  &gEfiDriverConfiguration2ProtocolGuid,
+                  NULL,
+                  NULL,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
+    if (!EFI_ERROR (Status)) {
+      *ConfigurationStatus = EFI_SUCCESS;
+    }
+
+    Status = BS->OpenProtocol (
+                  DriverBindingHandleBuffer[HandleIndex],
                   &gEfiDriverDiagnosticsProtocolGuid,
+                  NULL,
+                  NULL,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                  );
+    if (!EFI_ERROR (Status)) {
+      *DiagnosticsStatus = EFI_SUCCESS;
+    }
+
+    Status = BS->OpenProtocol (
+                  DriverBindingHandleBuffer[HandleIndex],
+                  &gEfiDriverDiagnostics2ProtocolGuid,
                   NULL,
                   NULL,
                   NULL,
@@ -1139,16 +1337,18 @@ SEnvGetDeviceName (
     //
     // Make sure this interface has been implemented
     //
+    SupportedLanguage = NULL;
     if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
+      SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
       Status = ComponentName->GetControllerName (
                                 ComponentName,
                                 DeviceHandle,
                                 NULL,
-                                Language,
+                                SupportedLanguage,
                                 &ControllerName
                                 );
     } else if ((ComponentName2 != NULL) && (ComponentName2->GetControllerName != NULL)) {
-      SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+      SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
       Status = ComponentName2->GetControllerName (
                                  ComponentName2,
                                  DeviceHandle,
@@ -1156,9 +1356,11 @@ SEnvGetDeviceName (
                                  SupportedLanguage,
                                  &ControllerName
                                  );
-      FreePool(SupportedLanguage);
     } else {
       Status = EFI_UNSUPPORTED;
+    }
+    if (SupportedLanguage != NULL) {
+      FreePool (SupportedLanguage);
     }
 
     if (EFI_ERROR (Status)) {
@@ -1224,7 +1426,31 @@ SEnvGetDeviceName (
 
           Status = BS->OpenProtocol (
                         ParentDriverBindingHandleBuffer[ParentDriverIndex],
+                        &gEfiDriverConfiguration2ProtocolGuid,
+                        NULL,
+                        NULL,
+                        NULL,
+                        EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                        );
+          if (!EFI_ERROR (Status)) {
+            *ConfigurationStatus = EFI_SUCCESS;
+          }
+
+          Status = BS->OpenProtocol (
+                        ParentDriverBindingHandleBuffer[ParentDriverIndex],
                         &gEfiDriverDiagnosticsProtocolGuid,
+                        NULL,
+                        NULL,
+                        NULL,
+                        EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                        );
+          if (!EFI_ERROR (Status)) {
+            *DiagnosticsStatus = EFI_SUCCESS;
+          }
+
+          Status = BS->OpenProtocol (
+                        ParentDriverBindingHandleBuffer[ParentDriverIndex],
+                        &gEfiDriverDiagnostics2ProtocolGuid,
                         NULL,
                         NULL,
                         NULL,
@@ -1245,16 +1471,18 @@ SEnvGetDeviceName (
           //
           // Make sure this interface has been implemented
           //
+          SupportedLanguage = NULL;
           if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
+            SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
             Status = ComponentName->GetControllerName (
                                       ComponentName,
                                       ParentControllerHandleBuffer[HandleIndex],
                                       DeviceHandle,
-                                      Language,
+                                      SupportedLanguage,
                                       &ControllerName
                                       );
           } else if ((ComponentName2 != NULL) && (ComponentName2->GetControllerName != NULL)) {
-            SupportedLanguage = LibConvertComponentName2SupportLanguage (ComponentName2, Language);
+            SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
             Status = ComponentName2->GetControllerName (
                                        ComponentName2,
                                        ParentControllerHandleBuffer[HandleIndex],
@@ -1262,9 +1490,11 @@ SEnvGetDeviceName (
                                        SupportedLanguage,
                                        &ControllerName
                                        );
-            FreePool(SupportedLanguage);
           } else {
             Status = EFI_UNSUPPORTED;
+          }
+          if (SupportedLanguage != NULL) {
+            FreePool (SupportedLanguage);
           }
 
           if (EFI_ERROR (Status)) {
@@ -1595,21 +1825,41 @@ Returns:
 
   DiagnosticsStatus = BS->OpenProtocol (
                             Handle,
-                            &gEfiDriverDiagnosticsProtocolGuid,
+                            &gEfiDriverDiagnostics2ProtocolGuid,
                             NULL,
                             NULL,
                             NULL,
                             EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                             );
-
-  ConfigurationStatus = BS->OpenProtocol (
+  if (EFI_ERROR (DiagnosticsStatus)) {
+    DiagnosticsStatus = BS->OpenProtocol (
                               Handle,
-                              &gEfiDriverConfigurationProtocolGuid,
+                              &gEfiDriverDiagnosticsProtocolGuid,
                               NULL,
                               NULL,
                               NULL,
                               EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                               );
+  }
+
+  ConfigurationStatus = BS->OpenProtocol (
+                              Handle,
+                              &gEfiDriverConfiguration2ProtocolGuid,
+                              NULL,
+                              NULL,
+                              NULL,
+                              EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                              );
+  if (EFI_ERROR (DiagnosticsStatus)) {
+    ConfigurationStatus = BS->OpenProtocol (
+                                Handle,
+                                &gEfiDriverConfigurationProtocolGuid,
+                                NULL,
+                                NULL,
+                                NULL,
+                                EFI_OPEN_PROTOCOL_TEST_PROTOCOL
+                                );
+  }
 
   NumberOfChildren        = 0;
   ControllerHandleBuffer  = NULL;
@@ -1939,7 +2189,7 @@ Returns:
   ArgVar      = 0;
   ByProtocol  = FALSE;
   Status      = EFI_SUCCESS;
-  Language    = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language    = LibGetVariableLang ();
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
 
   if (!EFI_PROPER_VERSION (1, 10)) {

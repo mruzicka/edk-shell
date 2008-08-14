@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -15,9 +15,6 @@ Module Name:
 
 
 Abstract:
-
-
-
 
 Revision History
 
@@ -88,7 +85,7 @@ Returns:
   }
 
   if (ImageHandle && UnicodeInterface == &LibStubUnicodeInterface) {
-    LangCode  = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+    LangCode  = LibGetVariableLang ();
     Status    = InitializeUnicodeSupport (LangCode);
     if (EFI_ERROR (Status)) {
       Status = InitializeUnicodeSupport (LanguageCodeEnglish);
@@ -129,8 +126,6 @@ Returns:
   EFI_STATUS                      Status;
   CHAR8                           *Languages;
   UINTN                           Index;
-  UINTN                           Position;
-  UINTN                           Length;
   UINTN                           NoHandles;
   EFI_HANDLE                      *Handles;
   EFI_STATUS                      ReturnStatus;
@@ -139,7 +134,10 @@ Returns:
   //
   // If we don't know it, lookup the current language code
   //
-  LibLocateHandle (ByProtocol, &gEfiUnicodeCollationProtocolGuid, NULL, &NoHandles, &Handles);
+  LibLocateHandle (ByProtocol, &gEfiUnicodeCollation2ProtocolGuid, NULL, &NoHandles, &Handles);
+  if (NoHandles == 0) {
+    LibLocateHandle (ByProtocol, &gEfiUnicodeCollationProtocolGuid, NULL, &NoHandles, &Handles);
+  }
   if (!LangCode || !NoHandles) {
     goto Done;
   }
@@ -147,24 +145,30 @@ Returns:
   // Check all driver's for a matching language code
   //
   for (Index = 0; Index < NoHandles; Index++) {
-    Status = BS->HandleProtocol (Handles[Index], &gEfiUnicodeCollationProtocolGuid, (VOID *) &Ui);
+    Status = BS->HandleProtocol (Handles[Index], &gEfiUnicodeCollation2ProtocolGuid, (VOID *) &Ui);
+    if (EFI_ERROR (Status)) {
+      Status = BS->HandleProtocol (Handles[Index], &gEfiUnicodeCollationProtocolGuid, (VOID *) &Ui);
+    }
     if (EFI_ERROR (Status)) {
       continue;
     }
     //
     // Check for a matching language code
     //
-    Languages = Ui->SupportedLanguages;
-    Length    = strlena (Languages);
-    for (Position = 0; Position < Length; Position += ISO_639_2_ENTRY_SIZE) {
-      //
-      // If this code matches, use this driver
-      //
-      if (CompareMem (Languages + Position, LangCode, ISO_639_2_ENTRY_SIZE) == 0) {
+    if (strstra (Ui->SupportedLanguages, LangCode) == NULL) {
+      Languages = LibConvertSupportedLanguage (Ui->SupportedLanguages, LangCode);
+      if (strcmpa (Languages, LangCode) != 0) {
         UnicodeInterface  = Ui;
         ReturnStatus      = EFI_SUCCESS;
+        FreePool (Languages);
         goto Done;
+      } else {
+        FreePool (Languages);
       }
+    } else {
+      UnicodeInterface  = Ui;
+      ReturnStatus      = EFI_SUCCESS;
+      goto Done;
     }
   }
 
@@ -179,7 +183,9 @@ Done:
   return ReturnStatus;
 }
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 EFI_HII_PROTOCOL *HiiProt        = NULL;
+#endif
 EFI_HII_HANDLE   HiiLibHandle    = (EFI_HII_HANDLE) 0;
 BOOLEAN          HiiInitialized  = FALSE;
 UINTN            NumStrings      = 0;
@@ -198,7 +204,6 @@ Routine Description:
   If previously registered, simply return the handle.
 
 Arguments:
-
   HiiLibHandle    - A pointer to the handle which is used to reference our string data.
   StringPack      - String package
   StringPackGuid  - String package guid
@@ -208,9 +213,15 @@ Returns:
 
 --*/
 {
-  EFI_STATUS        Status;
-  EFI_HII_PACKAGES  *HiiPackages;
-  VOID              **Package;
+  EFI_STATUS                  Status;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  EFI_HII_PACKAGE_LIST_HEADER *PackageList;
+  EFI_GUID                    PackageListGuid;
+  UINT64                      MonotonicCount;  
+#else
+  EFI_HII_PACKAGES            *HiiPackages;
+  VOID                        **Package;
+#endif
 
   ASSERT (HiiHandle);
   
@@ -225,6 +236,29 @@ Returns:
   }
 
   HiiInitialized = TRUE;
+  
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  LocateHiiProtocols ();
+  //
+  // Update the incoming StringPackGuid to make it unique to be a GUID of a 
+  // package list. 
+  //  
+  CopyMem (&PackageListGuid, StringPackGuid, sizeof (EFI_GUID));
+  BS->GetNextMonotonicCount (&MonotonicCount);
+  MonotonicCount += *((UINT64 *) (PackageListGuid.Data4));
+  CopyMem (PackageListGuid.Data4, &MonotonicCount, sizeof (UINT64));
+
+  PackageList = PreparePackageList (1, &PackageListGuid, StringPack);
+  ASSERT (PackageList != NULL);
+  Status = gLibHiiDatabase->NewPackageList (
+                              gLibHiiDatabase,
+                              PackageList,
+                              NULL,
+                              HiiHandle
+                              );
+  FreePool (PackageList);
+  
+#else
   //
   // Find the HII protocol
   //
@@ -242,11 +276,12 @@ Returns:
   HiiPackages->NumberOfPackages = 1;
   Package                       = (VOID **) (((UINT8 *) HiiPackages) + sizeof (EFI_HII_PACKAGES));
   *Package                      = (EFI_HII_STRING_PACK *) StringPack;
-  Status                        = HiiProt->NewPack (HiiProt, HiiPackages, HiiHandle);
-  NumStrings++;
-
-  HiiLibHandle = *HiiHandle;
+  Status                        = HiiProt->NewPack (HiiProt, HiiPackages, HiiHandle);  
   FreePool (HiiPackages);
+  
+#endif  
+  NumStrings++;
+  HiiLibHandle = *HiiHandle;
   return Status;
 }
 
@@ -259,10 +294,16 @@ LibUnInitializeStrings (
 
   Status = EFI_SUCCESS;
   NumStrings--;
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  LocateHiiProtocols ();
+  if (gLibHiiDatabase != NULL && NumStrings == 0) {
+    Status = gLibHiiDatabase->RemovePackageList (gLibHiiDatabase, HiiLibHandle);
+  }
+#else
   if (HiiProt != NULL && NumStrings == 0) {
     Status = HiiProt->RemovePack (HiiProt, HiiLibHandle);
-  }
-
+  }  
+#endif
   return Status;
 }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -54,6 +54,9 @@ Revision History
 #include EFI_GUID_DEFINITION (Smbios)
 #include EFI_GUID_DEFINITION (StandardErrorDevice)
 #include EFI_GUID_DEFINITION (FrameworkDevicePath)
+#include EFI_PROTOCOL_DEFINITION (AbsolutePointer)
+#include EFI_PROTOCOL_DEFINITION (AcpiTable)
+#include EFI_PROTOCOL_DEFINITION (Bis)
 #include EFI_PROTOCOL_DEFINITION (BlockIo)
 #include EFI_PROTOCOL_DEFINITION (BusSpecificDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (ComponentName)
@@ -66,10 +69,15 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (Decompress)
 #include EFI_PROTOCOL_DEFINITION (DeviceIO)
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (DevicePathFromText)
+#include EFI_PROTOCOL_DEFINITION (DevicePathToText)
+#include EFI_PROTOCOL_DEFINITION (DevicePathUtilities)
 #include EFI_PROTOCOL_DEFINITION (DiskIo)
 #include EFI_PROTOCOL_DEFINITION (DriverBinding)
 #include EFI_PROTOCOL_DEFINITION (DriverConfiguration)
+#include EFI_PROTOCOL_DEFINITION (DriverConfiguration2)
 #include EFI_PROTOCOL_DEFINITION (DriverDiagnostics)
+#include EFI_PROTOCOL_DEFINITION (DriverDiagnostics2)
 #include EFI_PROTOCOL_DEFINITION (Ebc)
 #include EFI_PROTOCOL_DEFINITION (EfiNetworkInterfaceIdentifier)
 #include EFI_PROTOCOL_DEFINITION (FileSystemInfo)
@@ -77,16 +85,30 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolume2)
 #include EFI_PROTOCOL_DEFINITION (FirmwareVolumeBlock)
+#include EFI_PROTOCOL_DEFINITION (Hash)
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include EFI_PROTOCOL_DEFINITION (FormBrowser2)
+#include EFI_PROTOCOL_DEFINITION (HiiString)
+#include EFI_PROTOCOL_DEFINITION (HiiDatabase)
+#include EFI_PROTOCOL_DEFINITION (HiiConfigAccess)
+#include EFI_PROTOCOL_DEFINITION (HiiConfigRouting)
+#include EFI_PROTOCOL_DEFINITION (HiiFont)
+#include EFI_PROTOCOL_DEFINITION (HiiImage)
+#else
 #include EFI_PROTOCOL_DEFINITION (FormBrowser)
 #include EFI_PROTOCOL_DEFINITION (FormCallback)
 #include EFI_PROTOCOL_DEFINITION (Hii)
+#endif
 #include EFI_PROTOCOL_DEFINITION (IsaAcpi)
 #include EFI_PROTOCOL_DEFINITION (IsaIo)
+#include EFI_PROTOCOL_DEFINITION (IScsiInitiatorName)
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
+#include EFI_PROTOCOL_DEFINITION (LoadedImageDevicePath)
 #include EFI_PROTOCOL_DEFINITION (LoadFile)
 #include EFI_PROTOCOL_DEFINITION (PciHostBridgeResourceAllocation)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_PROTOCOL_DEFINITION (PciRootBridgeIo)
+#include EFI_PROTOCOL_DEFINITION (PlatformDriverOverride)
 #include EFI_PROTOCOL_DEFINITION (PxeBaseCode)
 #include EFI_PROTOCOL_DEFINITION (PxeBaseCodeCallback)
 #include EFI_PROTOCOL_DEFINITION (ScsiIo)
@@ -96,7 +118,10 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (SimpleFileSystem)
 #include EFI_PROTOCOL_DEFINITION (SimpleNetwork)
 #include EFI_PROTOCOL_DEFINITION (SimplePointer)
+#include EFI_PROTOCOL_DEFINITION (SimpleTextIn)
+#include EFI_PROTOCOL_DEFINITION (SimpleTextInputEx)
 #include EFI_PROTOCOL_DEFINITION (SimpleTextOut)
+#include EFI_PROTOCOL_DEFINITION (TapeIo)
 #include EFI_PROTOCOL_DEFINITION (Tcp)
 #include EFI_PROTOCOL_DEFINITION (GraphicsOutput)
 #include EFI_PROTOCOL_DEFINITION (EdidDiscovered)
@@ -106,6 +131,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (UgaIo)
 #include EFI_PROTOCOL_DEFINITION (UgaSplash)
 #include EFI_PROTOCOL_DEFINITION (UnicodeCollation)
+#include EFI_PROTOCOL_DEFINITION (UnicodeCollation2)
 #include EFI_PROTOCOL_DEFINITION (UsbHostController)
 #include EFI_PROTOCOL_DEFINITION (UsbIo)
 #include EFI_PROTOCOL_DEFINITION (VariableStore)
@@ -120,6 +146,9 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (Udp4)
 #include EFI_PROTOCOL_DEFINITION (Mtftp4)
 #include EFI_PROTOCOL_DEFINITION (DevicePath)
+#include EFI_PROTOCOL_DEFINITION (AuthenticationInfo)
+#include EFI_PROTOCOL_DEFINITION (DriverSupportedEfiVersion)
+#include EFI_PROTOCOL_DEFINITION (PlatformToDriverConfiguration)
 
 #include "efilibplat.h"
 #include "efipart.h"
@@ -138,6 +167,9 @@ Revision History
 #include "Str.h"
 #include "VarCheck.h"
 #include "ConsistMapping.h"
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+#include "HiiSupport.h"
+#endif
 
 //
 //  Environment variable name constants
@@ -160,6 +192,7 @@ Revision History
 #define LanguageCodeEnglish "eng"
 
 #define ISO_639_2_ENTRY_SIZE  3
+#define RFC_3066_ENTRY_SIZE   12
 
 #define ALIGN_SIZE(a) ((a % MIN_ALIGNMENT_SIZE) ? MIN_ALIGNMENT_SIZE - (a % MIN_ALIGNMENT_SIZE) : 0)
 
@@ -295,9 +328,9 @@ LibGetComponentNameProtocol (
   );
 
 CHAR8 *
-LibConvertComponentName2SupportLanguage (
-  IN EFI_COMPONENT_NAME2_PROTOCOL    *ComponentName,
-  IN CHAR8                           *Language
+LibConvertSupportedLanguage (
+  IN CHAR8                           *SupportedLanguages,
+  IN CHAR8                           *LangCode
   );
 
 #endif

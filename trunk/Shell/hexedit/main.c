@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2007, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -9,10 +9,10 @@ http://opensource.org/licenses/bsd-license.php
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
 
-  Module Name:
+Module Name:
   main.c
 
-  Abstract:
+Abstract:
   Main entry point of editor
   
 
@@ -27,7 +27,9 @@ extern UINT8      STRING_ARRAY_NAME[];
 // Global Variables
 //
 EFI_HII_HANDLE    HiiHandle;
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 EFI_HII_PROTOCOL  *Hii;
+#endif
 EFI_GUID          EfiHexeditGuid = EFI_HEXEDIT_GUID;
 SHELL_VAR_CHECK_ITEM    HexeditCheckList[] = {
   {
@@ -143,10 +145,14 @@ Returns:
 
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   Status = LibLocateProtocol (&gEfiHiiProtocolGuid, &Hii);
   if (EFI_ERROR (Status)) {
     return Status;
   }
+#else
+  Status = EFI_SUCCESS;
+#endif
   //
   // Register our string package with HII and return the handle to it.
   // If previously registered we will simply receive the handle

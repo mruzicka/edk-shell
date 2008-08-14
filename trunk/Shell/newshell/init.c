@@ -42,6 +42,8 @@ CHAR16              *ShellEnvPathName[] = {
 
 EFI_CONSOLE_CONTROL_SCREEN_MODE  mOldCurrentMode = EfiConsoleControlScreenText;
 
+BOOLEAN mOldCursorVisible = FALSE;
+
 EFI_SHELL_INTERFACE *OldSI;
 
 EFI_STATUS
@@ -226,6 +228,13 @@ _DoInit (
       ConsoleControl->SetMode (ConsoleControl, EfiConsoleControlScreenText);
     }
   }
+
+  //
+  // Enable cursor for console output
+  //
+  ASSERT (ST->ConOut != NULL);
+  mOldCursorVisible = ST->ConOut->Mode->CursorVisible;
+  ST->ConOut->EnableCursor (ST->ConOut, TRUE);
 
   //
   // When running under EFI1.1, there is no HII support
@@ -521,6 +530,12 @@ _CleanUpOnExit (
   //
   LibUnInitializeStrings ();
   FakeUninstallHiiDatabase();
+
+  //
+  // Restore the original cursor state
+  //
+  ASSERT (ST->ConOut != NULL);
+  ST->ConOut->EnableCursor (ST->ConOut, mOldCursorVisible);
 
   //
   // If EFI_CONSOLE_CONTROL_PROTOCOL is available,

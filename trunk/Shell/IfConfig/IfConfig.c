@@ -353,13 +353,14 @@ Returns:
 
 --*/
 {
-  EFI_IPv4_ADDRESS              IpAddr;
-  UINT32                        Index;
-  UINTN                         Byte;
-  CHAR16                        Number[8];
-  CHAR16                        *NumPtr;
+  EFI_IP_ADDRESS              IpAddr;
+  UINT32                      Index;
+  UINTN                       Byte;
+  CHAR16                      Number[8];
+  CHAR16                      *NumPtr;
 
-  EFI_IP4_TO_U32 (IpAddr) = 0;
+  IpAddr.Addr[0] = 0;
+
   if (!SHELL_IS_DIGIT (*String)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -381,7 +382,7 @@ Returns:
       return EFI_INVALID_PARAMETER;
     }
 
-    IpAddr.Addr[Index]  = (UINT8) Byte;
+    IpAddr.v4.Addr[Index]  = (UINT8) Byte;
 
     if ((*String != '.') || !SHELL_IS_DIGIT (*(String + 1))) {
       break;
@@ -394,7 +395,7 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
-  *Ip = IpAddr;
+  *Ip = IpAddr.v4;
   return EFI_SUCCESS;
 }
 
@@ -668,8 +669,8 @@ Returns:
   Ip4ConfigData.AcceptBroadcast          = FALSE;
   Ip4ConfigData.AcceptPromiscuous        = FALSE;
   Ip4ConfigData.UseDefaultAddress        = TRUE;
-  EFI_IP4_TO_U32 (Ip4ConfigData.StationAddress) = 0;
-  EFI_IP4_TO_U32 (Ip4ConfigData.SubnetMask)     = 0;
+  ZeroMem (&Ip4ConfigData.StationAddress, sizeof (EFI_IPv4_ADDRESS));
+  ZeroMem (&Ip4ConfigData.SubnetMask, sizeof (EFI_IPv4_ADDRESS));
   Ip4ConfigData.TypeOfService            = 0;
   Ip4ConfigData.TimeToLive               = 1;
   Ip4ConfigData.DoNotFragment            = FALSE;
@@ -769,9 +770,9 @@ Returns:
 {
   NIC_IP4_CONFIG_INFO           *Config;
   NIC_IP4_CONFIG_INFO           *OldConfig;
-  EFI_IPv4_ADDRESS              Ip;
-  EFI_IPv4_ADDRESS              Mask;
-  EFI_IPv4_ADDRESS              Gateway;
+  EFI_IP_ADDRESS                Ip;
+  EFI_IP_ADDRESS                Mask;
+  EFI_IP_ADDRESS                Gateway;
   NIC_INFO                      *Info;
   BOOLEAN                       Perment;
   EFI_STATUS                    Status;
@@ -783,10 +784,12 @@ Returns:
     return EFI_NOT_FOUND;
   }
 
-  Config = AllocateZeroPool (sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE));
+  Config = AllocateZeroPool (sizeof (NIC_IP4_CONFIG_INFO) + 2 * sizeof (EFI_IP4_ROUTE_TABLE));
   if (Config == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
+
+  Config->Ip4Info.RouteTable = (EFI_IP4_ROUTE_TABLE *) (Config + 1);
 
   OldConfig = Info->ConfigInfo;
   Perment   = FALSE;
@@ -835,19 +838,19 @@ Returns:
     }
 
     VarList = VarList->Next;
-    if (EFI_ERROR (StrToIp (VarList->VarStr, &Ip))) {
+    if (EFI_ERROR (StrToIp (VarList->VarStr, &Ip.v4))) {
       PrintToken (STRING_TOKEN (STR_IFCONFIG_INVALID_IP_STR), HiiHandle, VarList->VarStr);
       goto ON_EXIT;
     }
 
     VarList = VarList->Next;
-    if (EFI_ERROR (StrToIp (VarList->VarStr, &Mask))) {
+    if (EFI_ERROR (StrToIp (VarList->VarStr, &Mask.v4))) {
       PrintToken (STRING_TOKEN (STR_IFCONFIG_INVALID_IP_STR), HiiHandle, VarList->VarStr);
       goto ON_EXIT;
     }
 
     VarList = VarList->Next;
-    if (EFI_ERROR (StrToIp (VarList->VarStr, &Gateway))) {
+    if (EFI_ERROR (StrToIp (VarList->VarStr, &Gateway.v4))) {
       PrintToken (STRING_TOKEN (STR_IFCONFIG_INVALID_IP_STR), HiiHandle, VarList->VarStr);
       goto ON_EXIT;
     }
@@ -864,15 +867,15 @@ Returns:
       Perment = TRUE;
     }
 
-    if ((EFI_IP4_TO_U32 (Ip) == 0) || (EFI_IP4_TO_U32 (Mask) == 0) ||
-        !ShellIp4IsUnicast (EFI_IP4_NTOHL (Ip), EFI_IP4_NTOHL (Mask))) {
+    if ((Ip.Addr[0] == 0) || (Mask.Addr[0] == 0) ||
+        !ShellIp4IsUnicast (NTOHL (Ip.Addr[0]), NTOHL (Mask.Addr[0]))) {
 
       PrintToken (STRING_TOKEN (STR_IFCONFIG_INVALID_ADDR_PAIR), HiiHandle);
       goto ON_EXIT;
     }
 
-    if (!IP4_EQUAL_MASK (EFI_IP4_NTOHL (Ip), EFI_IP4_NTOHL (Gateway), EFI_IP4_NTOHL (Mask)) ||
-        !ShellIp4IsUnicast (EFI_IP4_NTOHL (Gateway), EFI_IP4_NTOHL (Mask))) {
+    if (!IP4_EQUAL_MASK (Ip.Addr[0], Gateway.Addr[0], Mask.Addr[0]) ||
+        !ShellIp4IsUnicast (NTOHL (Gateway.Addr[0]), NTOHL (Mask.Addr[0]))) {
         
       PrintToken (STRING_TOKEN (STR_IFCONFIG_INVALID_GATEWAY), HiiHandle);
       goto ON_EXIT;
@@ -885,12 +888,16 @@ Returns:
     // by AllocateZeroPool
     //
     Config->Source = IP4_CONFIG_SOURCE_STATIC;
-    Config->Ip4Info.StationAddress = Ip;
-    Config->Ip4Info.SubnetMask     = Mask;
     Config->Ip4Info.RouteTableSize = 2;
-    Config->Ip4Info.RouteTable[0].SubnetAddress  = Ip;
-    Config->Ip4Info.RouteTable[0].SubnetMask     = Mask;
-    Config->Ip4Info.RouteTable[1].GatewayAddress = Gateway;
+
+    CopyMem (&Config->Ip4Info.StationAddress, &Ip.v4, sizeof (EFI_IPv4_ADDRESS));
+    CopyMem (&Config->Ip4Info.SubnetMask, &Mask.v4, sizeof (EFI_IPv4_ADDRESS));
+
+    Ip.Addr[0] = Ip.Addr[0] & Mask.Addr[0];
+
+    CopyMem (&Config->Ip4Info.RouteTable[0].SubnetAddress, &Ip.v4, sizeof (EFI_IPv4_ADDRESS));
+    CopyMem (&Config->Ip4Info.RouteTable[0].SubnetMask, &Mask.v4, sizeof (EFI_IPv4_ADDRESS));
+    CopyMem (&Config->Ip4Info.RouteTable[1].GatewayAddress, &Gateway.v4, sizeof (EFI_IPv4_ADDRESS));
   } else {
     PrintToken (STRING_TOKEN (STR_IFCONFIG_PROMPT_HELP), HiiHandle);
     goto ON_EXIT;
@@ -947,6 +954,7 @@ Returns:
   UINT32                        Index;
   EFI_IP4_IPCONFIG_DATA         *Ip4Config;
   EFI_IPv4_ADDRESS              Gateway;
+  EFI_IPv4_ADDRESS              ZeroIp;
 
   EFI_LIST_FOR_EACH (Entry, &NicInfoList) {
     NicInfo = _CR (Entry, NIC_INFO, Link);
@@ -984,12 +992,13 @@ Returns:
     PrintIp (L"  IP address : ", &Ip4Config->StationAddress);
     PrintIp (L"  Mask       : ", &Ip4Config->SubnetMask);
 
-    EFI_IP4_TO_U32 (Gateway) = 0;
+    ZeroMem (&Gateway, sizeof (EFI_IPv4_ADDRESS));
+    ZeroMem (&ZeroIp, sizeof (EFI_IPv4_ADDRESS));
     
     for (Index = 0; Index < Ip4Config->RouteTableSize; Index++) {
-      if ((EFI_IP4_TO_U32 (Ip4Config->RouteTable[Index].SubnetAddress) == 0) &&
-          (EFI_IP4_TO_U32 (Ip4Config->RouteTable[Index].SubnetMask) == 0)) {
-        Gateway = Ip4Config->RouteTable[Index].GatewayAddress;
+      if ((CompareMem (&Ip4Config->RouteTable[Index].SubnetAddress, &ZeroIp, sizeof (EFI_IPv4_ADDRESS)) == 0) &&
+        (CompareMem (&Ip4Config->RouteTable[Index].SubnetMask, &ZeroIp, sizeof (EFI_IPv4_ADDRESS)) == 0)) {
+        CopyMem (&Gateway, &Ip4Config->RouteTable[Index].GatewayAddress, sizeof (EFI_IPv4_ADDRESS));
       }
     }
    
@@ -1199,6 +1208,11 @@ Done:
     Info  = _CR (Entry, NIC_INFO, Link);
 
     RemoveEntryList (Entry);
+
+    if (Info->ConfigInfo != NULL) {
+      FreePool (Info->ConfigInfo);
+    }
+
     FreePool (Info);
   }
 

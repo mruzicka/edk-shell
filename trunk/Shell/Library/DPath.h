@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -155,5 +155,28 @@ EFIAPI
 GetNameGuidFromFwVolDevicePathNode (
   IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
   );
+
+
+#pragma pack(1)
+
+#if (EFI_SPECIFICATION_VERSION > 0x00020000)
+//
+// For UEFI2.0 FV file device path
+//
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL  Header;
+  EFI_GUID                  PiwgSpecificDevicePath;
+  UINT32                    Type;
+} PIWG_DEVICE_PATH;
+
+#define PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE         0x01
+typedef struct {
+  PIWG_DEVICE_PATH      Piwg;
+  EFI_GUID              NameGuid;
+} MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_EFI_2_00;
+
+#endif
+
+#pragma pack()
 
 #endif

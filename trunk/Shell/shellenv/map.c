@@ -56,14 +56,31 @@ typedef struct {
 typedef struct {
   EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
   CHAR16                    *ConsistMappingName;
-  CHAR16                    *FSName;
-  CHAR16                    *BlkName;
   EFI_HANDLE                Handle;
   UINTN                     MediaType;
   BOOLEAN                   Removeable;
   BOOLEAN                   BlkDevice;
   BOOLEAN                   FSDevice;
 } MAPPING_NAME_INFO;
+
+#define MAPPING_HISTORY_NODE_SIGNATURE EFI_SIGNATURE_32 ('m', 'h', 'n', 's')
+
+typedef enum {
+  MappingNodeBlockFs,
+  MappingNodeNT,
+  MappingNodeBlock,
+  MappingNodeCustomize,
+  MappingNodeMax
+} MAPPING_NODE_TYPE;
+
+typedef struct {
+  UINT32                    Signature;
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+  CHAR16                    *Name;
+  BOOLEAN                   Valid;
+  MAPPING_NODE_TYPE         NodeType;
+  EFI_LIST_ENTRY            Link;
+} MAPPING_HISTORY_NODE;
 
 #define MediaFloppy         0x01
 #define MediaHardDisk       0x02
@@ -113,7 +130,7 @@ SHELL_VAR_CHECK_ITEM    MapCheckList[] = {
   {
     L"-r",
     0x01,
-    0x4,
+    0x104,
     FlagTypeSingle
   },
   {
@@ -159,6 +176,12 @@ SHELL_VAR_CHECK_ITEM    MapCheckList[] = {
     FlagTypeSingle
   },
   {
+    L"-u",
+    0x100,
+    0x5,
+    FlagTypeSingle
+  },
+  {
     NULL,
     0,
     0,
@@ -197,6 +220,8 @@ extern EFI_LIST_ENTRY SEnvCurMapping;
 extern EFI_LIST_ENTRY SEnvMap;
 
 STATIC CHAR16         *SEnvCurDevice;
+
+STATIC EFI_LIST_ENTRY SEnvMapHistory;
 
 //
 // Private worker function prototypes
@@ -240,7 +265,7 @@ CopyToDefaultMappingTable (
 
 EFI_STATUS
 Remapping (
-  VOID
+  BOOLEAN  KeepHistory
   );
 
 EFI_STATUS
@@ -259,6 +284,52 @@ EFI_STATUS
 SEnvCmdMapOld (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
+  );
+
+STATIC
+EFI_STATUS
+CheckCdFilePath (
+  IN   EFI_DEVICE_PATH_PROTOCOL  *FilePath,
+  OUT  CHAR16                    **AbsoluteDir
+  );
+
+STATIC
+VOID
+InitializeMapHistory (
+  VOID
+  );
+
+STATIC
+VOID
+AddHistoryMappingNamesToVariable (
+  VOID
+  );
+
+STATIC
+VOID
+InvalidMappingHistory (
+  VOID
+  );
+
+STATIC
+EFI_STATUS
+ObtainHistoryMappingName (
+  IN   EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
+  IN   CHAR16                    *MappingName,
+  IN   MAPPING_NODE_TYPE         NodeType,
+  OUT  CHAR16                    **MappingNameObtained
+  );
+
+STATIC
+VOID
+RemoveHistoryMappingName (
+  IN   CHAR16  *Name
+  );
+
+STATIC
+VOID
+ClearHistoryMapping (
+  VOID
   );
 
 //
@@ -282,6 +353,7 @@ Returns:
   // Init the default map device
   //
   SEnvCurDevice = StrDuplicate (L"none");
+  InitializeMapHistory ();
 }
 
 BOOLEAN
@@ -646,6 +718,7 @@ Returns:
   BOOLEAN                 Delete;
   BOOLEAN                 Verbose;
   BOOLEAN                 Remap;
+  BOOLEAN                 KeepHistory;
   EFI_STATUS              Status;
   EFI_HANDLE              Handle;
   UINTN                   ShowType;
@@ -656,6 +729,8 @@ Returns:
   CHAR16                  *Useful;
   SHELL_ARG_LIST          *Item;
   SHELL_VAR_CHECK_PACKAGE ChkPck;
+  
+  EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
 
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
   if (IS_OLD_SHELL) {
@@ -688,6 +763,7 @@ Returns:
   Delete    = FALSE;
   Verbose   = FALSE;
   Remap     = FALSE;
+  KeepHistory = FALSE;
   Status    = EFI_SUCCESS;
   Found     = NULL;
   ShowType  = ShowNull;
@@ -777,6 +853,16 @@ Returns:
     Remap = TRUE;
   }
 
+  if (LibCheckVarGetFlag (&ChkPck, L"-u") != NULL) {
+    if (SI->RedirArgc != 0) {
+      LibCheckVarFreeVarList (&ChkPck);
+      return EFI_REDIRECTION_NOT_ALLOWED;
+    }
+
+    Remap       = TRUE;
+    KeepHistory = TRUE;
+  }
+
   if (LibCheckVarGetFlag (&ChkPck, L"-c") != NULL) {
     ShowType |= ShowConsistMapping;
   }
@@ -843,7 +929,7 @@ Returns:
   // Process
   //
   if (Remap && !Value && !Delete) {
-    Status  = Remapping ();
+    Status  = Remapping (KeepHistory);
     Remap   = FALSE;
   }
 
@@ -870,7 +956,8 @@ Returns:
         if (EFI_ERROR (Status)) {
           goto Done;
         }
-
+        
+        RemoveHistoryMappingName (Var->Name);
         RemoveEntryList (&Found->Link);
         FreePool (Found);
       }
@@ -910,6 +997,15 @@ Returns:
       if (EFI_ERROR (Status)) {
         goto Done;
       }
+      DevicePath = DevicePathFromHandle (Handle);
+      if (DevicePath != NULL) {
+        ObtainHistoryMappingName (
+          DevicePath,
+          Name,
+          MappingNodeCustomize,
+          NULL
+          );
+      }
     } else {
       SEnvAddVarToList (
         &SEnvMap,
@@ -925,6 +1021,12 @@ Returns:
             DevicePathSize ((VOID *) Var->u.Str),
             Var->u.Str
             );
+      ObtainHistoryMappingName (
+        (EFI_DEVICE_PATH_PROTOCOL  *) Var->u.Str,
+        Name,
+        MappingNodeCustomize,
+        NULL
+        );
     }
 
     if (Found != NULL) {
@@ -1292,11 +1394,9 @@ Returns:
 {
   EFI_DEVICE_PATH_PROTOCOL  *FilePath;
   EFI_STATUS                Status;
-  EFI_FILE_HANDLE           OpenDir;
   CHAR16                    *Dir;
   CHAR16                    *CurDir;
   VARIABLE_ID               *Var;
-  EFI_FILE_INFO             *FileInfo;
   SHELL_VAR_CHECK_PACKAGE   ChkPck;
   SHELL_VAR_CHECK_CODE      RetCode;
   CHAR16                    *Useful;
@@ -1413,39 +1513,23 @@ Returns:
    Status = EFI_NOT_FOUND;
    goto Done;
   }
-  //
-  // Open the target directory
-  //
-  OpenDir = LibOpenFilePath (FilePath, EFI_FILE_MODE_READ);
 
-  if (!OpenDir) {
-    PrintToken (STRING_TOKEN (STR_SHELLENV_CD_TARGET_DIR_NOT_FOUND), HiiEnvHandle, L"cd");
+  CurDir = NULL;
+  Status = CheckCdFilePath (FilePath, &CurDir);
+  switch (Status) {
+    case EFI_NOT_FOUND:
+      PrintToken (STRING_TOKEN (STR_SHELLENV_CD_TARGET_DIR_NOT_FOUND), HiiEnvHandle, L"cd");
+      break;
+    case EFI_ACCESS_DENIED:
+      PrintToken (STRING_TOKEN (STR_SHELLENV_CD_TARGET_NOT_DIR), HiiEnvHandle, L"cd");
+      break;
+    default:
+      break;
+  }
+  if (EFI_ERROR (Status)) {
     Status = EFI_NOT_FOUND;
     goto Done;
   }
-  //
-  // Get information on the file path that was opened.
-  //
-  FileInfo = LibGetFileInfo (OpenDir);
-  if (FileInfo == NULL) {
-    Status = EFI_NOT_FOUND;
-    goto Done;
-  }
-  //
-  // Verify that the file opened is a directory.
-  //
-  if (!(FileInfo->Attribute & EFI_FILE_DIRECTORY)) {
-    PrintToken (STRING_TOKEN (STR_SHELLENV_CD_TARGET_NOT_DIR), HiiEnvHandle, L"cd");
-    FreePool (FileInfo);
-    OpenDir->Close (OpenDir);
-    Status = EFI_NOT_FOUND;
-    goto Done;
-  }
-
-  FreePool (FileInfo);
-
-  CurDir = SEnvFileHandleToFileName (OpenDir);
-  OpenDir->Close (OpenDir);
 
   //
   // If we have a new path, update the device
@@ -2122,20 +2206,22 @@ CheckMediaChange (
     if (!EFI_ERROR (Status)) {
       if (!BlkIo->Media->LogicalPartition) {
         Buffer = AllocatePool (BlkIo->Media->BlockSize);
-        BlkIo->ReadBlocks (
-                BlkIo,
-                BlkIo->Media->MediaId,
-                0,
-                BlkIo->Media->BlockSize,
-                Buffer
-                );
+        Status = BlkIo->ReadBlocks (
+                    BlkIo,
+                    BlkIo->Media->MediaId,
+                    0,
+                    BlkIo->Media->BlockSize,
+                    Buffer
+                    );
         FreePool (Buffer);
-        BS->ReinstallProtocolInterface (
-              ProtBlkIo->Handles[Index],
-              &gEfiBlockIoProtocolGuid,
-              BlkIo,
-              BlkIo
-              );
+        if (EFI_ERROR (Status)) {
+          BS->ReinstallProtocolInterface (
+                ProtBlkIo->Handles[Index],
+                &gEfiBlockIoProtocolGuid,
+                BlkIo,
+                BlkIo
+                );
+        }
       }
     }
   }
@@ -2146,7 +2232,7 @@ CheckMediaChange (
 
 EFI_STATUS
 Remapping (
-  VOID
+  BOOLEAN KeepHistory
   )
 {
   PROTOCOL_INFO             *ProtFs;
@@ -2158,16 +2244,16 @@ Remapping (
   UINTN                     MappingCount;
   MAPPING_NAME_INFO         **MappingTable;
   EFI_DEVICE_PATH_PROTOCOL  **HITable;
-  UINTN                     BlkCount;
-  UINTN                     FsntCount;
   UINTN                     MappingInfoCount;
   POOL_PRINT                Path;
+  CHAR16                    *CurDir;
+  CHAR16                    *CurDev;
+  UINTN                     CurDirSize;
+  EFI_DEVICE_PATH_PROTOCOL  *FilePath;
 
   VARIABLE_ID               *Var;
 
   HITable   = NULL;
-  BlkCount  = 0;
-  FsntCount = 0;
 
   ZeroMem (&Path, sizeof (Path));
 
@@ -2179,6 +2265,19 @@ Remapping (
   // Delete all the old mappings
   //
   AcquireLock (&SEnvLock);
+  //
+  // Save current file path first if history is kept
+  //
+  CurDir = NULL;
+  CurDev = SEnvCurDevice;
+  if (KeepHistory && CurDev != NULL) {
+    Var = SEnvMapDeviceFromName (&CurDev);
+    if (Var != NULL && Var->CurDir != NULL) {
+      CurDirSize = StrSize (Var->CurDir);
+      CurDir = AllocateZeroPool (CurDirSize);
+      StrCpy (CurDir, Var->CurDir);
+    }
+  }
   while (!IsListEmpty (&SEnvMap)) {
     Var = CR (SEnvMap.Flink, VARIABLE_ID, Link, VARIABLE_SIGNATURE);
     Status = RT->SetVariable (
@@ -2191,6 +2290,12 @@ Remapping (
     RemoveEntryList (&Var->Link);
     FreePool (Var);
   }
+
+  if (!KeepHistory) {
+    ClearHistoryMapping ();
+  }
+
+  InvalidMappingHistory ();
 
   SEnvLoadHandleTable ();
   SEnvLoadHandleProtocolInfo (NULL);
@@ -2255,57 +2360,35 @@ Remapping (
   //
   QSort (MappingTable, MappingInfoCount, sizeof (MAPPING_NAME_INFO *), CompareMappingInfo);
 
-  BlkCount  = 0;
-  FsntCount = 0;
   for (Index = 0; Index < MappingInfoCount; Index++) {
-    //
-    //  Suppose the Blkname and FSname is not too large.
-    //
-    //  the blkname and the fsname is:
-    //
-    //  fsnt0
-    //  fsnt1
-    //  fsnt2
-    //  ...
-    //  fsnt(l)
-    //  fs0  .............  blk0
-    //  fs1  .............  blk1
-    //  fs2  .............  blk2
-    //  ...
-    //  fs(m).............  blk(m)
-    //                      blk(m+1)
-    //                      ...
-    //                      blk(n)
-    //
     if (MappingTable[Index]->BlkDevice) {
-      MappingTable[Index]->BlkName = AllocateZeroPool (0x20);
-      SPrint (MappingTable[Index]->BlkName, 0x20, L"blk%x", BlkCount);
+      ObtainHistoryMappingName (
+        MappingTable[Index]->DevicePath,
+        NULL,
+        MappingNodeBlock,
+        NULL
+        );
       if (MappingTable[Index]->FSDevice) {
-        MappingTable[Index]->FSName = AllocateZeroPool (0x20);
-        SPrint (MappingTable[Index]->FSName, 0x20, L"fs%x", BlkCount);
+        ObtainHistoryMappingName (
+          MappingTable[Index]->DevicePath,
+          NULL,
+          MappingNodeBlockFs,
+          NULL
+          );
       }
-
-      BlkCount++;
     } else {
-      MappingTable[Index]->FSName = AllocateZeroPool (0x20);
-      SPrint (MappingTable[Index]->FSName, 0x20, L"fsnt%x", FsntCount);
-      FsntCount++;
+      ObtainHistoryMappingName (
+        MappingTable[Index]->DevicePath,
+        NULL,
+        MappingNodeNT,
+        NULL
+        );
     }
   }
   //
   //  Add these consist name, fs name, blk name to map name list.
   //
-  for (Index = 0; Index < MappingInfoCount; Index++) {
-    if (MappingTable[Index]->FSName != NULL) {
-      SEnvAddMappingName (MappingTable[Index]->Handle, MappingTable[Index]->FSName, FALSE);
-    }
-  }
-
-  for (Index = 0; Index < MappingInfoCount; Index++) {
-    if (MappingTable[Index]->BlkName != NULL) {
-      SEnvAddMappingName (MappingTable[Index]->Handle, MappingTable[Index]->BlkName, FALSE);
-    }
-  }
+  AddHistoryMappingNamesToVariable ();
 
   for (Index = 0; Index < MappingInfoCount; Index++) {
     if (MappingTable[Index]->ConsistMappingName != NULL && MappingTable[Index]->FSDevice) {
@@ -2343,11 +2426,37 @@ Remapping (
     (Path.len + 1) * sizeof (CHAR16),
     TRUE
     );
-
+  
+  if (!KeepHistory || CurDir == NULL) {
+    goto Done;
+  }
+  //
+  // Attempt to restore current file path
+  //
+  CurDev = SEnvCurDevice;
+  Var    = NULL;
+  if (CurDev != NULL) {
+    Var = SEnvMapDeviceFromName (&CurDev);
+  }
+  if (Var != NULL) {
+    FilePath = SEnvINameToPath (CurDir);
+    if (!FilePath) {
+      goto Done;
+    }
+    Status = CheckCdFilePath (FilePath, NULL);
+    if (!EFI_ERROR (Status)) {
+      Var->CurDir = StrDuplicate (CurDir);
+    }
+    FreePool (FilePath);
+  }
+  
 Done:
   //
   //  Free the resources.
   //
+  if (CurDir != NULL) {
+    FreePool (CurDir);
+  }
   SEnvFreeHandleTable ();
   ReleaseLock (&SEnvLock);
 
@@ -2358,14 +2467,6 @@ Done:
 
     if (MappingTable[Index]->DevicePath != NULL) {
       FreePool (MappingTable[Index]->DevicePath);
-    }
-
-    if (MappingTable[Index]->FSName != NULL) {
-      FreePool (MappingTable[Index]->FSName);
-    }
-
-    if (MappingTable[Index]->BlkName != NULL) {
-      FreePool (MappingTable[Index]->BlkName);
     }
 
     FreePool (MappingTable[Index]);
@@ -3044,4 +3145,265 @@ Done:
   // Get current mapping info for whole system
   //
   return Status;
+}
+
+STATIC
+EFI_STATUS
+CheckCdFilePath (
+  IN   EFI_DEVICE_PATH_PROTOCOL  *FilePath,
+  OUT  CHAR16                    **AbsoluteDir
+  )
+{
+  EFI_STATUS                Status;
+  EFI_FILE_HANDLE           OpenDir;
+  EFI_FILE_INFO             *FileInfo;
+
+  Status   = EFI_SUCCESS;
+  FileInfo = NULL;
+  //
+  // Open the target directory
+  //
+  OpenDir = LibOpenFilePath (FilePath, EFI_FILE_MODE_READ);
+
+  if (!OpenDir) {
+    Status = EFI_NOT_FOUND;
+    goto Done;
+  }
+  //
+  // Get information on the file path that was opened.
+  //
+  FileInfo = LibGetFileInfo (OpenDir);
+  if (FileInfo == NULL) {
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
+  }
+  //
+  // Verify that the file opened is a directory.
+  //
+  if (!(FileInfo->Attribute & EFI_FILE_DIRECTORY)) {
+    Status = EFI_ACCESS_DENIED;
+    goto Done;
+  }
+
+  if (AbsoluteDir != NULL) {
+    *AbsoluteDir = SEnvFileHandleToFileName (OpenDir);
+  }
+Done:
+  if (FileInfo != NULL) {
+    FreePool (FileInfo);
+  }
+  if (OpenDir != NULL) {
+    OpenDir->Close (OpenDir);
+  }
+  return Status;
+}
+
+STATIC
+VOID
+InitializeMapHistory (
+  VOID
+  )
+{
+  InitializeListHead (&SEnvMapHistory);
+}
+
+STATIC
+VOID
+InvalidMappingHistory (
+  VOID
+  )
+{
+  EFI_LIST_ENTRY       *Head;
+  EFI_LIST_ENTRY       *Link;
+  MAPPING_HISTORY_NODE *HistoryNode;
+
+  Head = &SEnvMapHistory;
+  for (Link = Head->Flink; Link != Head; Link = Link->Flink) {
+    HistoryNode = CR (Link, MAPPING_HISTORY_NODE, Link, MAPPING_HISTORY_NODE_SIGNATURE);
+    HistoryNode->Valid = FALSE;
+  }
+}
+
+STATIC
+EFI_STATUS
+ObtainHistoryMappingName (
+  IN   EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
+  IN   CHAR16                    *MappingName,
+  IN   MAPPING_NODE_TYPE         NodeType,
+  OUT  CHAR16                    **MappingNameObtained
+  )
+{
+  EFI_LIST_ENTRY       *Head;
+  EFI_LIST_ENTRY       *Link;
+  MAPPING_HISTORY_NODE *HistoryNode;
+  BOOLEAN              IsNew;
+  BOOLEAN              Found;
+  UINTN                Index;
+  UINTN                Count;
+  CHAR16               *Name;
+  CHAR16               *Prefix;
+
+  if (NodeType >= MappingNodeMax ||
+      (MappingName == NULL && NodeType == MappingNodeCustomize)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Head  = &SEnvMapHistory;
+  IsNew = TRUE;
+  Count = 0;
+
+  for (Link = Head->Flink; Link != Head; Link = Link->Flink) {
+    HistoryNode = CR (Link, MAPPING_HISTORY_NODE, Link, MAPPING_HISTORY_NODE_SIGNATURE);
+    if (MappingName != NULL &&
+        StrCmp (HistoryNode->Name, MappingName) == 0 &&
+        DevicePathCompare (DevicePath, HistoryNode->DevicePath) != 0) {
+      FreePool (HistoryNode->DevicePath);
+      HistoryNode->DevicePath = DuplicateDevicePath (DevicePath);
+    }
+    if (DevicePathCompare (DevicePath, HistoryNode->DevicePath) == 0) {
+      if (NodeType == HistoryNode->NodeType ||
+          HistoryNode->NodeType == MappingNodeCustomize) {
+        HistoryNode->Valid = TRUE;
+      }
+      if (NodeType == HistoryNode->NodeType) {
+        IsNew = FALSE;
+        if (MappingNameObtained != NULL) {
+          *MappingNameObtained = HistoryNode->Name;
+        }
+      }
+    }
+    Count++;
+  }
+  if (IsNew) {
+    if (MappingName != NULL) {
+      Name = AllocateZeroPool (StrSize (MappingName));
+      StrCpy (Name, MappingName);
+    } else {
+      switch (NodeType) {
+        case MappingNodeBlockFs:
+          Prefix = L"fs";
+          break;
+        case MappingNodeBlock:
+          Prefix = L"blk";
+          break;
+        case MappingNodeNT:
+          Prefix = L"fsnt";
+          break;
+        default:
+          Prefix = L"";
+          //
+          // Should not be here!
+          //
+          ASSERT (FALSE);
+          break;
+      }
+      Name = AllocateZeroPool (0x20);
+      for (Index = 0; Index <= Count; Index++) {
+        Found = FALSE;
+        SPrint (Name, 0x20, L"%s%x", Prefix, Index);
+        for (Link = Head->Flink; Link != Head; Link = Link->Flink) {
+          HistoryNode = CR (Link, MAPPING_HISTORY_NODE, Link, MAPPING_HISTORY_NODE_SIGNATURE);
+          if (StrnCmp (Name, HistoryNode->Name, 0x20) == 0) {
+            Found = TRUE;
+            break;
+          }
+        }
+        if (!Found) {
+          break;
+        }
+        ZeroMem (Name, 0x20);
+      }
+    }
+    HistoryNode = (MAPPING_HISTORY_NODE *) AllocateZeroPool (sizeof (MAPPING_HISTORY_NODE));
+    HistoryNode->Signature  = MAPPING_HISTORY_NODE_SIGNATURE;
+    HistoryNode->DevicePath = DuplicateDevicePath (DevicePath);
+    HistoryNode->Name       = Name;
+    HistoryNode->NodeType   = NodeType;
+    HistoryNode->Valid      = TRUE;
+    InsertTailList (Head, &HistoryNode->Link);
+    if (MappingNameObtained != NULL) {
+      *MappingNameObtained = HistoryNode->Name;
+    }
+  }
+  return EFI_SUCCESS;
+}
+
+STATIC
+VOID
+RemoveHistoryMappingName (
+  IN   CHAR16  *Name
+  )
+{
+  EFI_LIST_ENTRY       *Head;
+  EFI_LIST_ENTRY       *Link;
+  MAPPING_HISTORY_NODE *HistoryNode;
+
+  Head  = &SEnvMapHistory;
+
+  for (Link = Head->Flink; Link != Head; Link = Link->Flink) {
+    HistoryNode = CR (Link, MAPPING_HISTORY_NODE, Link, MAPPING_HISTORY_NODE_SIGNATURE);
+    if (StrCmp (HistoryNode->Name, Name) == 0) {
+      RemoveEntryList (Link);
+      FreePool (HistoryNode->Name);
+      FreePool (HistoryNode->DevicePath);
+      FreePool (HistoryNode);
+      break;
+    }
+  }
+}
+
+STATIC
+VOID
+AddHistoryMappingNamesToVariable (
+  VOID
+  )
+{
+  EFI_LIST_ENTRY       *Head;
+  EFI_LIST_ENTRY       *Link;
+  MAPPING_HISTORY_NODE *HistoryNode;
+  MAPPING_NODE_TYPE    NodeType;
+
+  Head = &SEnvMapHistory;
+
+  for (NodeType = MappingNodeBlockFs; NodeType < MappingNodeMax; NodeType++) {
+    for (Link = Head->Flink; Link != Head; Link = Link->Flink) {
+      HistoryNode = CR (Link, MAPPING_HISTORY_NODE, Link, MAPPING_HISTORY_NODE_SIGNATURE);
+      if (HistoryNode->Valid && HistoryNode->NodeType == NodeType) {
+        SEnvAddVarToList (
+          &SEnvMap,
+          HistoryNode->Name,
+          (UINT8 *) HistoryNode->DevicePath,
+          DevicePathSize (HistoryNode->DevicePath),
+          TRUE
+          );
+        RT->SetVariable (
+              HistoryNode->Name,
+              &SEnvMapId,
+              EFI_VARIABLE_BOOTSERVICE_ACCESS,
+              DevicePathSize (HistoryNode->DevicePath),
+              HistoryNode->DevicePath
+              );
+      }
+    }
+  }
+}
+
+STATIC
+VOID
+ClearHistoryMapping (
+  VOID
+  )
+{
+  EFI_LIST_ENTRY       *Head;
+  MAPPING_HISTORY_NODE *HistoryNode;
+
+  Head = &SEnvMapHistory;
+
+  while (!IsListEmpty (Head)) {
+    HistoryNode = CR (Head->Flink, MAPPING_HISTORY_NODE, Link, MAPPING_HISTORY_NODE_SIGNATURE);
+    RemoveEntryList (&HistoryNode->Link);
+    FreePool (HistoryNode->Name);
+    FreePool (HistoryNode->DevicePath);
+    FreePool (HistoryNode);
+  }
 }

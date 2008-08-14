@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -136,6 +136,7 @@ Returns:
   EFI_HANDLE                                DeviceHandle;
   EFI_HANDLE                                ChildHandle;
   UINTN                                     StringIndex;
+  UINTN                                     StringLength;
   UINTN                                     Index;
   CHAR8                                     *Language;
   CHAR8                                     *SupportedLanguages;
@@ -256,7 +257,7 @@ Returns:
   //
   // Setup Handle and Protocol Globals
   //
-  Language = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language = LibGetVariableLang ();
   if (Language == NULL) {
     Language    = AllocatePool (4);
     Language[0] = 'e';
@@ -267,13 +268,13 @@ Returns:
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item) {
-    if (StrLen (Item->VarStr) != 3) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_DRVCFG_BAD_LANG), HiiHandle, L"drvcfg", Item->VarStr);
-      Status = EFI_INVALID_PARAMETER;
-      goto Done;
+    if (Language != NULL) {
+      FreePool (Language);
     }
 
-    for (StringIndex = 0; StringIndex < 3; StringIndex++) {
+    StringLength = StrLen (Item->VarStr);
+    Language = AllocatePool (StringLength + 1);
+    for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
       Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
     }
 
@@ -381,11 +382,21 @@ Returns:
   if (DriverImageHandle == NULL) {
     Status = LibLocateHandle (
               ByProtocol,
-              &gEfiDriverConfigurationProtocolGuid,
+              &gEfiDriverConfiguration2ProtocolGuid,
               NULL,
               &DriverImageHandleCount,
               &DriverImageHandleBuffer
               );
+
+    if (EFI_ERROR (Status)) {
+      Status = LibLocateHandle (
+                ByProtocol,
+                &gEfiDriverConfigurationProtocolGuid,
+                NULL,
+                &DriverImageHandleCount,
+                &DriverImageHandleBuffer
+                );
+    }
     if (EFI_ERROR (Status)) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -406,12 +417,22 @@ Returns:
   for (Index = 0; Index < DriverImageHandleCount; Index++) {
     Status = BS->OpenProtocol (
                   DriverImageHandleBuffer[Index],
-                  &gEfiDriverConfigurationProtocolGuid,
+                  &gEfiDriverConfiguration2ProtocolGuid,
                   (VOID **) &DriverConfiguration,
                   NULL,
                   NULL,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
+    if (EFI_ERROR (Status)) {
+      Status = BS->OpenProtocol (
+                    DriverImageHandleBuffer[Index],
+                    &gEfiDriverConfigurationProtocolGuid,
+                    (VOID **) &DriverConfiguration,
+                    NULL,
+                    NULL,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
+    }
     if (EFI_ERROR (Status)) {
       PrintToken (
         STRING_TOKEN (STR_SHELLENV_PROTID_DRVCFG_NOT_SUPPORT_PROT),
@@ -422,13 +443,17 @@ Returns:
     }
 
     Status = EFI_NOT_FOUND;
-    for (SupportedLanguages = DriverConfiguration->SupportedLanguages;
-         SupportedLanguages[0] != 0;
-         SupportedLanguages += 3
-        ) {
-      if (CompareMem (SupportedLanguages, Language, 3) == 0) {
+    if (strstra (DriverConfiguration->SupportedLanguages, Language) == NULL) {
+      SupportedLanguages = LibConvertSupportedLanguage (DriverConfiguration->SupportedLanguages, Language);
+      if (strcmpa (SupportedLanguages, Language) != 0) {
+        FreePool (Language);
+        Language = SupportedLanguages;
         Status = EFI_SUCCESS;
+      } else {
+        FreePool (SupportedLanguages);
       }
+    } else {
+      Status = EFI_SUCCESS;
     }
 
     if (EFI_ERROR (Status)) {
@@ -818,6 +843,7 @@ Returns:
   EFI_HANDLE                                DeviceHandle;
   EFI_HANDLE                                ChildHandle;
   UINTN                                     StringIndex;
+  UINTN                                     StringLength;
   UINTN                                     Index;
   CHAR8                                     *Language;
   CHAR8                                     *SupportedLanguages;
@@ -855,7 +881,7 @@ Returns:
   DriverImageHandleBuffer = NULL;
   GetHelp                 = FALSE;
 
-  Language                = LibGetVariable (VarLanguage, &gEfiGlobalVariableGuid);
+  Language                = LibGetVariableLang ();
   if (Language == NULL) {
     Language    = AllocatePool (4);
     Language[0] = 'e';
@@ -871,7 +897,13 @@ Returns:
       case 'l':
       case 'L':
         if (*(Ptr + 2) != 0) {
-          for (StringIndex = 0; StringIndex < 3 && Ptr[StringIndex + 2] != 0; StringIndex++) {
+          if (Language != NULL) {
+            FreePool (Language);
+          }
+
+          StringLength = StrLen (Ptr + 2);
+          Language = AllocatePool (StringLength + 1);
+          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
             Language[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
           }
 
@@ -979,11 +1011,21 @@ Returns:
   if (DriverImageHandle == NULL) {
     Status = LibLocateHandle (
               ByProtocol,
-              &gEfiDriverConfigurationProtocolGuid,
+              &gEfiDriverConfiguration2ProtocolGuid,
               NULL,
               &DriverImageHandleCount,
               &DriverImageHandleBuffer
               );
+
+    if (EFI_ERROR (Status)) {
+      Status = LibLocateHandle (
+                ByProtocol,
+                &gEfiDriverConfigurationProtocolGuid,
+                NULL,
+                &DriverImageHandleCount,
+                &DriverImageHandleBuffer
+                );
+    }
     if (EFI_ERROR (Status)) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -1004,12 +1046,22 @@ Returns:
   for (Index = 0; Index < DriverImageHandleCount; Index++) {
     Status = BS->OpenProtocol (
                   DriverImageHandleBuffer[Index],
-                  &gEfiDriverConfigurationProtocolGuid,
+                  &gEfiDriverConfiguration2ProtocolGuid,
                   (VOID **) &DriverConfiguration,
                   NULL,
                   NULL,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
+    if (EFI_ERROR (Status)) {
+      Status = BS->OpenProtocol (
+                    DriverImageHandleBuffer[Index],
+                    &gEfiDriverConfigurationProtocolGuid,
+                    (VOID **) &DriverConfiguration,
+                    NULL,
+                    NULL,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
+    }
     if (EFI_ERROR (Status)) {
       PrintToken (
         STRING_TOKEN (STR_SHELLENV_PROTID_DRVCFG_NOT_SUPPORT_PROT),
@@ -1020,13 +1072,17 @@ Returns:
     }
 
     Status = EFI_NOT_FOUND;
-    for (SupportedLanguages = DriverConfiguration->SupportedLanguages;
-         SupportedLanguages[0] != 0;
-         SupportedLanguages += 3
-        ) {
-      if (CompareMem (SupportedLanguages, Language, 3) == 0) {
+    if (strstra (DriverConfiguration->SupportedLanguages, Language) == NULL) {
+      SupportedLanguages = LibConvertSupportedLanguage (DriverConfiguration->SupportedLanguages, Language);
+      if (strcmpa (SupportedLanguages, Language) != 0) {
+        FreePool (Language);
+        Language = SupportedLanguages;
         Status = EFI_SUCCESS;
+      } else {
+        FreePool (SupportedLanguages);
       }
+    } else {
+      Status = EFI_SUCCESS;
     }
 
     if (EFI_ERROR (Status)) {

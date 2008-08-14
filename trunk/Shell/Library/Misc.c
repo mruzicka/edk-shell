@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -23,9 +23,31 @@ Revision History
 
 #include "EfiShelllib.h"
 
+#if (PLATFORM == NT32)
+#define LOCAL_EFI_WIN_NT_THUNK_PROTOCOL_GUID \
+  { \
+    0x58c518b1, 0x76f3, 0x11d4, 0xbc, 0xea, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 \
+  }
+
+#define LOCAL_EFI_WIN_NT_BUS_DRIVER_IO_PROTOCOL_GUID \
+  { \
+    0x96eb4ad6, 0xa32a, 0x11d4, 0xbc, 0xfd, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 \
+  }
+
+#define LOCAL_EFI_WIN_NT_SERIAL_PORT_GUID \
+  { \
+    0xc95a93d, 0xa006, 0x11d4, 0xbc, 0xfa, 0x0, 0x80, 0xc7, 0x3c, 0x88, 0x81 \
+  }
+EFI_GUID WinNtThunkProtocolGuid = LOCAL_EFI_WIN_NT_THUNK_PROTOCOL_GUID;
+EFI_GUID WinNtIoProtocolGuid    = LOCAL_EFI_WIN_NT_BUS_DRIVER_IO_PROTOCOL_GUID;
+EFI_GUID WinNtSerialPortGuid    = LOCAL_EFI_WIN_NT_SERIAL_PORT_GUID;
+#endif
+
 EFI_GUID        ShellInterfaceProtocol  = SHELL_INTERFACE_PROTOCOL;
 EFI_GUID        PcAnsiProtocol          = DEVICE_PATH_MESSAGING_PC_ANSI;
 EFI_GUID        Vt100Protocol           = DEVICE_PATH_MESSAGING_VT_100;
+EFI_GUID        Vt100PlusProtocol       = DEVICE_PATH_MESSAGING_VT_100_PLUS;
+EFI_GUID        VtUtf8Protocol          = DEVICE_PATH_MESSAGING_VT_UTF8;
 
 #define DEFAULT_FORM_BUFFER_SIZE  0xFFFF
 
@@ -34,63 +56,299 @@ struct {
   CHAR16    *GuidName;
 }
 KnownGuids[] = {
-  &NullGuid,
-  L"G0",
-  &gEfiGlobalVariableGuid,
-  L"Efi",
-
-  &gEfiVariableStoreProtocolGuid,
-  L"varstore",
-  &gEfiDevicePathProtocolGuid,
-  L"dpath",
+  //
+  // Loaded Image
+  //
   &gEfiLoadedImageProtocolGuid,
-  L"image",
-  &gEfiSimpleTextInProtocolGuid,
-  L"txtin",
-  &gEfiSimpleTextOutProtocolGuid,
-  L"txtout",
-  &gEfiBlockIoProtocolGuid,
-  L"blkio",
-  &gEfiDiskIoProtocolGuid,
-  L"diskio",
-  &gEfiSimpleFileSystemProtocolGuid,
-  L"fs",
-  &gEfiLoadFileProtocolGuid,
-  L"load",
-  &gEfiDeviceIoProtocolGuid,
-  L"DevIo",
-
-  &gEfiFileInfoGuid,
-  L"GenFileInfo",
-  &gEfiFileSystemInfoGuid,
-  L"FileSysInfo",
-
-  &gEfiUnicodeCollationProtocolGuid,
-  L"UnicodeCollation",
-  &gEfiSerialIoProtocolGuid,
-  L"serialio",
-  &gEfiSimpleNetworkProtocolGuid,
-  L"net",
-  &gEfiNetworkInterfaceIdentifierProtocolGuid,
-  L"nii",
-  &gEfiPxeBaseCodeProtocolGuid,
-  L"pxebc",
-  &gEfiPxeBaseCodeCallbackProtocolGuid,
-  L"pxecb",
-
+  L"Image",
+  //
+  // Device Path
+  //
+  &gEfiDevicePathProtocolGuid,
+  L"Dpath",
+  &gEfiLoadedImageDevicePathProtocolGuid,
+  L"ImageDPath",
+  &gEfiDevicePathUtilitiesProtocolGuid,
+  L"DpathUtil",
+  &gEfiDevicePathToTextProtocolGuid,
+  L"DpathToText",
+  &gEfiDevicePathFromTextProtocolGuid,
+  L"DpathFromText",
   &PcAnsiProtocol,
   L"PcAnsi",
   &Vt100Protocol,
   L"Vt100",
-  &UnknownDeviceGuid,
-  L"Unknown Device",
+  &Vt100PlusProtocol,
+  L"Vt100+",
+  &VtUtf8Protocol,
+  L"VtUtf8",
+  //
+  // Driver Model
+  //
+  &gEfiDriverBindingProtocolGuid,
+  L"DriverBinding",
+  &gEfiPlatformDriverOverrideProtocolGuid,
+  L"PlatformOverride",
+  &gEfiBusSpecificDriverOverrideProtocolGuid,
+  L"BusSpecificDriverOverride",
+  &gEfiDriverDiagnosticsProtocolGuid,
+  L"Diagnostics",
+  &gEfiDriverDiagnostics2ProtocolGuid,
+  L"Diagnostics2",
+  &gEfiComponentNameProtocolGuid,
+  L"ComponentName",
+  &gEfiComponentName2ProtocolGuid,
+  L"ComponentName2",
+  &gEfiPlatformToDriverConfigurationProtocolGuid,
+  L"PlatformDriverConfig",
+  &gEfiDriverSupportedEfiVersionProtocolGuid,
+  L"DriverEFIVersion",
+  //
+  // Console Support
+  //
+  &gEfiSimpleTextInputExProtocolGuid,
+  L"TxtinEx",
+  &gEfiSimpleTextInProtocolGuid,
+  L"Txtin",
+  &gEfiSimpleTextOutProtocolGuid,
+  L"Txtout",
+  &gEfiSimplePointerProtocolGuid,
+  L"SimplePointer",
+  &gEfiAbsolutePointerProtocolGuid,
+  L"AbsolutePointer",
+  &gEfiSerialIoProtocolGuid,
+  L"SerialIo",
+  &gEfiGraphicsOutputProtocolGuid,
+  L"GraphicsOutput",
+  &gEfiEdidDiscoveredProtocolGuid,
+  L"EdidDiscovered",
+  &gEfiEdidActiveProtocolGuid,
+  L"EdidActive",
+  &gEfiEdidOverrideProtocolGuid,
+  L"EdidOverride",
+  &gEfiConsoleInDeviceGuid,
+  L"ConIn",
+  &gEfiConsoleOutDeviceGuid,
+  L"ConOut",
+  &gEfiStandardErrorDeviceGuid,
+  L"StdErr",
+  //
+  // Media Access
+  //
+  &gEfiLoadFileProtocolGuid,
+  L"Load",
+  &gEfiSimpleFileSystemProtocolGuid,
+  L"Fs",
+  &gEfiFileInfoGuid,
+  L"GenFileInfo",
+  &gEfiFileSystemInfoGuid,
+  L"FileSysInfo",
+  &gEfiTapeIoProtocolGuid,
+  L"TapeIo",
+  &gEfiDiskIoProtocolGuid,
+  L"DiskIo",
+  &gEfiBlockIoProtocolGuid,
+  L"BlkIo",
+  &gEfiUnicodeCollationProtocolGuid,
+  L"UnicodeCollation",
+  &gEfiUnicodeCollation2ProtocolGuid,
+  L"UnicodeCollation2",
+  //
+  // PCI Bus Support
+  //
+  &gEfiPciRootBridgeIoProtocolGuid,
+  L"PciRootBridgeIo",
+  &gEfiPciIoProtocolGuid,
+  L"PciIo",
+  //
+  // SCSI Bus Support
+  //
+  &gEfiScsiPassThruProtocolGuid,
+  L"ScsiPassThru",
+  &gEfiScsiIoProtocolGuid,
+  L"ScsiIo",
+  &gEfiExtScsiPassThruProtocolGuid,
+  L"ExtScsiPassThru",
+  //
+  // iSCSI
+  //
+  &gEfiIScsiInitiatorNameProtocolGuid,
+  L"IScsiInitName",
+  //
+  // USB Support
+  //
+  &gEfiUsbIoProtocolGuid,
+  L"UsbIo",
+  &gEfiUsb2HcProtocolGuid,
+  L"UsbHc",
+  &gEfiUsb2HcProtocolGuid,
+  L"UsbHc2", 
+  //
+  // Debugger Support
+  //
+  &gEfiDebugSupportProtocolGuid,
+  L"DebugSupport",
+  &gEfiDebugPortDevicePathGuid,
+  L"DebugPort",
+  //
+  // Decompression Algorithm
+  //
+  &gEfiDecompressProtocolGuid,
+  L"Decompress",
+  //
+  // ACPI
+  //
+  &gEfiAcpiTableProtocolGuid,
+  L"AcpiTable",
+  // EBC
+  //
+  &gEfiEbcProtocolGuid,
+  L"EbcInterp",
+  //
+  // SNP, PXE, BIS
+  //
+  &gEfiSimpleNetworkProtocolGuid,
+  L"Net",
+  &gEfiNetworkInterfaceIdentifierProtocolGuid,
+  L"Nii",
+  &gEfiPxeBaseCodeProtocolGuid,
+  L"Pxebc",
+  &gEfiPxeBaseCodeCallbackProtocolGuid,
+  L"PxebcCallback",
+  &gEfiBisProtocolGuid,
+  L"Bis",
+  //
+  // Managed Network
+  //
+  &gEfiManagedNetworkServiceBindingProtocolGuid,
+  L"MNPSb",
+  &gEfiManagedNetworkProtocolGuid,
+  L"MNP",
+  //
+  // ARP, DHCPv4
+  //
+  &gEfiArpServiceBindingProtocolGuid,
+  L"ARPSb",
+  &gEfiArpProtocolGuid,
+  L"ARP",
+  &gEfiDhcp4ServiceBindingProtocolGuid,
+  L"DHCPv4Sb",
+  &gEfiDhcp4ProtocolGuid,
+  L"DHCPv4",
+  //
+  // TCPv4, IPv4 and Configuration
+  //
+  &gEfiTcp4ServiceBindingProtocolGuid,
+  L"TCPv4Sb",
+  &gEfiTcp4ProtocolGuid,
+  L"TCPv4",
+  &gEfiIp4ServiceBindingProtocolGuid,
+  L"IPv4Sb",
+  &gEfiIp4ProtocolGuid,
+  L"IPv4",
+  &gEfiIp4ConfigProtocolGuid,
+  L"IPv4Config",
+  //
+  // UDPv4, MTFTPv4
+  //
+  &gEfiUdp4ServiceBindingProtocolGuid,
+  L"UDPv4Sb",
+  &gEfiUdp4ProtocolGuid,
+  L"UDPv4",
+  &gEfiMtftp4ServiceBindingProtocolGuid,
+  L"MTFTPv4Sb",
+  &gEfiMtftp4ProtocolGuid,
+  L"MTFTPv4",
+  //
+  // Security
+  //
+  &gEfiAuthenticationInfoProtocolGuid,
+  L"AuthInfo",
+  &gEfiHashServiceBindingProtocolGuid,
+  L"HashSb",
+  &gEfiHashProtocolGuid,
+  L"Hash",
+  //
+  // HII 
+  //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  &gEfiHiiFontProtocolGuid,
+  L"HiiFont",
+  &gEfiHiiStringProtocolGuid,
+  L"HiiString",
+  &gEfiHiiImageProtocolGuid,
+  L"HiiImage",
+  &gEfiHiiDatabaseProtocolGuid,
+  L"HiiDatabase",
+  //
+  // HII Configuration Processing and Browser
+  //
+  &gEfiHiiConfigRoutingProtocolGuid,
+  L"HiiConfRouting",
+  &gEfiHiiConfigAccessProtocolGuid,
+  L"HiiConfAccess",
+  &gEfiFormBrowser2ProtocolGuid,
+  L"FormBrowser2",
+#else
+  &gEfiHiiProtocolGuid,
+  L"Hii",
+  &gEfiFormBrowserProtocolGuid,
+  L"FormBrowser",
+  &gEfiFormCallbackProtocolGuid,
+  L"FormCallback",
+#endif
+  //
+  // Shell Specific
+  //
+  &NullGuid,
+  L"G0",
+  &ShellInterfaceProtocol,
+  L"ShellInt",
+  //
+  // Deprecated
+  //
+  &gEfiDeviceIoProtocolGuid,
+  L"DevIo",
+  &gEfiTcpProtocolGuid,
+  L"Tcp",
+  &gEfiUgaDrawProtocolGuid,
+  L"UgaDraw",
+  &gEfiUgaIoProtocolGuid,
+  L"UgaIo",
+  &gEfiGlobalVariableGuid,
+  L"Efi",
+  &gEfiFileSystemInfoGuid,
+  L"FileSysInfo",
   &gEfiPartTypeSystemPartGuid,
   L"ESP",
   &gEfiPartTypeLegacyMbrGuid,
   L"GPT MBR",
-
-  &ShellInterfaceProtocol,
-  L"ShellInt",
+  &gEfiDriverConfigurationProtocolGuid,
+  L"Configuration",
+  &gEfiDriverConfiguration2ProtocolGuid,
+  L"Configuration2",
+  &gEfiIsaIoProtocolGuid,
+  L"IsaIo",
+  &gEfiIsaAcpiProtocolGuid,
+  L"IsaAcpi",
+  //
+  // NT32
+  //
+#if (PLATFORM == NT32)
+  &WinNtThunkProtocolGuid,
+  L"WinNtThunk",
+  &WinNtIoProtocolGuid,
+  L"WinNtDriverIo",
+  &WinNtSerialPortGuid,
+  L"SerialPrivate",
+#endif
+  //
+  // Misc
+  //
+  &gEfiVariableStoreProtocolGuid,
+  L"varstore",
+  &UnknownDeviceGuid,
+  L"Unknown Device",
 
   NULL
 };
@@ -132,6 +390,34 @@ CHAR16        *ShellLibMemoryTypeDesc[EfiMaxMemoryType] = {
 };
 
 CHAR8  ca[] = { 3, 1, 2 };
+
+VOID *
+LibGetVariableLang (
+  VOID
+  )
+/*++
+
+Routine Description:
+  Function returns the value of the Language Variable.
+
+Arguments:
+  None
+
+Returns:
+
+  None
+
+--*/
+{
+  VOID *Var;
+
+  Var = LibGetVariable (L"PlatformLang", &gEfiGlobalVariableGuid);
+  if (Var == NULL) {
+    Var = LibGetVariable (L"Lang", &gEfiGlobalVariableGuid);
+  }
+
+  return Var;
+}
 
 VOID *
 LibGetVariable (
@@ -472,6 +758,7 @@ Notes:
   }
 }
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 EFI_STATUS
 LibExtractDataFromHiiHandle (
   IN      EFI_HII_HANDLE      HiiHandle,
@@ -674,6 +961,8 @@ Returns:
 
   return Status;
 }
+
+#endif
 
 CHAR16 *
 MemoryTypeStr (
@@ -1146,7 +1435,6 @@ Returns:
   EFI_STATUS                        Status;
   EFI_DEVICE_PATH_PROTOCOL          *DevPath;
   EFI_DEVICE_PATH_PROTOCOL          *DevPathNode;
-  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *FvFilePath;
   VOID                              *Buffer;
   UINTN                             BufferSize;
   UINT32                            AuthenticationStatus;
@@ -1173,7 +1461,6 @@ Returns:
     //
     NameGuid = GetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *)DevPathNode);
     if (NameGuid != NULL) {
-      FvFilePath = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) DevPathNode;
       Status = BS->HandleProtocol (
                     Image->DeviceHandle,
                     &gEfiFirmwareVolumeProtocolGuid,
@@ -1182,7 +1469,7 @@ Returns:
       if (!EFI_ERROR (Status)) {
         Status = FV->ReadSection (
                       FV,
-                      &FvFilePath->NameGuid,
+                      NameGuid,
                       EFI_SECTION_USER_INTERFACE,
                       0,
                       &Buffer,
@@ -1203,7 +1490,7 @@ Returns:
         if (!EFI_ERROR (Status)) {
           Status = FV2->ReadSection (
                           FV2,
-                          &FvFilePath->NameGuid,
+                          NameGuid,
                           EFI_SECTION_USER_INTERFACE,
                           0,
                           &Buffer,
@@ -1283,17 +1570,23 @@ Returns:
 {
   EFI_STATUS        Status;
   UINTN             StringSize;
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   EFI_HII_PROTOCOL  *HiiProt;
+#endif
 
   ASSERT (String);
 
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   Status = LibLocateProtocol (&gEfiHiiProtocolGuid, (VOID **) &HiiProt);
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
+#endif
 
   StringSize  = 0;
   *String     = NULL;
+
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
   Status = HiiProt->GetString (
                       HiiProt,
                       HiiHandle,
@@ -1303,12 +1596,15 @@ Returns:
                       &StringSize,
                       *String
                       );
+#else
+  Status = LibGetString (HiiHandle, Token, *String, &StringSize);
+#endif
   if (EFI_BUFFER_TOO_SMALL == Status) {
     *String = AllocatePool (StringSize);
     if (NULL == *String) {
       return EFI_OUT_OF_RESOURCES;
     }
-
+#if (EFI_SPECIFICATION_VERSION < 0x0002000A)
     Status = HiiProt->GetString (
                         HiiProt,
                         HiiHandle,
@@ -1318,6 +1614,9 @@ Returns:
                         &StringSize,
                         *String
                         );
+#else
+  Status = LibGetString (HiiHandle, Token, *String, &StringSize);
+#endif
   }
 
   return Status;
@@ -1907,9 +2206,9 @@ LibGetComponentNameProtocol (
 }
 
 CHAR8 *
-LibConvertComponentName2SupportLanguage (
-  IN EFI_COMPONENT_NAME2_PROTOCOL    *ComponentName,
-  IN CHAR8                           *Language
+LibConvertSupportedLanguage (
+  IN CHAR8                           *SupportedLanguages,
+  IN CHAR8                           *LangCode
   )
 /*++
 
@@ -1920,8 +2219,8 @@ LibConvertComponentName2SupportLanguage (
 
   Arguments:
 
-    ComponentName         - Pointer to the ComponentName2 protocl pointer.
-    Language              - The language string.
+    SupportedLanguages    - Pointer to SupportedLanguages of ComponentName2/ComponentName protocl.
+    LangCode              - The language code in variable "PlatformLang" or "Lang".
 
   Returns:
 
@@ -1930,46 +2229,45 @@ LibConvertComponentName2SupportLanguage (
 
 --*/
 {
-  CHAR8                              *SupportedLanguages;
-  CHAR8                              *LangCode;
+  CHAR8                              *Languages;
+  CHAR8                              *Lang;
   UINTN                              Index;
 
-  LangCode           = NULL;
-  SupportedLanguages = NULL;
+  Lang  = NULL;
+  Languages = NULL;
 
   //
   // treat all the english language code (en-xx or eng) equally
   //
-  if ((strncmpa(Language, "en-", 3) == 0) || (strcmpa(Language, "eng") == 0)) {
-    SupportedLanguages = strstra(ComponentName->SupportedLanguages, "en-");
-    if (SupportedLanguages == NULL) {
-      SupportedLanguages = strstra(ComponentName->SupportedLanguages, "eng");
+  if ((strncmpa(LangCode, "en-", 3) == 0) || (strcmpa(LangCode, "eng") == 0)) {
+    Languages = strstra(SupportedLanguages, "en-");
+    if (Languages == NULL) {
+      Languages = strstra(SupportedLanguages, "eng");
     }
   }
 
   //
-  // duplicate the Language if it is not english
+  // Return NULL if it is not english
   //
-  if (SupportedLanguages == NULL) {
-    SupportedLanguages = Language;
+  if (Languages == NULL) {
+    Languages = LangCode;
   }
 
   //
   // duplicate the returned language code.
   //
   if (strstra(SupportedLanguages, "-") != NULL) {
-    LangCode = AllocateZeroPool(32);
-    for(Index = 0; (Index < 31) && (SupportedLanguages[Index] != '\0') && (SupportedLanguages[Index] != ';'); Index++) {
-      LangCode[Index] = SupportedLanguages[Index];
+    Lang = AllocateZeroPool(32);
+    for(Index = 0; (Index < 31) && (Languages[Index] != '\0') && (Languages[Index] != ';'); Index++) {
+      Lang[Index] = Languages[Index];
     }
-    LangCode[Index] = '\0';
+    Lang[Index] = '\0';
   } else {
-    LangCode = AllocateZeroPool(4);
-    for(Index = 0; (Index < 3) && (SupportedLanguages[Index] != '\0'); Index++) {
-      LangCode[Index] = SupportedLanguages[Index];
+    Lang = AllocateZeroPool(4);
+    for(Index = 0; (Index < 3) && (Languages[Index] != '\0'); Index++) {
+      Lang[Index] = Languages[Index];
     }
-    LangCode[Index] = '\0';
+    Lang[Index] = '\0';
   }
-  return LangCode;
+  return Lang;
 }
-
