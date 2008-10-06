@@ -133,12 +133,12 @@ Returns:
   PrintToken (
     STRING_TOKEN (STR_IFCONFIG_SHOW_MAC_ADDR),
     HiiHandle,
-    Mac->Addr[0], 
-    Mac->Addr[1], 
-    Mac->Addr[2],
-    Mac->Addr[3], 
-    Mac->Addr[4], 
-    Mac->Addr[5]
+    (UINTN)Mac->Addr[0], 
+    (UINTN)Mac->Addr[1], 
+    (UINTN)Mac->Addr[2],
+    (UINTN)Mac->Addr[3], 
+    (UINTN)Mac->Addr[4], 
+    (UINTN)Mac->Addr[5]
     );
 }
 
@@ -171,10 +171,10 @@ Returns:
   PrintToken (
     STRING_TOKEN (STR_IFCONFIG_SHOW_IP_ADDR),
     HiiHandle,
-    Ip4->Addr[0],
-    Ip4->Addr[1],
-    Ip4->Addr[2],
-    Ip4->Addr[3]
+    (UINTN)Ip4->Addr[0],
+    (UINTN)Ip4->Addr[1],
+    (UINTN)Ip4->Addr[2],
+    (UINTN)Ip4->Addr[3]
     );
 }
 

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1779,7 +1779,7 @@ DisplayMaxMemoryModuleSize (
   //
   // MaxSize is determined by follow formula
   //
-  MaxSize = 1 << Size;
+  MaxSize = (UINTN) 1 << Size;
   PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ONE_VAR_MB), HiiHandle, MaxSize);
 
   if (Option >= SHOW_DETAIL) {

@@ -739,6 +739,8 @@ Returns:
 
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
 
+  EnableOutputTabPause ();
+
   if (!EFI_PROPER_VERSION (0, 99)) {
     PrintToken (
       STRING_TOKEN (STR_SHELLENV_GNC_COMMAND_NOT_SUPPORT),
@@ -2929,6 +2931,8 @@ Returns:
   BOOLEAN                   PrtHelp;
 
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
+
+  EnableOutputTabPause ();
 
   if (!EFI_PROPER_VERSION (0, 99)) {
     PrintToken (

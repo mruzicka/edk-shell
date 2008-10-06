@@ -2076,15 +2076,15 @@ Returns:
   //
   // UNICODE byte-order-mark is two bytes
   //
-  CHAR8       Buffer8[2];
+  UINT16      ByteOrderMark;
   UINTN       BufSize;
   EFI_STATUS  Status;
 
   //
   //  Read the first two bytes to check for byte order mark
   //
-  BufSize = sizeof (Buffer8);
-  Status  = File->Read (File, &BufSize, Buffer8);
+  BufSize = sizeof (ByteOrderMark);
+  Status  = File->Read (File, &BufSize, &ByteOrderMark);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -2098,7 +2098,8 @@ Returns:
   //  otherwise assume it is ASCII.  UNICODE byte order mark on
   //  IA little endian is first byte 0xff and second byte 0xfe
   //
-  if ((Buffer8[0] | (Buffer8[1] << 8)) == EFI_UNICODE_BYTE_ORDER_MARK) {
+  if (BufSize       == sizeof (ByteOrderMark) &&
+      ByteOrderMark == EFI_UNICODE_BYTE_ORDER_MARK) {
     *IsAscii = FALSE;
 
   } else {

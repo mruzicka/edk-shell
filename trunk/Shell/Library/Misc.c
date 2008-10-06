@@ -1905,13 +1905,13 @@ DumpHex (
   IN VOID         *UserData
   )
 {
-  CHAR8 *Data;
+  UINT8 *Data;
 
   CHAR8 Val[50];
 
   CHAR8 Str[20];
 
-  CHAR8 c;
+  UINT8 c;
   UINTN Size;
   UINTN Index;
   

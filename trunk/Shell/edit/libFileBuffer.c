@@ -735,7 +735,7 @@ Returns:
   UINTN                           LineSize;
   VOID                            *Buffer;
   CHAR16                          *UnicodeBuffer;
-  CHAR8                           *AsciiBuffer;
+  UINT8                           *AsciiBuffer;
   UINTN                           FileSize;
   EFI_FILE_HANDLE                 Handle;
   BOOLEAN                         CreateFile;
@@ -1047,7 +1047,7 @@ Returns:
       //
       // Unicode file
       //
-      if (AsciiBuffer[0] == 0xff && AsciiBuffer[1] == 0xfe) {
+      if (*(UINT16 *) Buffer == EFI_UNICODE_BYTE_ORDER_MARK) {
         //
         // Unicode file's size should be even
         //

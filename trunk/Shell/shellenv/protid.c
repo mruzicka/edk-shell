@@ -2185,6 +2185,8 @@ Returns:
   //
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
 
+  EnableOutputTabPause ();
+
   Arg         = NULL;
   ArgVar      = 0;
   ByProtocol  = FALSE;
