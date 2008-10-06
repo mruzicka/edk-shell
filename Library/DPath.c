@@ -24,9 +24,7 @@ Revision History
 
 EFI_GUID mEfiDevicePathMessagingUartFlowControlGuid = DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL;
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 EFI_GUID mEfiDevicePathMessagingSASGuid = DEVICE_PATH_MESSAGING_SAS;
-#endif
 
 EFI_DEVICE_PATH_PROTOCOL *
 DevicePathInstance (
@@ -495,9 +493,7 @@ _DevPathVendor (
   UINTN               DataLength;
   UINTN               Index;
   UINT32              FlowControlMap;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   UINT16              Info;
-#endif
 
   ASSERT (Str != NULL);
   ASSERT (DevPath != NULL);
@@ -542,14 +538,13 @@ _DevPathVendor (
       }
 
       return ;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
     } else if (CompareGuid (&Vendor->Guid, &mEfiDevicePathMessagingSASGuid) == 0) {
       CatPrint (
         Str,
         L"SAS(%lx,%lx,%x,",
         ((SAS_DEVICE_PATH *) Vendor)->SasAddress,
         ((SAS_DEVICE_PATH *) Vendor)->Lun,
-        ((SAS_DEVICE_PATH *) Vendor)->RelativeTargetPort
+        (UINTN) ((SAS_DEVICE_PATH *) Vendor)->RelativeTargetPort
         );
       Info = (((SAS_DEVICE_PATH *) Vendor)->DeviceTopology);
       if ((Info & 0x0f) == 0) {
@@ -573,7 +568,6 @@ _DevPathVendor (
 
       CatPrint (Str, L"%x)", (UINTN) ((SAS_DEVICE_PATH *) Vendor)->Reserved);
       return ;
-#endif
     } else if (CompareGuid (&Vendor->Guid, &gEfiDebugPortProtocolGuid) == 0) {
       CatPrint (Str, L"DebugPort()");
       return ;
@@ -777,8 +771,7 @@ _DevPathUsb (
   CatPrint (Str, L"Usb(%x,%x)", (UINTN) Usb->ParentPortNumber, (UINTN) Usb->InterfaceNumber);
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-void
+VOID
 _DevPathUsbWWID (
   IN OUT POOL_PRINT       *Str,
   IN VOID                 *DevPath
@@ -799,7 +792,7 @@ _DevPathUsbWWID (
     );
 }
 
-void
+VOID
 _DevPathLogicalUnit (
   IN OUT POOL_PRINT       *Str,
   IN VOID                 *DevPath
@@ -813,7 +806,6 @@ _DevPathLogicalUnit (
   LogicalUnit = DevPath;
   CatPrint (Str, L"Unit(%x)", (UINTN) LogicalUnit->Lun);
 }
-#endif
 
 VOID
 _DevPathUsbClass (
@@ -821,9 +813,6 @@ _DevPathUsbClass (
   IN VOID                 *DevPath
   )
 {
-  //
-  // tbd:
-  //
   USB_CLASS_DEVICE_PATH *UsbClass;
 
   ASSERT (Str != NULL);
@@ -853,13 +842,22 @@ _DevPathSata (
   ASSERT (DevPath != NULL);
 
   Sata = DevPath;
-  CatPrint (
-    Str,
-    L"Sata(%x,%x,%x)",
-    (UINTN) Sata->HBAPortNumber,
-    (UINTN) Sata->PortMultiplierPortNumber,
-    (UINTN) Sata->Lun
-    );
+  if (Sata->PortMultiplierPortNumber & SATA_HBA_DIRECT_CONNECT_FLAG) {
+    CatPrint (
+      Str,
+      L"Sata(%x,%x)",
+      (UINTN) Sata->HBAPortNumber,
+      (UINTN) Sata->Lun
+      );
+  } else {
+    CatPrint (
+      Str,
+      L"Sata(%x,%x,%x)",
+      (UINTN) Sata->HBAPortNumber,
+      (UINTN) Sata->PortMultiplierPortNumber,
+      (UINTN) Sata->Lun
+      );
+  }
 }
 
 VOID
@@ -1062,7 +1060,6 @@ _DevPathUart (
   }
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 VOID
 _DevPathiSCSI (
   IN OUT POOL_PRINT       *Str,
@@ -1078,7 +1075,7 @@ _DevPathiSCSI (
   iSCSI = DevPath;
   CatPrint (
     Str,
-    L"iSCSI(%s,%x,%lx,",
+    L"iSCSI(%a,%x,%lx,",
     iSCSI->iSCSITargetName,
     (UINTN) iSCSI->TargetPortalGroupTag,
     iSCSI->Lun
@@ -1098,7 +1095,6 @@ _DevPathiSCSI (
 
   CatPrint (Str, L"%s)", (iSCSI->NetworkProtocol == 0) ? L"TCP" : L"reserved");
 }
-#endif
 
 VOID
 _DevPathHardDrive (
@@ -1192,7 +1188,7 @@ _DevPathMediaProtocol (
   ASSERT (DevPath != NULL);
 
   MediaProt = DevPath;
-  CatPrint (Str, L"%g", &MediaProt->Protocol);
+  CatPrint (Str, L"Media(%g)", &MediaProt->Protocol);
 }
 
 VOID
@@ -1282,7 +1278,6 @@ _DevPathNodeUnknown (
   CatPrint (Str, L"?");
 }
 
-#if (EFI_SPECIFICATION_VERSION > 0x00020000)
 VOID
 _DevPathFvPath (
   IN OUT POOL_PRINT       *Str,
@@ -1297,7 +1292,6 @@ _DevPathFvPath (
   FvPath = DevPath;
   CatPrint (Str, L"Fv(%g)", &FvPath->NameGuid);
 }
-#endif
 
 struct {
   UINT8 Type;
@@ -1344,14 +1338,12 @@ DevPathTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_USB_DP,
   _DevPathUsb,
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   MESSAGING_DEVICE_PATH,
   MSG_USB_WWID_DP,
   _DevPathUsbWWID,
   MESSAGING_DEVICE_PATH,
   MSG_DEVICE_LOGICAL_UNIT_DP,
   _DevPathLogicalUnit,
-#endif
   MESSAGING_DEVICE_PATH,
   MSG_USB_CLASS_DP,
   _DevPathUsbClass,
@@ -1379,11 +1371,9 @@ DevPathTable[] = {
   MESSAGING_DEVICE_PATH,
   MSG_VENDOR_DP,
   _DevPathVendor,
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   MESSAGING_DEVICE_PATH,
   MSG_ISCSI_DP,
   _DevPathiSCSI,
-#endif
   MEDIA_DEVICE_PATH,
   MEDIA_HARDDRIVE_DP,
   _DevPathHardDrive,
@@ -1399,16 +1389,12 @@ DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_PROTOCOL_DP,
   _DevPathMediaProtocol,
-#if (EFI_SPECIFICATION_VERSION > 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_DP,
   _DevPathFvPath,
-#endif
-#if (EFI_SPECIFICATION_VERSION != 0x00020000)
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   _DevPathFvFilePath,
-#endif
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   _DevPathBssBss,
@@ -1912,54 +1898,20 @@ InitializeFwVolDevicepathNode (
 /*++
 
 Routine Description:
-  The function returns 0 if the two device paths are equal.
-  Otherwise, other value is returned.
-
   Initialize a Firmware Volume (FV) Media Device Path node.
   
-  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
-  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
-  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
-  device path is defined for PIWG extensions of device path. If the code 
-  is compiled to conform with the UEFI 2.0 specification use the new device path
-  else use the old form for backwards compatability.
-
 Arguments:
   FvDevicePathNode  - Pointer to a FV device path node to initialize
-
   NameGuid          - FV file name to use in FvDevicePathNode
 
 Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION != 0x00020000)
-  //
-  // Use old Device Path that conflicts with UEFI
-  //
   FvDevicePathNode->Header.Type     = MEDIA_DEVICE_PATH;
   FvDevicePathNode->Header.SubType  = MEDIA_FV_FILEPATH_DP;
   SetDevicePathNodeLength (&FvDevicePathNode->Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
 
-#else
-  //
-  // Use the new Device path that does not conflict with the UEFI
-  //
-  FvDevicePathNode->Piwg.Header.Type     = MEDIA_DEVICE_PATH;
-  FvDevicePathNode->Piwg.Header.SubType  = MEDIA_VENDOR_DP;
-  SetDevicePathNodeLength (&FvDevicePathNode->Piwg.Header, sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH));
-
-  //
-  // Add the GUID for generic PIWG device paths
-  //
-  CopyMem (&FvDevicePathNode->Piwg.PiwgSpecificDevicePath, &gEfiFrameworkDevicePathGuid, sizeof(EFI_GUID));
-
-  //
-  // Add in the FW Vol File Path PIWG defined inforation
-  //
-  FvDevicePathNode->Piwg.Type = PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE;
-
-#endif
   CopyMem (&FvDevicePathNode->NameGuid, NameGuid, sizeof(EFI_GUID));
 }
 
@@ -1971,20 +1923,8 @@ GetNameGuidFromFwVolDevicePathNode (
 /*++
 
 Routine Description:
-  The function returns 0 if the two device paths are equal.
-  Otherwise, other value is returned.
-
   Check to see if the Firmware Volume (FV) Media Device Path is valid.
   
-  Tiano extended the EFI 1.10 device path nodes. Tiano does not own this enum
-  so as we move to UEFI 2.0 support we must use a mechanism that conforms with
-  the UEFI 2.0 specification to define the FV device path. An UEFI GUIDed 
-  device path is defined for PIWG extensions of device path. If the code 
-  is compiled to conform with the UEFI 2.0 specification use the new device path
-  else use the old form for backwards compatability. The return value to this
-  function points to a location in FvDevicePathNode and it does not allocate
-  new memory for the GUID pointer that is returned.
-
 Arguments:
   FvDevicePathNode  - Pointer to FV device path to check
 
@@ -1994,45 +1934,10 @@ Returns:
 
 --*/
 {
-#if (EFI_SPECIFICATION_VERSION > 0x00020000)
-  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_EFI_2_00 *FvDevicePathNodeUefi_2_00;
-  
-  if (ST->Hdr.Revision != 0x00020000) {
-    if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
-        DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
-      return &FvDevicePathNode->NameGuid;
-    }    
-  } else {
-    FvDevicePathNodeUefi_2_00 = (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_EFI_2_00 *)FvDevicePathNode;
-    if (DevicePathType (&FvDevicePathNodeUefi_2_00->Piwg.Header) == MEDIA_DEVICE_PATH &&
-        DevicePathSubType (&FvDevicePathNodeUefi_2_00->Piwg.Header) == MEDIA_VENDOR_DP) {
-      if (CompareMem (&gEfiFrameworkDevicePathGuid, &FvDevicePathNodeUefi_2_00->Piwg.PiwgSpecificDevicePath, sizeof(EFI_GUID)) == 0) {
-        if (FvDevicePathNodeUefi_2_00->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
-          return &FvDevicePathNodeUefi_2_00->NameGuid;
-        }
-      }
-    }    
-  }
-#elif (EFI_SPECIFICATION_VERSION < 0x00020000) 
-  //
-  // Use old Device Path that conflicts with UEFI2.0
-  //
   if (DevicePathType (&FvDevicePathNode->Header) == MEDIA_DEVICE_PATH &&
       DevicePathSubType (&FvDevicePathNode->Header) == MEDIA_FV_FILEPATH_DP) {
     return &FvDevicePathNode->NameGuid;
   }
-#else
-  //
-  // Use the new Device path that does not conflict with the UEFI2.0
-  //
-  if (DevicePathType (&FvDevicePathNode->Piwg.Header) == MEDIA_DEVICE_PATH &&
-      DevicePathSubType (&FvDevicePathNode->Piwg.Header) == MEDIA_VENDOR_DP) {
-    if (CompareMem (&gEfiFrameworkDevicePathGuid, &FvDevicePathNode->Piwg.PiwgSpecificDevicePath, sizeof(EFI_GUID)) == 0) {
-      if (FvDevicePathNode->Piwg.Type == PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE) {
-        return &FvDevicePathNode->NameGuid;
-      }
-    }
-  }
-#endif  
+
   return NULL;
 }

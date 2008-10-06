@@ -44,8 +44,6 @@ typedef struct {
   UINT8                     VendorDefinedData[1];
 } VENDOR_DEVICE_PATH_WITH_DATA;
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
-
 extern EFI_GUID mEfiDevicePathMessagingSASGuid;
 
 typedef struct {
@@ -54,10 +52,8 @@ typedef struct {
   UINT16                    LoginOption;
   UINT64                    Lun;
   UINT16                    TargetPortalGroupTag;
-  CHAR16                    iSCSITargetName[1];
+  CHAR8                     iSCSITargetName[1];
 } ISCSI_DEVICE_PATH_WITH_NAME;
-
-#endif
 
 EFI_DEVICE_PATH_PROTOCOL  *
 DevicePathFromHandle (
@@ -155,28 +151,5 @@ EFIAPI
 GetNameGuidFromFwVolDevicePathNode (
   IN  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH   *FvDevicePathNode
   );
-
-
-#pragma pack(1)
-
-#if (EFI_SPECIFICATION_VERSION > 0x00020000)
-//
-// For UEFI2.0 FV file device path
-//
-typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL  Header;
-  EFI_GUID                  PiwgSpecificDevicePath;
-  UINT32                    Type;
-} PIWG_DEVICE_PATH;
-
-#define PIWG_MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_TYPE         0x01
-typedef struct {
-  PIWG_DEVICE_PATH      Piwg;
-  EFI_GUID              NameGuid;
-} MEDIA_FW_VOL_FILEPATH_DEVICE_PATH_EFI_2_00;
-
-#endif
-
-#pragma pack()
 
 #endif

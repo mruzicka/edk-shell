@@ -608,14 +608,14 @@ Returns:
   PrintToken (
     STRING_TOKEN (STR_PING_REPLY_INFO),
     HiiHandle,
-    RxData->Header->SourceAddress.Addr[0],
-    RxData->Header->SourceAddress.Addr[1],
-    RxData->Header->SourceAddress.Addr[2],
-    RxData->Header->SourceAddress.Addr[3],
-    RxData->DataLength - sizeof (EFI_ICMP_ECHO_REPLY) + sizeof (IcmpEchoReply->TimerValue),
+    (UINTN)RxData->Header->SourceAddress.Addr[0],
+    (UINTN)RxData->Header->SourceAddress.Addr[1],
+    (UINTN)RxData->Header->SourceAddress.Addr[2],
+    (UINTN)RxData->Header->SourceAddress.Addr[3],
+    (UINTN)(RxData->DataLength - sizeof (EFI_ICMP_ECHO_REPLY) + sizeof (IcmpEchoReply->TimerValue)),
     Notation,
-    Rtt,
-    RxData->Header->TimeToLive
+    (UINTN)Rtt,
+    (UINTN)RxData->Header->TimeToLive
     );
 }
 
@@ -956,11 +956,11 @@ Returns:
   PrintToken (
     STRING_TOKEN (STR_PING_START),
     HiiHandle,
-    DestinationIp.Addr[0],
-    DestinationIp.Addr[1],
-    DestinationIp.Addr[2],
-    DestinationIp.Addr[3],
-    BufferSize
+    (UINTN)DestinationIp.Addr[0],
+    (UINTN)DestinationIp.Addr[1],
+    (UINTN)DestinationIp.Addr[2],
+    (UINTN)DestinationIp.Addr[3],
+    (UINTN)BufferSize
     );
 
   //
@@ -1149,24 +1149,24 @@ Returns:
   PrintToken (
     STRING_TOKEN (STR_PING_STAT_HEAD),
     HiiHandle,
-    DestinationIp.Addr[0],
-    DestinationIp.Addr[1],
-    DestinationIp.Addr[2],
-    DestinationIp.Addr[3]
+    (UINTN)DestinationIp.Addr[0],
+    (UINTN)DestinationIp.Addr[1],
+    (UINTN)DestinationIp.Addr[2],
+    (UINTN)DestinationIp.Addr[3]
     );
 
   PrintToken (
     STRING_TOKEN (STR_PING_STAT_DETAIL),
     HiiHandle,
-    TxCount,
-    RxCount,
-    TxCount - RxCount,
-    (100 * (TxCount - RxCount)) / TxCount
+    (UINTN)TxCount,
+    (UINTN)RxCount,
+    (UINTN)(TxCount - RxCount),
+    (UINTN)((100 * (TxCount - RxCount)) / TxCount)
     );
 
   if (RxCount != 0) {
     PrintToken (STRING_TOKEN (STR_PING_RTT_HEAD), HiiHandle);
-    PrintToken (STRING_TOKEN (STR_PING_RTT_DETAIL), HiiHandle, RttMin, RttMax, RttSum / RxCount);
+    PrintToken (STRING_TOKEN (STR_PING_RTT_DETAIL), HiiHandle, (UINTN)RttMin, (UINTN)RttMax, (UINTN)(RttSum / RxCount));
   }
     
 Exit:

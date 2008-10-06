@@ -366,10 +366,8 @@ _DevPathSerialVendor (
   )
 {
   VENDOR_DEVICE_PATH  *Vendor;
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   SAS_DEVICE_PATH     *Sas;
   EFI_GUID            SasVendorGuid = DEVICE_PATH_MESSAGING_SAS;
-#endif
 
   ASSERT(DevicePathNode != NULL);
   ASSERT(MappingItem != NULL);
@@ -377,7 +375,6 @@ _DevPathSerialVendor (
   Vendor = (VENDOR_DEVICE_PATH *) DevicePathNode;
   AppendCSDGuid (MappingItem, &Vendor->Guid);
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   if (CompareGuid (&SasVendorGuid, &Vendor->Guid) == 0) {
     Sas = (SAS_DEVICE_PATH *) Vendor;
     AppendCSDNum (MappingItem, Sas->SasAddress);
@@ -385,10 +382,8 @@ _DevPathSerialVendor (
     AppendCSDNum (MappingItem, Sas->DeviceTopology);
     AppendCSDNum (MappingItem, Sas->RelativeTargetPort);
   }
-#endif
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
 VOID
 _DevPathSerialLUN (
   IN EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode,
@@ -403,7 +398,6 @@ _DevPathSerialLUN (
   Lun = (DEVICE_LOGICAL_UNIT_DEVICE_PATH *) DevicePathNode;
   AppendCSDNum (MappingItem, Lun->Lun);
 }
-#endif
 
 VOID
 _DevPathSerialSata (
@@ -716,12 +710,10 @@ DEV_PATH_CONSIST_MAPPING_TABLE  DevPathConsistMappingTable[] = {
   MSG_VENDOR_DP,
   _DevPathSerialVendor,
   _DevPathCompareDefault,
-#if (EFI_SPECIFICATION_VERSION >= 0x00020000)
   MESSAGING_DEVICE_PATH,
   MSG_DEVICE_LOGICAL_UNIT_DP,
   _DevPathSerialLUN,
   _DevPathCompareDefault,
-#endif
   MESSAGING_DEVICE_PATH,
   MSG_SATA_DP,
   _DevPathSerialSata,
