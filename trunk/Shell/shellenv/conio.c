@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2008, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -458,21 +458,21 @@ Returns:
 {
   CHAR16                        *Str;
   BOOLEAN                       Done;
-  UINTN                         Column;
-  UINTN                         Row;
-  UINTN                         StartColumn;
-  UINTN                         Update;
-  UINTN                         Delete;
-  UINTN                         Len;
-  UINTN                         StrPos;
-  UINTN                         MaxStr;
+  UINTN                         Column;         // Column of current cursor
+  UINTN                         Row;            // Row of current cursor
+  UINTN                         StartColumn;    // Column at the beginning of the line
+  UINTN                         Update;         // Line index for update
+  UINTN                         Delete;         // Num of chars to delete from console after update
+  UINTN                         Len;            // Total length of the line
+  UINTN                         StrPos;         // Line index corresponding to the cursor
+  UINTN                         MaxStr;         // Maximum possible line length
   UINTN                         Index;
-  UINTN                         LineLength;
-  UINTN                         TotalRow;
+  UINTN                         LineLength;     // Num of columns in the console
+  UINTN                         TotalRow;       // Num of rows in the console
   UINTN                         SkipLength;
-  UINTN                         OutputLength;
-  UINTN                         TailRow;
-  UINTN                         TailColumn;
+  UINTN                         OutputLength;   // Length of the update string
+  UINTN                         TailRow;        // Row of end of line
+  UINTN                         TailColumn;     // Column of end of line
   EFI_INPUT_KEY                 Key;
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ConOut;
   EFI_SIMPLE_TEXT_IN_PROTOCOL   *ConIn;
@@ -482,7 +482,7 @@ Returns:
   EFI_LIST_ENTRY                *NewPos;
   BOOLEAN                       InScrolling;
   EFI_STATUS                    Status;
-  BOOLEAN                       InTabScrolling;
+  BOOLEAN                       InTabScrolling; // Whether in TAB-completion state
   EFI_LIST_ENTRY                DirList;
   SHELL_FILE_ARG                *Arg;
   EFI_LIST_ENTRY                *TabLinePos;
@@ -492,8 +492,8 @@ Returns:
   BOOLEAN                       HasSpaceInTabOutputStr;
   BOOLEAN                       InQuotationMode;
   CHAR16                        *TempStr;
-  UINTN                         TabPos;
-  UINTN                         TabUpdatePos;
+  UINTN                         TabPos;         // Start index of the string to search for TAB completion.
+  UINTN                         TabUpdatePos;   // Start index of the string updated by TAB stroke
   UINTN                         Count;
 
   ConOut            = ST->ConOut;
@@ -822,8 +822,11 @@ Returns:
       if (Arg && (Arg->Status != EFI_SUCCESS)) {
         continue;
       }
-      Column = StartColumn + TabUpdatePos % LineLength;
-      Row -= (Len - StrPos + Column + OutputLength) / LineLength;
+      //
+      // Adjust the column and row to the start of TAB-completion string.
+      //
+      Column = (StartColumn + TabUpdatePos) % LineLength;
+      Row -= (StartColumn + StrPos) / LineLength - (StartColumn + TabUpdatePos) / LineLength;
       HasSpaceInTabOutputStr = FALSE;
       OutputLength = StrLen (Arg->FileName);
       //

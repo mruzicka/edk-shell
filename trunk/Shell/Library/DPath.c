@@ -1207,6 +1207,28 @@ _DevPathFvFilePath (
 }
 
 VOID
+_DevPathRelativeOffsetRange (
+  IN OUT POOL_PRINT       *Str,
+  IN VOID                 *DevPath
+  )
+{
+  MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH *Offset;
+
+  ASSERT (Str != NULL);
+  ASSERT (DevPath != NULL);
+
+  Offset = DevPath;
+  CatPrint (
+    Str,
+    L"Offset(%lx,%lx)",
+    Offset->StartingOffset,
+    Offset->EndingOffset
+    );
+  
+}
+
+
+VOID
 _DevPathBssBss (
   IN OUT POOL_PRINT       *Str,
   IN VOID                 *DevPath
@@ -1395,6 +1417,9 @@ DevPathTable[] = {
   MEDIA_DEVICE_PATH,
   MEDIA_FV_FILEPATH_DP,
   _DevPathFvFilePath,
+  MEDIA_DEVICE_PATH,
+  MEDIA_RELATIVE_OFFSET_RANGE_DP,
+  _DevPathRelativeOffsetRange,
   BBS_DEVICE_PATH,
   BBS_BBS_DP,
   _DevPathBssBss,

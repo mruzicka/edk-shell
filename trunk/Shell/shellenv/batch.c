@@ -2101,7 +2101,6 @@ Returns:
   if (BufSize       == sizeof (ByteOrderMark) &&
       ByteOrderMark == EFI_UNICODE_BYTE_ORDER_MARK) {
     *IsAscii = FALSE;
-
   } else {
     *IsAscii = TRUE;
   }

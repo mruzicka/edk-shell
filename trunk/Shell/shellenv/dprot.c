@@ -70,6 +70,7 @@ STATIC CHAR16 *SEnvDP_MediaStr[] = {
   L"Media Protocol",
   L"PIWG FV",
   L"PIWG Firmware File",
+  L"Relative Offset Range",
 };
 
 STATIC CHAR16 *SEnvDP_BBS_Str[] = { L"Illegal", L"BIOS Boot Spec" };
@@ -593,6 +594,8 @@ Returns:
   VENDOR_DEVICE_PATH          *VendorDevicePath;
   FILEPATH_DEVICE_PATH        *FilePath;
   MEDIA_PROTOCOL_DEVICE_PATH  *MediaProtocol;
+  MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH
+                              *Offset;
 
   if (DevicePathType (DevicePath) != MEDIA_DEVICE_PATH) {
     return ;
@@ -650,6 +653,11 @@ Returns:
     MediaProtocol = (MEDIA_PROTOCOL_DEVICE_PATH *) DevicePath;
     PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_PROTOCOL_2), HiiEnvHandle, &MediaProtocol->Protocol);
     break;
+
+  case MEDIA_RELATIVE_OFFSET_RANGE_DP:
+    Offset = (MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH *) DevicePath;
+    PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_OFFSET), HiiEnvHandle, Offset->StartingOffset, Offset->EndingOffset);
+
   };
 
   //
@@ -679,7 +687,7 @@ struct DevicePathTypes  SEnvDP_Strings[] = {
   SEnvDP_MessageStr,
   SEnvMessagingDevicePathEntry,
   0x04,
-  0x07,
+  0x08,
   L"Media",
   SEnvDP_MediaStr,
   SEnvMediaDevicePathEntry,

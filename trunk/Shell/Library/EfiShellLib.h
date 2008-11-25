@@ -105,6 +105,7 @@ Revision History
 #include EFI_PROTOCOL_DEFINITION (LoadedImage)
 #include EFI_PROTOCOL_DEFINITION (LoadedImageDevicePath)
 #include EFI_PROTOCOL_DEFINITION (LoadFile)
+#include EFI_PROTOCOL_DEFINITION (LoadFile2)
 #include EFI_PROTOCOL_DEFINITION (PciHostBridgeResourceAllocation)
 #include EFI_PROTOCOL_DEFINITION (PciIo)
 #include EFI_PROTOCOL_DEFINITION (PciRootBridgeIo)

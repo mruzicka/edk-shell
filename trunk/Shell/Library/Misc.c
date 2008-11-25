@@ -137,6 +137,8 @@ KnownGuids[] = {
   //
   &gEfiLoadFileProtocolGuid,
   L"Load",
+  &gEfiLoadFile2ProtocolGuid,
+  L"Load2",
   &gEfiSimpleFileSystemProtocolGuid,
   L"Fs",
   &gEfiFileInfoGuid,
