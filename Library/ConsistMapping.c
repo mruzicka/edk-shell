@@ -1072,6 +1072,7 @@ ConsistMappingGenMappingName (
   CatPrint (&Str, L"%d", (UINTN) MappingInfo.HI);
   if (MappingInfo.CSD.str != NULL) {
     CatPrint (&Str, L"%s", MappingInfo.CSD.str);
+    FreePool (MappingInfo.CSD.str);
   }
 
   NewSize           = (Str.len + 1) * sizeof (CHAR16);
