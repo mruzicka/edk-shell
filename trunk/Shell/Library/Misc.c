@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -395,30 +395,27 @@ CHAR8  ca[] = { 3, 1, 2 };
 
 VOID *
 LibGetVariableLang (
-  VOID
+  IN BOOLEAN               Iso639Language
   )
 /*++
 
 Routine Description:
-  Function returns the value of the Language Variable.
+
+  Function returns the value of the Language Variable. If Iso639Language is TRUE,
+  It retrieves ISO 639-2 global variable L"Lang"; if IsoLanguage is FALSE, it
+  retrieves RFC 4646 global variable L"PlatformLang".
 
 Arguments:
-  None
+
+  Iso639Language   - Indicates whether the language is in ISO 639-2 format or RFC 4646 format
 
 Returns:
 
-  None
+  The language variable contents.
 
 --*/
 {
-  VOID *Var;
-
-  Var = LibGetVariable (L"PlatformLang", &gEfiGlobalVariableGuid);
-  if (Var == NULL) {
-    Var = LibGetVariable (L"Lang", &gEfiGlobalVariableGuid);
-  }
-
-  return Var;
+  return LibGetVariable (Iso639Language ? L"Lang" : L"PlatformLang", &gEfiGlobalVariableGuid);
 }
 
 VOID *
@@ -2151,125 +2148,651 @@ Returns:
   return Status;
 }
 
-EFI_STATUS
-LibGetComponentNameProtocol (
-  IN EFI_HANDLE                      DriverBindingHandle,
-  OUT EFI_COMPONENT_NAME_PROTOCOL    **ComponentName,
-  OUT EFI_COMPONENT_NAME2_PROTOCOL   **ComponentName2
+
+CHAR8 *
+LibGetCommandLineLanguage (
+  IN CHAR16        *CommandLineLanguage
   )
 /*++
 
-  Routine Description:
+Routine Description:
 
-    Get the ComponentName or ComponentName2 protocol according to the driver binding handle
+  Gets the language from command line parameter and converts it to an newly allocated ASCII language code.
 
-  Arguments:
+Arguments:
+  CommandLineLanguage  - An NULL-terminated Unicode language string.
 
-    DriverBindingHandle   - The Handle of DriverBinding
-    ComponentName         - Pointer to the ComponentName protocl pointer
-    ComponentName2        - Pointer to the ComponentName2 protocl pointer
-
-  Returns:
-
-    EFI_INVALID_PARAMETER - The ComponentName and ComponentName2 parameters are invalid.
-    EFI_NOT_FOUND         - Neither ComponentName nor ComponentName2 has been installed.
+Returns:
+  An allocated ASCII language string correspond to the command line language or NULL if
+  the input command line string is NULL or there is not enough memory .
 
 --*/
 {
-  EFI_STATUS                         Status;
+  CHAR8           *Language;
+  UINTN           Length;
+  UINTN           Index;
 
-  if ((ComponentName == NULL) || (ComponentName2 == NULL)) {
-    return EFI_INVALID_PARAMETER;
+  Language = NULL;
+  if (CommandLineLanguage != NULL) {
+    Length = StrLen(CommandLineLanguage);
+    Language = AllocatePool (Length + 1);
+    if (Language != NULL) {
+      for (Index = 0; Index <= Length; Index++) {
+        Language[Index] = (CHAR8) CommandLineLanguage[Index];
+      }
+    }
   }
 
-  *ComponentName  = NULL;
-  *ComponentName2 = NULL;
+  return Language;
+}
 
+
+CHAR8 *
+GetBestLanguage (
+  IN CHAR8        *SupportedLanguages, 
+  IN BOOLEAN      Iso639Language,
+  ...
+  )
+/*++
+
+Routine Description:
+
+  Returns a pointer to an allocated buffer that contains the best matching language 
+  from a set of supported languages.  
+  
+  This function supports both ISO 639-2 and RFC 4646 language codes, but language 
+  code types may not be mixed in a single call to this function.  The language 
+  code returned is allocated using AllocatePool().  The caller is responsible for 
+  freeing the allocated buffer using FreePool().  This function supports a variable
+  argument list that allows the caller to pass in a prioritized list of language 
+  codes to test against all the language codes in SupportedLanguages. 
+
+  If SupportedLanguages is NULL, then ASSERT()..
+
+Arguments:
+
+  SupportedLanguages   -          A pointer to a Null-terminated ASCII string that
+                                  contains a set of language codes in the format 
+                                  specified by Iso639Language.
+  Iso639Language       -          If TRUE, then all language codes are assumed to be
+                                  in ISO 639-2 format.  If FALSE, then all language
+                                  codes are assumed to be in RFC 4646 language format.
+  ...                  -          A variable argument list that contains pointers to 
+                                  Null-terminated ASCII strings that contain one or more
+                                  language codes in the format specified by Iso639Language.
+                                  The first language code from each of these language
+                                  code lists is used to determine if it is an exact or
+                                  close match to any of the language codes in 
+                                  SupportedLanguages.  Close matches only apply to RFC 4646
+                                  language codes, and the matching algorithm from RFC 4647
+                                  is used to determine if a close match is present.  If 
+                                  an exact or close match is found, then the matching
+                                  language code from SupportedLanguages is returned.  If
+                                  no matches are found, then the next variable argument
+                                  parameter is evaluated.  The variable argument list 
+                                  is terminated by a NULL
+
+Returns:
+  NULL                -           The best matching language could not be found in SupportedLanguages.
+  NULL                -           There are not enough resources available to return the best matching 
+                                  language.
+  Other               -           A pointer to a Null-terminated ASCII string that is the best matching 
+                                  language in SupportedLanguages.
+
+--*/
+{
+  VA_LIST      Args;
+  CHAR8        *Language;
+  UINTN        CompareLength;
+  UINTN        LanguageLength;
+  CHAR8        *Supported;
+  CHAR8        *BestLanguage;
+
+  ASSERT (SupportedLanguages != NULL);
+
+  VA_START (Args, Iso639Language);
+  while ((Language = VA_ARG (Args, CHAR8 *)) != NULL) {
+    //
+    // Default to ISO 639-2 mode
+    //
+    CompareLength  = 3;
+    LanguageLength = strlena (Language);
+    if (LanguageLength > 3) {
+      LanguageLength = 3;
+    }
+
+    //
+    // If in RFC 4646 mode, then determine the length of the first RFC 4646 language code in Language
+    //
+    if (!Iso639Language) {
+      for (LanguageLength = 0; Language[LanguageLength] != 0 && Language[LanguageLength] != ';'; LanguageLength++);
+    }
+
+    //
+    // Trim back the length of Language used until it is empty
+    //
+    while (LanguageLength > 0) {
+      //
+      // Loop through all language codes in SupportedLanguages
+      //
+      for (Supported = SupportedLanguages; *Supported != '\0'; Supported += CompareLength) {
+        //
+        // In RFC 4646 mode, then Loop through all language codes in SupportedLanguages
+        //
+        if (!Iso639Language) {
+          //
+          // Skip ';' characters in Supported
+          //
+          for (; *Supported != '\0' && *Supported == ';'; Supported++);
+          //
+          // Determine the length of the next language code in Supported
+          //
+          for (CompareLength = 0; Supported[CompareLength] != 0 && Supported[CompareLength] != ';'; CompareLength++);
+          //
+          // If Language is longer than the Supported, then skip to the next language
+          //
+          if (LanguageLength > CompareLength) {
+            continue;
+          }
+        }
+        //
+        // See if the first LanguageLength characters in Supported match Language
+        //
+        if (strncmpa (Supported, Language, LanguageLength) == 0) {
+          VA_END (Args);
+          //
+          // Allocate, copy, and return the best matching language code from SupportedLanguages
+          //
+          BestLanguage = AllocateZeroPool (CompareLength + 1);
+          if (BestLanguage == NULL) {
+            return NULL;
+          }
+          CopyMem (BestLanguage, Supported, CompareLength);
+          return BestLanguage;
+        }
+      }
+
+      if (Iso639Language) {
+        //
+        // If ISO 639 mode, then each language can only be tested once
+        //
+        LanguageLength = 0;
+      } else {
+        //
+        // If RFC 4646 mode, then trim Language from the right to the next '-' character 
+        //
+        for (LanguageLength--; LanguageLength > 0 && Language[LanguageLength] != '-'; LanguageLength--);
+      }
+    }
+  }
+  VA_END (Args);
+
+  //
+  // No matches were found 
+  //
+  return NULL;
+}
+
+
+BOOLEAN
+MatchLanguageFormat (
+  IN CHAR8        *Language,
+  IN BOOLEAN      Iso639Language
+  )
+/*++
+
+Routine Description:
+
+  This function detects whether the input language match current language format. 
+  If Iso639Language is TRUE, it detects whether the input Language is in ISO 639 format.
+  If Iso639Language is FALSE, it detects whether the input Language is in RFC 4646 format.
+
+Arguments:
+
+  Language             -          A pointer to a Null-terminated ASCII string that
+                                  contains a set of language codes.
+  Iso639Language       -          If TRUE, it detects whether the input Language is in ISO 639 format.
+                                  If FALSE, it detects whether the input Language is in RFC 4646 format.
+
+Returns:
+
+  TRUE                 -         The input language format matches the format specified by Iso639Language.
+  FALSE                -         The input language format does not match the format specified by Iso639Language.
+
+--*/
+{
+  UINTN           Length;
+  UINTN           MajorLength;
+
+  Length = strlena (Language);
+
+  MajorLength = 0;
+  while (Language[MajorLength] >= 'a' && Language[MajorLength] <= 'z') {
+    MajorLength++;
+  }
+
+  if (Iso639Language) {
+    //
+    // For ISO 639 language, it must be a 3-character string.
+    //
+    if ((Length == 3) && (MajorLength == 3)) {
+      return TRUE;
+    }
+    return FALSE;
+  } else {
+    //
+    // For RFC 4646 language, we check for the following 3 characteristics,
+    // this is not a complete check, but should be effective since GetBestLanguage()
+    // will ensure the best RFC 4646 language is matched from the supported languages.
+    //
+    if (Length == 0) {
+      return FALSE;
+    }
+    if (MajorLength > 3) {
+      return FALSE;
+    }
+    if ((MajorLength == 1) && (Language[1] != '-')) {
+      return FALSE;
+    }
+
+    return TRUE;
+  }
+}
+
+
+CHAR8 *
+LibSelectBestLanguage (
+  IN CHAR8        *SupportedLanguages,
+  IN BOOLEAN      Iso639Language,
+  IN CHAR8        *Language
+  )
+/*++
+
+Routine Description:
+
+  Select the best matching language according to shell policy for best user experience. 
+  
+  This function supports both ISO 639-2 and RFC 4646 language codes, but language 
+  code types may not be mixed in a single call to this function. Normally, parameter
+  Language is the ASCII string language from shell command line option.
+  If Language is not NULL, it is used to match the SupportedLanguages.
+  If Language is NULL, we will use language variable and system default language
+  to match the SupportedLanguages to ensure of best user experience.
+
+Arguments:
+
+  SupportedLanguages   -          A pointer to a Null-terminated ASCII string that
+                                  contains a set of language codes in the format 
+                                  specified by Iso639Language.
+  Iso639Language       -          If TRUE, then all language codes are assumed to be
+                                  in ISO 639-2 format.  If FALSE, then all language
+                                  codes are assumed to be in RFC 4646 language format.
+  Language             -          An ASCII string that represents the language command line option.
+
+Returns:
+  NULL                 -          The best matching language could not be found in SupportedLanguages.
+  NULL                 -          There are not enough resources available to return the best matching 
+                                  language.
+  Other                -          A pointer to a Null-terminated ASCII string that is the best matching 
+                                  language in SupportedLanguages.
+
+--*/
+{
+  CHAR8           *LanguageVariable;
+  CHAR8           *BestLanguage;
+
+  if (Language != NULL) {
+    //
+    // If a language is specified, we will use this language only and ignore the
+    // language variable and the system default language.
+    //
+    if (MatchLanguageFormat (Language, Iso639Language)) {
+      BestLanguage = GetBestLanguage(
+                       SupportedLanguages,
+                       Iso639Language,
+                       Language,
+                       NULL
+                       );
+    } else {
+      return NULL;
+    }
+  } else {
+    LanguageVariable = LibGetVariableLang (Iso639Language);
+    BestLanguage = GetBestLanguage(
+                     SupportedLanguages,
+                     Iso639Language,
+                     (LanguageVariable != NULL) ? LanguageVariable : "",
+                     Iso639Language ? DefaultLang : DefaultPlatformLang,
+                     NULL
+                     );
+    if (LanguageVariable != NULL) {
+      FreePool (LanguageVariable);
+    }
+  }
+
+  return BestLanguage;
+}
+
+
+EFI_STATUS
+GetComponentNameWorker (
+  IN  EFI_GUID                    *ProtocolGuid,
+  IN  EFI_HANDLE                  DriverBindingHandle,
+  IN  CHAR8                       *Language,
+  OUT EFI_COMPONENT_NAME_PROTOCOL **ComponentName,
+  OUT CHAR8                       **SupportedLanguage
+  )
+/*++
+
+Routine Description:
+
+  This is an internal worker function to get the Component Name (2) protocol interface
+  and the language it supports.
+
+Arguments:
+
+  ProtocolGuid         -          A pointer to an EFI_GUID. It points to Component Name (2) protocol GUID.
+  DriverBindingHandle  -          The handle on which the Component Name (2) protocol instance is retrieved.
+  Language             -          An ASCII string that represents the language command line option.
+  ComponentName        -          A pointer to the Component Name (2) protocol interface.
+  SupportedLanguage    -          The best suitable language that matches the SupportedLangues interface for the 
+                                  located Component Name (2) instance.
+
+Returns:
+
+  EFI_SUCCESS          -          The Component Name (2) protocol instance is successfully located and we find
+                                  the best matching language it support.
+  EFI_UNSUPPORTED      -          The input Language is not supported by the Component Name (2) protocol.
+  Other                -          Some error occurs when locating Component Name (2) protocol instance or finding
+                                  the supported language.
+
+--*/
+{
+  EFI_STATUS                      Status;
+
+  //
+  // Locate Component Name (2) protocol on the driver binging handle.
+  //
   Status = BS->OpenProtocol (
                  DriverBindingHandle,
-                 &gEfiComponentName2ProtocolGuid,
-                 (VOID **) ComponentName2,
+                 ProtocolGuid,
+                 (VOID **) ComponentName,
                  NULL,
                  NULL,
                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
                  );
-  if (EFI_ERROR(Status)) {
-    Status = BS->OpenProtocol (
-                   DriverBindingHandle,
-                   &gEfiComponentNameProtocolGuid,
-                   (VOID **) ComponentName,
-                   NULL,
-                   NULL,
-                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                   );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Apply shell policy to select the best language.
+  //
+  *SupportedLanguage = LibSelectBestLanguage (
+                         (*ComponentName)->SupportedLanguages,
+                         (BOOLEAN) (ProtocolGuid == &gEfiComponentNameProtocolGuid),
+                         Language
+                         );
+  if (*SupportedLanguage == NULL) {
+    Status = EFI_UNSUPPORTED;
   }
 
   return Status;
 }
 
-CHAR8 *
-LibConvertSupportedLanguage (
-  IN CHAR8                           *SupportedLanguages,
-  IN CHAR8                           *LangCode
+
+EFI_STATUS
+GetDriverNameWorker (
+  IN  EFI_GUID    *ProtocolGuid,
+  IN  EFI_HANDLE  DriverBindingHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **DriverName
   )
 /*++
 
-  Routine Description:
+Routine Description:
 
-    Do some convertion for the ComponentName2 supported language. It do 
-    the convertion just for english language code currently.
+  This is an internal worker function to get driver name from Component Name (2) protocol interface.
 
-  Arguments:
+Arguments:
 
-    SupportedLanguages    - Pointer to SupportedLanguages of ComponentName2/ComponentName protocl.
-    LangCode              - The language code in variable "PlatformLang" or "Lang".
+  ProtocolGuid         -          A pointer to an EFI_GUID. It points to Component Name (2) protocol GUID.
+  DriverBindingHandle  -          The handle on which the Component Name (2) protocol instance is retrieved.
+  Language             -          An ASCII string that represents the language command line option.
+  DriverName           -          A pointer to the Unicode string to return. This Unicode string is the name
+                                  of the driver specified by This.
 
-  Returns:
+Returns:
 
-    Return the duplication of Language if it is not english otherwise return 
-    the supported english language code.
+  EFI_SUCCESS          -          The driver name is successfully retrieved from Component Name (2) protocol
+                                  interface.
+  Other                -          The driver name cannot be retrieved from Component Name (2) protocol
+                                  interface.
 
 --*/
 {
-  CHAR8                              *Languages;
-  CHAR8                              *Lang;
-  UINTN                              Index;
-
-  Lang  = NULL;
-  Languages = NULL;
+  EFI_STATUS                     Status;
+  CHAR8                          *BestLanguage;
+  EFI_COMPONENT_NAME_PROTOCOL    *ComponentName;
 
   //
-  // treat all the english language code (en-xx or eng) equally
+  // Retrieve Component Name (2) protocol instance on the driver binding handle and 
+  // find the best language this instance supports. 
   //
-  if ((strncmpa(LangCode, "en-", 3) == 0) || (strcmpa(LangCode, "eng") == 0)) {
-    Languages = strstra(SupportedLanguages, "en-");
-    if (Languages == NULL) {
-      Languages = strstra(SupportedLanguages, "eng");
-    }
+  Status = GetComponentNameWorker (
+             ProtocolGuid,
+             DriverBindingHandle,
+             Language,
+             &ComponentName,
+             &BestLanguage
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+ 
+  //
+  // Get the driver name from Component Name (2) protocol instance on the driver binging handle.
+  //
+  Status = ComponentName->GetDriverName (
+                            ComponentName,
+                            BestLanguage,
+                            DriverName
+                            );
+  FreePool (BestLanguage);
+ 
+  return Status;
+}
+
+
+EFI_STATUS
+LibGetDriverName (
+  IN  EFI_HANDLE  DriverBindingHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **DriverName
+  )
+/*++
+
+Routine Description:
+
+  This function gets driver name from Component Name 2 protocol interface and Component Name protocol interface
+  in turn. It first tries UEFI 2.0 Component Name 2 protocol interface and try to get the driver name.
+  If the attempt fails, it then gets the driver name from EFI 1.1 Component Name protocol for backward
+  compatibility support. 
+
+Arguments:
+
+  DriverBindingHandle  -          The handle on which the Component Name (2) protocol instance is retrieved.
+  Language             -          An ASCII string that represents the language command line option.
+  DriverName           -          A pointer to the Unicode string to return. This Unicode string is the name
+                                  of the driver specified by This.
+
+Returns:
+
+  EFI_SUCCESS          -          The driver name is successfully retrieved from Component Name (2) protocol
+                                  interface.
+  Other                -          The driver name cannot be retrieved from Component Name (2) protocol
+                                  interface.
+
+--*/
+{
+  EFI_STATUS      Status;
+
+  //
+  // Get driver name from UEFI 2.0 Component Name 2 protocol interface.
+  //
+  Status = GetDriverNameWorker (&gEfiComponentName2ProtocolGuid, DriverBindingHandle, Language, DriverName);
+  if (EFI_ERROR (Status)) {
+    //
+    // If it fails to get the driver name from Component Name protocol interface, we should fall back on
+    // EFI 1.1 Component Name protocol interface.
+    //
+    Status = GetDriverNameWorker (&gEfiComponentNameProtocolGuid, DriverBindingHandle, Language, DriverName);
+  }
+
+  return Status;
+}
+
+EFI_STATUS
+GetControllerNameWorker (
+  IN  EFI_GUID    *ProtocolGuid,
+  IN  EFI_HANDLE  DriverBindingHandle,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  ChildHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **ControllerName
+  )
+/*++
+
+Routine Description:
+
+  This function gets controller name from Component Name 2 protocol interface and Component Name protocol interface
+  in turn. It first tries UEFI 2.0 Component Name 2 protocol interface and try to get the controller name.
+  If the attempt fails, it then gets the controller name from EFI 1.1 Component Name protocol for backward
+  compatibility support. 
+
+Arguments:
+
+  ProtocolGuid         -          A pointer to an EFI_GUID. It points to Component Name (2) protocol GUID.
+  DriverBindingHandle  -          The handle on which the Component Name (2) protocol instance is retrieved.
+  ControllerHandle     -          The handle of a controller that the driver specified by This is managing.
+                                  This handle specifies the controller whose name is to be returned.
+  ChildHandle          -          The handle of the child controller to retrieve the name of. This is an
+                                  optional parameter that may be NULL. It will be NULL for device drivers.
+                                  It will also be NULL for bus drivers that attempt to retrieve the name
+                                  of the bus controller. It will not be NULL for a bus driver that attempts
+                                  to retrieve the name of a child controller.
+  Language             -          An ASCII string that represents the language command line option.
+  ControllerName       -          A pointer to the Unicode string to return. This Unicode string
+                                  is the name of the controller specified by ControllerHandle and ChildHandle.
+
+Returns:
+
+  EFI_SUCCESS          -          The controller name is successfully retrieved from Component Name (2) protocol
+                                  interface.
+  Other                -          The controller name cannot be retrieved from Component Name (2) protocol.
+
+--*/
+{
+  EFI_STATUS                     Status;
+  CHAR8                          *BestLanguage;
+  EFI_COMPONENT_NAME_PROTOCOL    *ComponentName;
+
+  //
+  // Retrieve Component Name (2) protocol instance on the driver binding handle and 
+  // find the best language this instance supports. 
+  //
+  Status = GetComponentNameWorker (
+             ProtocolGuid,
+             DriverBindingHandle,
+             Language,
+             &ComponentName,
+             &BestLanguage
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
   }
 
   //
-  // Return NULL if it is not english
+  // Get the controller name from Component Name (2) protocol instance on the driver binging handle.
   //
-  if (Languages == NULL) {
-    Languages = LangCode;
-  }
+  Status = ComponentName->GetControllerName (
+                            ComponentName,
+                            ControllerHandle,
+                            ChildHandle,
+                            BestLanguage,
+                            ControllerName
+                            );
+  FreePool (BestLanguage);
+
+  return Status;
+}
+
+EFI_STATUS
+LibGetControllerName (
+  IN  EFI_HANDLE  DriverBindingHandle,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  ChildHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **ControllerName
+  )
+/*++
+
+Routine Description:
+
+  This function gets controller name from Component Name 2 protocol interface and Component Name protocol interface
+  in turn. It first tries UEFI 2.0 Component Name 2 protocol interface and try to get the controller name. 
+  If the attempt fails, it then gets the controller name from EFI 1.1 Component Name protocol for backward
+  compatibility support. 
+
+Arguments:
+
+  DriverBindingHandle  -          The handle on which the Component Name (2) protocol instance is retrieved.
+  ControllerHandle     -          The handle of a controller that the driver specified by This is managing.
+                                  This handle specifies the controller whose name is to be returned.
+  ChildHandle          -          The handle of the child controller to retrieve the name of. This is an
+                                  optional parameter that may be NULL. It will be NULL for device drivers.
+                                  It will also be NULL for bus drivers that attempt to retrieve the name
+                                  of the bus controller. It will not be NULL for a bus driver that attempts
+                                  to retrieve the name of a child controller.
+  Language             -          An ASCII string that represents the language command line option.
+  ControllerName       -          A pointer to the Unicode string to return. This Unicode string
+                                  is the name of the controller specified by ControllerHandle and ChildHandle.
+
+Returns:
+
+  EFI_SUCCESS          -          The controller name is successfully retrieved from Component Name (2) protocol
+                                  interface.
+  Other                -          The controller name cannot be retrieved from Component Name (2) protocol.
+
+--*/
+{
+  EFI_STATUS      Status;
 
   //
-  // duplicate the returned language code.
+  // Get controller name from UEFI 2.0 Component Name 2 protocol interface.
   //
-  if (strstra(SupportedLanguages, "-") != NULL) {
-    Lang = AllocateZeroPool(32);
-    for(Index = 0; (Index < 31) && (Languages[Index] != '\0') && (Languages[Index] != ';'); Index++) {
-      Lang[Index] = Languages[Index];
-    }
-    Lang[Index] = '\0';
-  } else {
-    Lang = AllocateZeroPool(4);
-    for(Index = 0; (Index < 3) && (Languages[Index] != '\0'); Index++) {
-      Lang[Index] = Languages[Index];
-    }
-    Lang[Index] = '\0';
+  Status = GetControllerNameWorker (
+             &gEfiComponentName2ProtocolGuid,
+             DriverBindingHandle,
+             ControllerHandle,
+             ChildHandle,
+             Language,
+             ControllerName
+             );
+  if (EFI_ERROR (Status)) {
+    //
+    // If it fails to get the controller name from Component Name protocol interface, we should fall back on
+    // EFI 1.1 Component Name protocol interface.
+    //
+    Status = GetControllerNameWorker (
+               &gEfiComponentNameProtocolGuid,
+               DriverBindingHandle,
+               ControllerHandle,
+               ChildHandle,
+               Language,
+               ControllerName
+               );
   }
-  return Lang;
+
+  return Status;
 }

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -23,9 +23,19 @@ Abstract:
 #include STRING_DEFINES_FILE
 extern UINT8 STRING_ARRAY_NAME[];
 
+#define NET_IFTYPE_ETHERNET    1
+#define NIC_ITEM_CONFIG_SIZE   sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * MAX_IP4_CONFIG_IN_VARIABLE
+
 EFI_HII_HANDLE  HiiHandle;
 
 EFI_GUID  EfiIfConfigGuid = EFI_IFCONFIG_GUID;
+
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_HII_CONFIG_ROUTING_PROTOCOL  *mHiiConfigRouting = NULL;
+#endif
+BOOLEAN                          mIp4ConfigExist    = FALSE;
+
 
 SHELL_VAR_CHECK_ITEM  IfConfigCheckList[] = {
   {
@@ -178,6 +188,517 @@ Returns:
     );
 }
 
+UINTN
+AppendOffsetWidthValue (
+  IN OUT CHAR16               *String,
+  IN UINTN                    Offset,
+  IN UINTN                    Width,
+  IN UINT8                    *Block
+  )
+/*++
+
+Routine Description:
+  Append OFFSET/WIDTH/VALUE items at the beginning of string.
+
+Arguments:
+  String -         Point to the position should be appended.
+  Offset -         Offset value.
+  Width  -         Width value.
+  Block  -         Point to data buffer.
+
+Returns:
+  The count of unicode character was appended.
+
+--*/
+{
+  CHAR16                      *OriString;
+
+  OriString = String;
+
+  StrCpy (String, L"&OFFSET=");
+  String += StrLen (L"&OFFSET=");
+  String += SPrint (String, 0, L"%x", Offset);
+
+  StrCpy (String,L"&WIDTH=");
+  String += StrLen (L"&WIDTH=");
+  String += SPrint (String, 0, L"%x", Width);
+
+  if (Block != NULL) {
+    StrCpy (String,L"&VALUE=");
+    String += StrLen (L"&VALUE=");
+    while ((Width--) != 0) {
+      String += SPrint (String, 0, L"%x", Block[Width]);
+    }
+  }
+  
+  return String - OriString;
+}
+
+CHAR16 *
+ConstructConfigHdr (
+  IN EFI_GUID                *Guid,
+  IN CHAR16                  *Name,
+  IN EFI_HANDLE              DriverHandle
+  )
+/*++
+
+Routine Description:
+  Construct <ConfigHdr> using routing information GUID/NAME/PATH.
+
+Arguments:
+  Guid          - Routing information: GUID.
+  Name          - Routing information: NAME.
+  DriverHandle  - Driver handle which contains the routing information: PATH.
+
+Returns:
+  NULL  - Fails.
+  Other - Pointer to configHdr string.
+
+--*/
+{
+  EFI_STATUS                 Status;
+  CHAR16                     *ConfigHdr;
+  EFI_DEVICE_PATH_PROTOCOL   *DevicePath;
+  CHAR16                     *String;
+  CHAR16                     *UpperString;
+  UINTN                      Index;
+  UINT8                      *Buffer;
+  UINTN                      DevicePathLength;
+  UINTN                      NameLength;
+
+  //
+  // Get device path 
+  //
+  Status = BS->HandleProtocol (
+                 DriverHandle,
+                 &gEfiDevicePathProtocolGuid,
+                 (VOID **) &DevicePath
+                 );
+  
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+
+  DevicePathLength = DevicePathSize (DevicePath);
+  NameLength = StrLen (Name);
+  ConfigHdr = AllocateZeroPool ((5 + sizeof (EFI_GUID) * 2 + 6 + NameLength * 4 + 6 + DevicePathLength * 2 + 1) * sizeof (CHAR16));
+  if (ConfigHdr == NULL) {
+    return NULL;
+  } 
+
+  String = ConfigHdr;
+  StrCpy (String, L"GUID=");
+  String += StrLen (L"GUID=");
+
+  //
+  // Append Guid converted to <HexCh>32
+  //
+  UpperString = String;
+  for (Index = 0, Buffer = (UINT8 *)Guid; Index < sizeof (EFI_GUID); Index++) {
+    String += SPrint (String, 0, L"%02x", *Buffer++);
+  }
+  *String = 0;
+  StrLwr (UpperString);
+
+  //
+  // Append L"&NAME="
+  //
+  StrCpy (String, L"&NAME=");
+  String += StrLen (L"&NAME=");
+  UpperString = String;
+  for (Index = 0; Index < NameLength ; Index++) {
+    String += SPrint (String, 0, L"00%x", Name[Index]);
+  }
+  *String = 0;
+  StrLwr (UpperString);
+  
+  //
+  // Append L"&PATH="
+  //
+
+  StrCpy (String, L"&PATH=");
+  String += StrLen (L"&PATH=");
+  UpperString = String;
+  for (Index = 0, Buffer = (UINT8 *) DevicePath; Index < DevicePathLength; Index++) {
+    String += SPrint (String, 0, L"%02x", *Buffer++);
+  }
+  *String = 0;
+  StrLwr (UpperString);
+
+  return ConfigHdr;
+}
+
+EFI_STATUS
+IfConfigGetNicMacInfo (
+  IN  EFI_HANDLE                    ImageHandle,
+  IN  EFI_HANDLE                    Handle,
+  OUT NIC_ADDR                      *NicAddr
+  )    
+/*++
+
+Routine Description:
+  Get network physical device NIC information.
+
+Arguments:
+  ImageHandle - The image handle of this application.
+  Handle      - The network physical device handle.
+  NicAddr     - NIC information.
+
+Returns:
+  EFI_SUCCESS - Get NIC information successfully.
+  Other       - Fails to get NIC information.
+
+--*/                  
+{
+  EFI_STATUS                    Status;
+  EFI_HANDLE                    MnpHandle;
+  EFI_SIMPLE_NETWORK_MODE       SnpMode;
+  EFI_MANAGED_NETWORK_PROTOCOL  *Mnp;
+
+  MnpHandle = NULL;
+  Mnp       = NULL;
+
+  Status = ShellCreateServiceChild (
+             Handle,
+             ImageHandle, 
+             &gEfiManagedNetworkServiceBindingProtocolGuid,
+             &MnpHandle
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = BS->HandleProtocol (
+                  MnpHandle,
+                  &gEfiManagedNetworkProtocolGuid,
+                  (VOID **) &Mnp
+                  );
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+  Status = Mnp->GetModeData (Mnp, NULL, &SnpMode);
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_STARTED)) {
+    goto ON_ERROR;
+  }
+ 
+  NicAddr->Type    = (UINT16) SnpMode.IfType;
+  NicAddr->Len     = (UINT8) SnpMode.HwAddressSize;
+  CopyMem (&NicAddr->MacAddr, &SnpMode.CurrentAddress, NicAddr->Len);
+
+ON_ERROR:
+
+  ShellDestroyServiceChild (
+    Handle,
+    ImageHandle, 
+    &gEfiManagedNetworkServiceBindingProtocolGuid,
+    MnpHandle
+    );
+
+  return Status;
+
+}
+
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+EFI_STATUS
+IfconfigGetAllNicInfoByHii (
+  EFI_HANDLE                  ImageHandle
+  )
+/*++
+
+Routine Description:
+
+  Get all Nic's information through HII service.
+
+Arguments:
+
+  ImageHandle - The image handle of this application.
+
+Returns:
+
+  EFI_SUCCESS - All the nic information is collected.
+  other       - Some error occurs.
+
+--*/
+{
+  EFI_STATUS                    Status;
+  EFI_HANDLE                    *Handles;
+  UINTN                         HandleCount;
+  CHAR16                        *ConfigResp;
+  CHAR16                        *ConfigHdr;
+  UINTN                         Index;
+  CHAR16                        *AccessProgress;
+  CHAR16                        *AccessResults;
+  UINTN                         BufferSize;
+  NIC_INFO                      *NicInfo;
+  NIC_IP4_CONFIG_INFO           *NicConfigRequest;
+  NIC_IP4_CONFIG_INFO           *NicConfig;
+  CHAR16                        *String;
+  UINTN                         Length;
+  UINTN                         Offset;
+
+  AccessResults    = NULL;
+  ConfigHdr        = NULL;
+  ConfigResp       = NULL;
+  NicConfigRequest = NULL;
+
+  InitializeListHead (&NicInfoList);
+
+  //
+  // Check if HII Config Routing protocol available.
+  //
+  Status = BS->LocateProtocol (
+                &gEfiHiiConfigRoutingProtocolGuid,
+                NULL,
+                &mHiiConfigRouting
+                );
+  if (EFI_ERROR (Status)) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Locate all network device handles
+  //
+  Status = BS->LocateHandleBuffer (
+                 ByProtocol,
+                 &gEfiManagedNetworkServiceBindingProtocolGuid,
+                 NULL,
+                 &HandleCount,
+                 &Handles
+                 );
+  if (EFI_ERROR (Status) || (HandleCount == 0)) {
+    return EFI_NOT_FOUND;
+  }
+
+  for (Index = 0; Index < HandleCount; Index++) {
+    //
+    // Construct configuration request string header
+    //
+    ConfigHdr = ConstructConfigHdr (&gEfiNicIp4ConfigVariableGuid, EFI_NIC_IP4_CONFIG_VARIABLE, Handles[Index]);
+    Length = StrLen (ConfigHdr);
+    ConfigResp = AllocateZeroPool ((Length + NIC_ITEM_CONFIG_SIZE * 2 + 100) * sizeof (CHAR16));
+    if (ConfigResp == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto ON_ERROR;
+    }
+    StrCpy (ConfigResp, ConfigHdr);
+ 
+    //
+    // Append OFFSET/WIDTH pair
+    //
+    String = ConfigResp + Length;
+    Offset = 0;
+    String += AppendOffsetWidthValue (String, Offset, NIC_ITEM_CONFIG_SIZE, NULL);
+
+
+    NicInfo = AllocateZeroPool (sizeof (NIC_INFO));
+    if (NicInfo == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto ON_ERROR;
+    }
+    NicInfo->Handle       = Handles[Index];
+    NicInfo->NicIp4Config = NULL;
+
+    //
+    // Get network physical devcie MAC information
+    //
+    IfConfigGetNicMacInfo (ImageHandle, Handles[Index], &NicInfo->NicAddress);
+    if (NicInfo->NicAddress.Type == NET_IFTYPE_ETHERNET) {
+      SPrint (NicInfo->Name, 0, L"eth%d", Index);
+    } else {
+      SPrint (NicInfo->Name, 0, L"unk%d", Index);
+    }
+
+    NicConfigRequest = AllocateZeroPool (NIC_ITEM_CONFIG_SIZE);
+    if (NicConfigRequest == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto ON_ERROR;
+    }
+
+    //
+    // Get network parameters by HII service
+    //
+    Status = mHiiConfigRouting->ExtractConfig (
+                                  mHiiConfigRouting,
+                                  ConfigResp,
+                                  &AccessProgress,
+                                  &AccessResults
+                                  );
+    if (!EFI_ERROR (Status)) {
+      BufferSize = NIC_ITEM_CONFIG_SIZE;
+      Status = mHiiConfigRouting->ConfigToBlock (
+                                    mHiiConfigRouting,
+                                    AccessResults,
+                                    (UINT8 *) NicConfigRequest,
+                                    &BufferSize,
+                                    &AccessProgress
+                                    );
+      if (!EFI_ERROR (Status)) {
+        BufferSize = sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * NicConfigRequest->Ip4Info.RouteTableSize;
+        NicConfig = AllocateZeroPool (BufferSize);
+        if (NicConfig == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto ON_ERROR;
+        }
+        CopyMem (NicConfig, NicConfigRequest, BufferSize);
+
+        //
+        // If succeeds to get NIC configuration, fix up routetable pointer.
+        //
+        NicConfig->Ip4Info.RouteTable = (EFI_IP4_ROUTE_TABLE *) (&NicConfig->Ip4Info + 1);
+        NicInfo->ConfigInfo   = NicConfig;
+
+      } else {
+        NicInfo->ConfigInfo   = NULL;
+      }
+
+      FreePool (AccessResults);
+
+    } else {
+      NicInfo->ConfigInfo   = NULL;
+    }
+
+    //
+    // Add the Nic's info to the global NicInfoList.
+    //
+    InsertTailList (&NicInfoList, &NicInfo->Link);
+
+    FreePool (NicConfigRequest);
+    FreePool (ConfigResp);
+    FreePool (ConfigHdr);
+  }
+
+  return EFI_SUCCESS;
+ 
+ON_ERROR:
+  if (AccessResults != NULL) {
+    FreePool (AccessResults);
+  }
+  if (NicConfigRequest != NULL) {
+    FreePool (NicConfigRequest);
+  }
+  if (ConfigResp != NULL) {
+    FreePool (ConfigResp);
+  }
+  if (ConfigHdr != NULL) {
+    FreePool (ConfigHdr);
+  }
+
+  FreePool (Handles);
+
+  return Status;
+}
+
+EFI_STATUS
+IfconfigSetNicAddrByHii (
+  IN  NIC_INFO                      *NicInfo,
+  IN  NIC_IP4_CONFIG_INFO           *Config
+  )
+/*++
+
+Routine Description:
+
+  Set the address for the specified nic by HII service.
+
+Arguments:
+
+  NicInfo - Pointer to the NIC_INFO of the Nic to be configured.
+  Config - The command line arguments for the set operation.
+
+Returns:
+
+  EFI_SUCCESS - The address set operation is done.
+  other       - Some error occurs.
+
+--*/
+{
+  EFI_STATUS                    Status;
+  NIC_IP4_CONFIG_INFO           *NicConfig;
+  CHAR16                        *ConfigResp;
+  CHAR16                        *ConfigHdr;
+  CHAR16                        *AccessProgress;
+  CHAR16                        *AccessResults;
+  CHAR16                        *String;
+  UINTN                         Length;
+  UINTN                         Offset;
+
+  AccessResults  = NULL;
+  ConfigHdr      = NULL;
+  ConfigResp     = NULL;
+  NicConfig      = NULL;
+
+  //
+  // Construct config request string header
+  //
+  ConfigHdr = ConstructConfigHdr (&gEfiNicIp4ConfigVariableGuid, EFI_NIC_IP4_CONFIG_VARIABLE, NicInfo->Handle);
+
+  Length = StrLen (ConfigHdr);
+  ConfigResp = AllocateZeroPool ((Length + NIC_ITEM_CONFIG_SIZE * 2 + 100) * sizeof (CHAR16));
+  StrCpy (ConfigResp, ConfigHdr);
+
+  NicConfig = AllocateZeroPool (NIC_ITEM_CONFIG_SIZE);
+  if (NicConfig == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_ERROR;
+  }
+
+  if (Config != NULL) {
+    CopyMem (NicConfig, Config, sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * Config->Ip4Info.RouteTableSize);
+  }
+
+  //
+  // Append OFFSET/WIDTH pair
+  //
+  String = ConfigResp + Length;
+  Offset = 0;
+  String += AppendOffsetWidthValue (String, Offset, NIC_ITEM_CONFIG_SIZE, NULL);
+
+  //
+  // Call HII helper function to generate configuration string
+  //
+  Status = mHiiConfigRouting->BlockToConfig (
+                                mHiiConfigRouting,
+                                ConfigResp,
+                                (UINT8 *) NicConfig,
+                                NIC_ITEM_CONFIG_SIZE,
+                                &AccessResults,
+                                &AccessProgress
+                                );
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+  //
+  // Set IP setting by HII servie
+  //
+  Status = mHiiConfigRouting->RouteConfig (
+                                mHiiConfigRouting,
+                                AccessResults,
+                                &AccessProgress
+                                );
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+ON_ERROR:
+  if (AccessResults != NULL) {
+    FreePool (AccessResults);
+  }
+  if (NicConfig != NULL) {
+    FreePool (NicConfig);
+  }
+  if (ConfigResp != NULL) {
+    FreePool (ConfigResp);
+  }
+  if (ConfigHdr != NULL) {
+    FreePool (ConfigHdr);
+  }
+
+  return Status;
+}
+#endif
+
+
 EFI_STATUS
 IfconfigGetAllNicInfo (
   VOID
@@ -208,7 +729,7 @@ Returns:
   UINT32                        Index;
   UINTN                         Len;
   EFI_STATUS                    Status;
-
+  
   NicIp4Config = NULL;
   Ip4Config    = NULL;
   NicInfo      = NULL;
@@ -218,20 +739,23 @@ Returns:
   InitializeListHead (&NicInfoList);
 
   //
-  // Locate the handles which has NicIp4Config installed.
+  // Locate the handles which has Ip4Config installed.
   //
   Status = BS->LocateHandleBuffer (
                 ByProtocol,
-                &gEfiNicIp4ConfigProtocolGuid,
+                &gEfiIp4ConfigProtocolGuid,
                 NULL,
                 &HandleCount,
                 &Handles
                 );
   if (EFI_ERROR (Status) || (HandleCount == 0)) {
-    PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_LOC_PROT_ERR_EX), HiiHandle, L"IfConfig", L"Ip4Config protocol");
-    
     return EFI_NOT_FOUND;
   }
+  
+  //
+  // Found Ip4Config protocol
+  //
+  mIp4ConfigExist = TRUE;
 
   for (Index = 0; Index < HandleCount; Index++) {
     //
@@ -906,12 +1430,38 @@ Returns:
   Config->NicAddr = Info->NicAddress;
   Config->Perment = Perment;
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+  if (Info->NicIp4Config == NULL) {
+    //
+    // Try to use HII service to set NIC address
+    //
+    Status = IfconfigSetNicAddrByHii (Info, Config);
+    if (EFI_ERROR (Status)) {
+      PrintToken (STRING_TOKEN (STR_IFCONFIG_SET_FAIL), HiiHandle, Status);
+      goto ON_EXIT;
+    } 
+  } else {
+    //
+    // Try to use NicIp4Config protocol to set NIC address
+    //
+    Status = Info->NicIp4Config->SetInfo (Info->NicIp4Config, Config, TRUE);
+
+    if (EFI_ERROR (Status)) {
+      PrintToken (STRING_TOKEN (STR_IFCONFIG_SET_FAIL), HiiHandle, Status);
+      goto ON_EXIT;
+    } 
+  }
+#else
+  //
+  // Try to use NicIp4Config protocol to set NIC address
+  //
   Status = Info->NicIp4Config->SetInfo (Info->NicIp4Config, Config, TRUE);
 
   if (EFI_ERROR (Status)) {
     PrintToken (STRING_TOKEN (STR_IFCONFIG_SET_FAIL), HiiHandle, Status);
     goto ON_EXIT;
   } 
+#endif
 
   Status = IfconfigStartIp4 (Info, Image);
 
@@ -976,7 +1526,7 @@ Returns:
     } else if (NicInfo->ConfigInfo->Source == IP4_CONFIG_SOURCE_STATIC) {
       PrintToken (STRING_TOKEN (STR_IFCONFIG_CONFIG_SOURCE), HiiHandle, L"STATIC");
     } else {
-       PrintToken (STRING_TOKEN (STR_IFCONFIG_CONFIG_SOURCE), HiiHandle, L"Unknown");
+      PrintToken (STRING_TOKEN (STR_IFCONFIG_CONFIG_SOURCE), HiiHandle, L"Unknown");
     }
 
     PrintToken (
@@ -1053,7 +1603,16 @@ Returns:
       continue;
     }
     
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
+    if (Info->NicIp4Config == NULL) { 
+      Status = IfconfigSetNicAddrByHii (Info, NULL);
+    } else {
+      Status = Info->NicIp4Config->SetInfo (Info->NicIp4Config, NULL, TRUE);
+    }
+#else 
     Status = Info->NicIp4Config->SetInfo (Info->NicIp4Config, NULL, TRUE);
+#endif
+
 
     if (EFI_ERROR (Status)) {
       return Status;
@@ -1155,10 +1714,31 @@ Returns:
   }
 
   Status = IfconfigGetAllNicInfo ();
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
   if (EFI_ERROR (Status)) {
-    PrintToken (STRING_TOKEN (STR_IFCONFIG_GET_NIC_FAIL), HiiHandle, Status);
-    goto Done;
+    Status = IfconfigGetAllNicInfoByHii (ImageHandle);
+
+    if (EFI_ERROR (Status)) {
+      if (mIp4ConfigExist) {
+        PrintToken (STRING_TOKEN (STR_IFCONFIG_GET_NIC_FAIL), HiiHandle, Status);
+      } else {
+        PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_LOC_PROT_ERR_EX), HiiHandle, L"IfConfig", L"Ip4Config Protocol");
+      }
+
+      return EFI_NOT_FOUND;
+    }
+  } 
+#else 
+  if (EFI_ERROR (Status)) {
+    if (mIp4ConfigExist) {
+      PrintToken (STRING_TOKEN (STR_IFCONFIG_GET_NIC_FAIL), HiiHandle, Status);
+    } else {
+      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_LOC_PROT_ERR_EX), HiiHandle, L"IfConfig", L"Ip4Config Protocol");
+    }
+
+    return EFI_NOT_FOUND;
   }
+#endif
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item != NULL) {

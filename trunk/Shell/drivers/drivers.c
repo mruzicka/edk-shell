@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -88,14 +88,6 @@ ShellDeviceTree (
   );
 
 EFI_STATUS
-DriversSyntaxOld (
-  IN  EFI_HANDLE         ImageHandle,
-  IN  EFI_SYSTEM_TABLE   *SystemTable,
-  OUT CHAR8              **Language,
-  OUT BOOLEAN            *IsHelp
-  );
-
-EFI_STATUS
 EFIAPI
 DriversMain (
   IN EFI_HANDLE         ImageHandle,
@@ -126,7 +118,6 @@ Returns:
   EFI_STATUS                   Status;
   EFI_STATUS                   DiagnosticsStatus;
   EFI_STATUS                   ConfigurationStatus;
-  UINTN                        StringLength;
   UINTN                        StringIndex;
   UINTN                        Index;
   CHAR8                        *Language;
@@ -135,9 +126,6 @@ Returns:
   UINTN                        HandleIndex;
   EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding;
   EFI_LOADED_IMAGE_PROTOCOL    *LoadedImage;
-  EFI_COMPONENT_NAME_PROTOCOL  *ComponentName;
-  EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
-  CHAR8                        *SupportedLanguage;
   CHAR16                       *DriverName;
   CHAR16                       FormattedDriverName[40];
   UINTN                        NumberOfChildren;
@@ -150,6 +138,7 @@ Returns:
   CHAR16                       *Useful;
   SHELL_ARG_LIST               *Item;
   SHELL_VAR_CHECK_PACKAGE      ChkPck;
+  CHAR16                       *Ptr;
 
   Language                = NULL;
   DriverImageHandleCount  = 0;
@@ -181,14 +170,34 @@ Returns:
   }
 
   if (IS_OLD_SHELL) {
-    Status = DriversSyntaxOld (ImageHandle, SystemTable, &Language, &IsHelp);
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
+    for (Index = 1; Index < SI->Argc; Index += 1) {
+      Ptr = SI->Argv[Index];
+      if (*Ptr == '-') {
+        switch (Ptr[1]) {
+        case 'l':
+        case 'L':
+          Language = LibGetCommandLineLanguage (Ptr + 2);
+          break;
 
-    if (IsHelp) {
-      PrintToken (STRING_TOKEN (STR_NO_HELP), HiiHandle);
-      goto Done;
+        case 'b':
+        case 'B':
+          EnablePageBreak (DEFAULT_INIT_ROW, DEFAULT_AUTO_LF);
+          break;
+
+        case '?':
+          PrintToken (STRING_TOKEN (STR_NO_HELP), HiiHandle);
+          goto Done;
+
+        default:
+          PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_UNKNOWN_FLAG), HiiHandle, L"drivers", Ptr);
+          Status = EFI_INVALID_PARAMETER;
+          goto Done;
+        }
+      } else {
+        PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_TOO_MANY), HiiHandle, L"drivers");
+        Status = EFI_INVALID_PARAMETER;
+        goto Done;
+      }
     }
   } else {
     RetCode = LibCheckVariables (SI, DriversCheckList, &ChkPck, &Useful);
@@ -241,29 +250,12 @@ Returns:
       goto Done;
     }
 
-    Language = LibGetVariableLang ();
-    if (Language == NULL) {
-      Language = (CHAR8 *)AllocateZeroPool(strlena(LanguageCodeEnglish) + 1);
-      if (Language == NULL) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-      strcpya(Language, LanguageCodeEnglish);
-    }
-
     Item = LibCheckVarGetFlag (&ChkPck, L"-l");
     if (Item) {
-      if (Language != NULL) {
-        FreePool (Language);
-      }
-
-      StringLength = StrLen (Item->VarStr);
-      Language    = AllocatePool (StringLength + 1);
-      for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-        Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
-      }
-      Language[StringIndex] = 0;
+      Language = LibGetCommandLineLanguage (Item->VarStr);
     }
   }
+
 
   ShellInitProtocolInfoEnumerator ();
   //
@@ -313,14 +305,6 @@ Returns:
                   NULL,
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
-
-    ComponentName  = NULL;
-    ComponentName2 = NULL;
-    Status = LibGetComponentNameProtocol (
-               DriverImageHandleBuffer[Index],
-               &ComponentName,
-               &ComponentName2
-               );
 
     DiagnosticsStatus = BS->OpenProtocol (
                               DriverImageHandleBuffer[Index],
@@ -419,32 +403,7 @@ Returns:
       PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_ONE_VAR_D), HiiHandle, NumberOfChildren);
     }
 
-    Status     = EFI_SUCCESS;
-    DriverName = L"<UNKNOWN>";
-    SupportedLanguage = NULL;
-    if (ComponentName != NULL) {
-      if (ComponentName->GetDriverName != NULL) {
-        SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
-        Status = ComponentName->GetDriverName (
-                                  ComponentName,
-                                  SupportedLanguage,
-                                  &DriverName
-                                  );
-      }
-    } else if (ComponentName2 != NULL) {
-      if (ComponentName2->GetDriverName != NULL) {
-        SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
-        Status = ComponentName2->GetDriverName (
-                                   ComponentName2,
-                                   SupportedLanguage,
-                                   &DriverName
-                                   );
-      }
-    }
-    if (SupportedLanguage != NULL) {
-      FreePool (SupportedLanguage);
-    }
-
+    Status = LibGetDriverName(DriverImageHandleBuffer[Index], Language, &DriverName);
     if (EFI_ERROR (Status)) {
       DriverName = L"<UNKNOWN>";
     }
@@ -520,74 +479,4 @@ Returns:
 {
   return LibCmdGetStringByToken (STRING_ARRAY_NAME, &EfiDriversGuid, STRING_TOKEN (STR_DRIVERS_LINE_HELP), Str);
 }
-//
-// Compatible support
-//
-EFI_STATUS
-DriversSyntaxOld (
-  IN  EFI_HANDLE         ImageHandle,
-  IN  EFI_SYSTEM_TABLE   *SystemTable,
-  OUT CHAR8              **Language,
-  OUT BOOLEAN            *IsHelp
-  )
-{
-  EFI_STATUS  Status;
-  UINTN       Index;
-  UINTN       StringIndex;
-  UINTN       StringLength;
-  CHAR16      *Ptr;
 
-  *Language = LibGetVariableLang ();
-  if (*Language == NULL) {
-    *Language       = AllocatePool (4);
-    (*Language)[0]  = 'e';
-    (*Language)[1]  = 'n';
-    (*Language)[2]  = 'g';
-    (*Language)[3]  = 0;
-  }
-
-  for (Index = 1; Index < SI->Argc; Index += 1) {
-    Ptr = SI->Argv[Index];
-    if (*Ptr == '-') {
-      switch (Ptr[1]) {
-      case 'l':
-      case 'L':
-        if (*(Ptr + 2) != 0) {
-          if (*Language != NULL) {
-            FreePool (*Language);
-          }
-
-          StringLength = StrLen (Ptr + 2);
-          *Language = AllocatePool (StringLength + 1);
-          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-            (*Language)[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
-          }
-          (*Language)[StringIndex] = 0;
-        }
-        break;
-
-      case 'b':
-      case 'B':
-        EnablePageBreak (DEFAULT_INIT_ROW, DEFAULT_AUTO_LF);
-        break;
-
-      case '?':
-        *IsHelp = TRUE;
-        break;
-
-      default:
-        PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_UNKNOWN_FLAG), HiiHandle, L"drivers", Ptr);
-        Status = EFI_INVALID_PARAMETER;
-        goto Done;
-      }
-    } else {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_TOO_MANY), HiiHandle, L"drivers");
-      Status = EFI_INVALID_PARAMETER;
-      goto Done;
-    }
-  }
-
-  Status = EFI_SUCCESS;
-Done:
-  return Status;
-}

@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1155,9 +1155,6 @@ GetDriverName (
   EFI_STATUS                    Status;
   EFI_DRIVER_BINDING_PROTOCOL   *DriverBinding;
   EFI_LOADED_IMAGE_PROTOCOL     *Image;
-  EFI_COMPONENT_NAME_PROTOCOL   *ComponentName;
-  EFI_COMPONENT_NAME2_PROTOCOL  *ComponentName2;
-  CHAR8                         *SupportedLanguage;
 
   *DriverName = NULL;
 
@@ -1186,35 +1183,7 @@ GetDriverName (
       *DriverName = LibDevicePathToStr (Image->FilePath);
     }
   } else {
-    Status = LibGetComponentNameProtocol (
-               DriverBindingHandle, 
-               &ComponentName,
-               &ComponentName2
-               );
-    if (!EFI_ERROR (Status)) {
-      //
-      // Make sure the interface has been implemented
-      //
-      SupportedLanguage = NULL;
-      if ((ComponentName != NULL) && (ComponentName->GetDriverName != NULL)) {
-        SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
-        Status = ComponentName->GetDriverName (
-                                  ComponentName,
-                                  SupportedLanguage,
-                                  DriverName
-                                  );
-      } else if ((ComponentName2 != NULL) && (ComponentName2->GetDriverName != NULL)) {
-        SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
-        Status = ComponentName2->GetDriverName (
-                                   ComponentName2,
-                                   SupportedLanguage,
-                                   DriverName
-                                   );
-      }
-      if (SupportedLanguage != NULL) {
-        FreePool (SupportedLanguage);
-      }
-    }
+    LibGetDriverName (DriverBindingHandle, Language, DriverName);
   }
 
   return EFI_SUCCESS;
@@ -1250,9 +1219,6 @@ SEnvGetDeviceName (
   EFI_HANDLE                  *ChildHandleBuffer;
   EFI_DEVICE_PATH_PROTOCOL    *DevicePath;
   CHAR16                      *ControllerName;
-  EFI_COMPONENT_NAME_PROTOCOL *ComponentName;
-  EFI_COMPONENT_NAME2_PROTOCOL *ComponentName2;
-  CHAR8                       *SupportedLanguage;
   UINTN                       Index;
   BOOLEAN                     First;
 
@@ -1330,43 +1296,13 @@ SEnvGetDeviceName (
       *DiagnosticsStatus = EFI_SUCCESS;
     }
 
-    Status = LibGetComponentNameProtocol (
-               DriverBindingHandleBuffer[HandleIndex], 
-               &ComponentName,
-               &ComponentName2
+    Status = LibGetControllerName (
+               DriverBindingHandleBuffer[HandleIndex],
+               DeviceHandle,
+               NULL,
+               Language,
+               &ControllerName
                );
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-    //
-    // Make sure this interface has been implemented
-    //
-    SupportedLanguage = NULL;
-    if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
-      SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
-      Status = ComponentName->GetControllerName (
-                                ComponentName,
-                                DeviceHandle,
-                                NULL,
-                                SupportedLanguage,
-                                &ControllerName
-                                );
-    } else if ((ComponentName2 != NULL) && (ComponentName2->GetControllerName != NULL)) {
-      SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
-      Status = ComponentName2->GetControllerName (
-                                 ComponentName2,
-                                 DeviceHandle,
-                                 NULL,
-                                 SupportedLanguage,
-                                 &ControllerName
-                                 );
-    } else {
-      Status = EFI_UNSUPPORTED;
-    }
-    if (SupportedLanguage != NULL) {
-      FreePool (SupportedLanguage);
-    }
-
     if (EFI_ERROR (Status)) {
       continue;
     }
@@ -1464,43 +1400,13 @@ SEnvGetDeviceName (
             *DiagnosticsStatus = EFI_SUCCESS;
           }
 
-          Status = LibGetComponentNameProtocol (
-                     ParentDriverBindingHandleBuffer[ParentDriverIndex], 
-                     &ComponentName,
-                     &ComponentName2
+          Status = LibGetControllerName (
+                     ParentDriverBindingHandleBuffer[ParentDriverIndex],
+                     ParentControllerHandleBuffer[HandleIndex],
+                     DeviceHandle,
+                     Language,
+                     &ControllerName
                      );
-          if (EFI_ERROR (Status)) {
-            continue;
-          }
-          //
-          // Make sure this interface has been implemented
-          //
-          SupportedLanguage = NULL;
-          if ((ComponentName != NULL) && (ComponentName->GetControllerName != NULL)) {
-            SupportedLanguage = LibConvertSupportedLanguage (ComponentName->SupportedLanguages, Language);
-            Status = ComponentName->GetControllerName (
-                                      ComponentName,
-                                      ParentControllerHandleBuffer[HandleIndex],
-                                      DeviceHandle,
-                                      SupportedLanguage,
-                                      &ControllerName
-                                      );
-          } else if ((ComponentName2 != NULL) && (ComponentName2->GetControllerName != NULL)) {
-            SupportedLanguage = LibConvertSupportedLanguage (ComponentName2->SupportedLanguages, Language);
-            Status = ComponentName2->GetControllerName (
-                                       ComponentName2,
-                                       ParentControllerHandleBuffer[HandleIndex],
-                                       DeviceHandle,
-                                       SupportedLanguage,
-                                       &ControllerName
-                                       );
-          } else {
-            Status = EFI_UNSUPPORTED;
-          }
-          if (SupportedLanguage != NULL) {
-            FreePool (SupportedLanguage);
-          }
-
           if (EFI_ERROR (Status)) {
             continue;
           }
@@ -2177,7 +2083,6 @@ Returns:
   PROTOCOL_INFO           *Prot;
   BOOLEAN                 Verbose;
   BOOLEAN                 DriverModel;
-  UINTN                   StringIndex;
   CHAR8                   *Language;
   SHELL_VAR_CHECK_CODE    RetCode;
   CHAR16                  *Useful;
@@ -2191,11 +2096,11 @@ Returns:
 
   EnableOutputTabPause ();
 
+  Language    = NULL;
   Arg         = NULL;
   ArgVar      = 0;
   ByProtocol  = FALSE;
   Status      = EFI_SUCCESS;
-  Language    = LibGetVariableLang ();
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
 
   if (!EFI_PROPER_VERSION (1, 10)) {
@@ -2209,10 +2114,6 @@ Returns:
     goto Done;
   }
 
-  if (Language == NULL) {
-    Language = (CHAR8 *) AllocatePool(strlena(LanguageCodeEnglish) + 1);
-    strcpya (Language, LanguageCodeEnglish);
-  }
 
   RetCode = LibCheckVariables (SI, DHCheckList, &ChkPck, &Useful);
   if (VarCheckOk != RetCode) {
@@ -2281,16 +2182,10 @@ Returns:
     Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
-
+ 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item) {
-    if (Language != NULL) {
-      FreePool(Language);
-    }
-    Language = (CHAR8 *) AllocateZeroPool(StrLen(Item->VarStr));
-    for (StringIndex = 0; Item->VarStr[StringIndex] != L'\0'; StringIndex++) {
-      Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
-    }
+    Language = LibGetCommandLineLanguage (Item->VarStr);
   }
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-d");

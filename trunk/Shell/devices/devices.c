@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -112,8 +112,6 @@ Returns:
   EFI_STATUS              Status;
   EFI_STATUS              ConfigurationStatus;
   EFI_STATUS              DiagnosticsStatus;
-  UINTN                   StringIndex;
-  UINTN                   StringLength;
   UINTN                   Index;
   CHAR8                   *Language;
   UINTN                   DeviceHandleCount;
@@ -161,15 +159,6 @@ Returns:
   // Setup Handle and Protocol Globals
   //
   ShellInitProtocolInfoEnumerator ();
-  Language = LibGetVariableLang ();
-
-  if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
-  }
 
   if (IS_OLD_SHELL) {
     Status = DevicesMainOld (ImageHandle, SystemTable);
@@ -223,17 +212,7 @@ Returns:
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item != NULL) {
-    if (Language != NULL) {
-      FreePool (Language);
-    }
-
-    StringLength = StrLen (Item->VarStr);
-    Language = AllocatePool (StringLength + 1);
-    for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-      Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
-    }
-
-    Language[StringIndex] = 0;
+    Language = LibGetCommandLineLanguage (Item->VarStr);
   }
   //
   // Display all device handles
@@ -437,8 +416,6 @@ Returns:
   EFI_STATUS  ConfigurationStatus;
   EFI_STATUS  DiagnosticsStatus;
   CHAR16      *Ptr;
-  UINTN       StringIndex;
-  UINTN       StringLength;
   UINTN       Index;
   CHAR8       *Language;
   UINTN       DeviceHandleCount;
@@ -453,34 +430,15 @@ Returns:
   BOOLEAN     PrtHelp;
 
   PrtHelp   = FALSE;
-  Language  = LibGetVariableLang ();
-  if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
-  }
 
+  Language  = NULL;
   for (Index = 1; Index < SI->Argc; Index += 1) {
     Ptr = SI->Argv[Index];
     if (*Ptr == '-') {
       switch (Ptr[1]) {
       case 'l':
       case 'L':
-        if (*(Ptr + 2) != 0) {
-          if (Language != NULL) {
-            FreePool (Language);
-          }
-
-          StringLength = StrLen (Ptr + 2);
-          Language = AllocatePool (StringLength + 1);
-          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-            Language[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
-          }
-
-          Language[StringIndex] = 0;
-        }
+        Language = LibGetCommandLineLanguage (Ptr + 2);
         break;
 
       case 'b':
@@ -640,6 +598,8 @@ Returns:
   FreePool (DeviceHandleBuffer);
 
 Done:
-  FreePool (Language);
+  if (Language != NULL) {
+    FreePool (Language);
+  }
   return Status;
 }
