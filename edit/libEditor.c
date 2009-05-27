@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -90,6 +90,7 @@ MainEditorInit (
   EFI_STATUS  Status;
   EFI_HANDLE  *HandleBuffer;
   UINTN       HandleCount;
+  UINTN       Index;
 
   //
   // basic initialization
@@ -117,38 +118,52 @@ MainEditorInit (
         );
 
   //
-  // Find mouse
+  // Find mouse in System Table ConsoleInHandle
   //
-  HandleBuffer = NULL;
-  Status = LibLocateHandle (
-            ByProtocol,
-            &gEfiPrimaryConsoleInDeviceGuid,
-            NULL,
-            &HandleCount,
-            &HandleBuffer
-            );
-
-  if (!EFI_ERROR (Status)) {
-    if (HandleCount > 0) {
-      Status = BS->HandleProtocol (
-                    HandleBuffer[0],
-                    &gEfiSimplePointerProtocolGuid,
-                    &MainEditor.MouseInterface
-                    );
-
-      if (EFI_ERROR (Status)) {
-        MainEditor.MouseInterface = NULL;
-      } else {
-        MainEditor.MouseAccumulatorX  = 0;
-        MainEditor.MouseAccumulatorY  = 0;
-        MainEditor.MouseSupported     = TRUE;
+  Status = BS->HandleProtocol (
+                In,
+                &gEfiSimplePointerProtocolGuid,
+                &MainEditor.MouseInterface
+                );
+  if (EFI_ERROR (Status)) {
+    //
+    // If there is no Simple Pointer Protocol on System Table
+    //
+    HandleBuffer = NULL;
+    MainEditor.MouseInterface = NULL;
+    Status = BS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiSimplePointerProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
+    if (!EFI_ERROR (Status) && HandleCount > 0) {
+      //
+      // Try to find the first available mouse device
+      //
+      for (Index = 0; Index < HandleCount; Index++) {
+        Status = BS->HandleProtocol (
+                      HandleBuffer[Index],
+                      &gEfiSimplePointerProtocolGuid,
+                      &MainEditor.MouseInterface
+                      );
+        if (!EFI_ERROR (Status)) {
+          break;
+        }
       }
+    }
+    if (HandleBuffer != NULL) {
+      FreePool (HandleBuffer);
     }
   }
 
-  if (HandleBuffer) {
-    FreePool (HandleBuffer);
+  if (!EFI_ERROR (Status) && MainEditor.MouseInterface != NULL) {
+    MainEditor.MouseAccumulatorX  = 0;
+    MainEditor.MouseAccumulatorY  = 0;
+    MainEditor.MouseSupported     = TRUE;
   }
+
   //
   // below will call the five components' init function
   //

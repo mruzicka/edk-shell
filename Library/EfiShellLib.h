@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -190,7 +190,8 @@ Revision History
 #define VarConsoleInpDev    L"ConInDev"
 #define VarConsoleOutDev    L"ConOutDev"
 #define VarErrorOutDev      L"ErrOutDev"
-#define LanguageCodeEnglish "eng"
+#define DefaultLang         "eng"
+#define DefaultPlatformLang "en-US"
 
 #define ISO_639_2_ENTRY_SIZE  3
 #define RFC_3066_ENTRY_SIZE   12
@@ -321,17 +322,39 @@ DivU64x32 (
   OUT UINTN   *Remainder OPTIONAL
   );
 
-EFI_STATUS
-LibGetComponentNameProtocol (
-  IN EFI_HANDLE                      DriverBindingHandle,
-  OUT EFI_COMPONENT_NAME_PROTOCOL    **ComponentName,
-  OUT EFI_COMPONENT_NAME2_PROTOCOL   **ComponentName2
+CHAR8 *
+GetBestLanguage (
+  IN CHAR8        *SupportedLanguages, 
+  IN BOOLEAN      Iso639Language,
+  ...
   );
 
 CHAR8 *
-LibConvertSupportedLanguage (
-  IN CHAR8                           *SupportedLanguages,
-  IN CHAR8                           *LangCode
+LibGetCommandLineLanguage (
+  IN CHAR16        *CommandLineLanguage
+  );
+
+CHAR8 *
+LibSelectBestLanguage (
+  IN CHAR8        *SupportedLanguages,
+  IN BOOLEAN      Iso639Language,
+  IN CHAR8        *Language
+  );
+
+EFI_STATUS
+LibGetDriverName (
+  IN  EFI_HANDLE  DriverBindingHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **DriverName
+  );
+
+EFI_STATUS
+LibGetControllerName (
+  IN  EFI_HANDLE  DriverBindingHandle,
+  IN  EFI_HANDLE  ControllerHandle,
+  IN  EFI_HANDLE  ChildHandle,
+  IN  CHAR8       *Language,
+  OUT CHAR16      **ControllerName
   );
 
 #endif

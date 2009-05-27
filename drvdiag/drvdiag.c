@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -152,11 +152,8 @@ Returns:
   EFI_HANDLE                      DriverImageHandle;
   EFI_HANDLE                      DeviceHandle;
   EFI_HANDLE                      ChildHandle;
-  UINTN                           StringIndex;
-  UINTN                           StringLength;
   UINTN                           Index;
   CHAR8                           *Language;
-  CHAR8                           *SupportedLanguages;
   EFI_DRIVER_DIAGNOSTIC_TYPE      DiagnosticType;
   EFI_DRIVER_DIAGNOSTICS_PROTOCOL *DriverDiagnostics;
   UINTN                           DriverImageHandleCount;
@@ -176,6 +173,8 @@ Returns:
   CHAR16                          *Useful;
   SHELL_ARG_LIST                  *Item;
   SHELL_VAR_CHECK_PACKAGE         ChkPck;
+  BOOLEAN                         Iso639Language;
+  CHAR8                           *BestLanguage;
 
   Language                = NULL;
   DriverImageHandle       = NULL;
@@ -268,28 +267,9 @@ Returns:
   //
   // Setup Handle and Protocol Globals
   //
-  Language = LibGetVariableLang ();
-  if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
-  }
-
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item) {
-    if (Language != NULL) {
-      FreePool (Language);
-    }
-
-    StringLength = StrLen (Item->VarStr);
-    Language = AllocatePool (StringLength + 1);
-    for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-      Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
-    }
-
-    Language[StringIndex] = 0;
+    Language = LibGetCommandLineLanguage (Item->VarStr);
   }
 
   if (LibCheckVarGetFlag (&ChkPck, L"-c")) {
@@ -414,6 +394,7 @@ Returns:
 
   Found = TRUE;
   for (Index = 0; Index < DriverImageHandleCount; Index++) {
+    Iso639Language = FALSE;
     Status = BS->OpenProtocol (
                   DriverImageHandleBuffer[Index],
                   &gEfiDriverDiagnostics2ProtocolGuid,
@@ -423,6 +404,7 @@ Returns:
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
     if (EFI_ERROR (Status)) {
+      Iso639Language = TRUE;
       Status = BS->OpenProtocol (
                     DriverImageHandleBuffer[Index],
                     &gEfiDriverDiagnosticsProtocolGuid,
@@ -452,21 +434,12 @@ Returns:
       ShellHandleToIndex (DriverImageHandleBuffer[Index])
       );
 
-    Status = EFI_NOT_FOUND;
-    if (strstra (DriverDiagnostics->SupportedLanguages, Language) == NULL) {
-      SupportedLanguages = LibConvertSupportedLanguage (DriverDiagnostics->SupportedLanguages, Language);
-      if (strcmpa (SupportedLanguages, Language) != 0) {
-        FreePool (Language);
-        Language = SupportedLanguages;
-        Status = EFI_SUCCESS;
-      } else {
-        FreePool (SupportedLanguages);
-      }
-    } else {
-      Status = EFI_SUCCESS;
-    }
-
-    if (EFI_ERROR (Status)) {
+    BestLanguage = LibSelectBestLanguage (
+                     DriverDiagnostics->SupportedLanguages,
+                     Iso639Language,
+                     Language
+                     );
+    if (BestLanguage == NULL) {
       PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_DRVDIAG_SUPPORT_LANG), HiiHandle, Language);
       continue;
     }
@@ -516,7 +489,7 @@ Returns:
             HandleBuffer[HandleIndex],
             NULL,
             DiagnosticType,
-            Language
+            BestLanguage
             );
 
         } else {
@@ -572,7 +545,7 @@ Returns:
             HandleBuffer[HandleIndex],
             ChildHandleBuffer[ChildIndex],
             DiagnosticType,
-            Language
+            BestLanguage
             );
 
         } else {
@@ -584,6 +557,7 @@ Returns:
       FreePool (ChildHandleType);
     }
 
+    FreePool (BestLanguage);
     FreePool (HandleBuffer);
     FreePool (HandleType);
   }
@@ -710,11 +684,8 @@ Returns:
   EFI_HANDLE                      DriverImageHandle;
   EFI_HANDLE                      DeviceHandle;
   EFI_HANDLE                      ChildHandle;
-  UINTN                           StringIndex;
-  UINTN                           StringLength;
   UINTN                           Index;
   CHAR8                           *Language;
-  CHAR8                           *SupportedLanguages;
   EFI_DRIVER_DIAGNOSTIC_TYPE      DiagnosticType;
   EFI_DRIVER_DIAGNOSTICS_PROTOCOL *DriverDiagnostics;
   UINTN                           DriverImageHandleCount;
@@ -730,6 +701,8 @@ Returns:
   EFI_HANDLE                      *ChildHandleBuffer;
   UINT32                          *ChildHandleType;
   BOOLEAN                         GetHelp;
+  BOOLEAN                         Iso639Language;
+  CHAR8                           *BestLanguage;
 
   //
   // Setup Handle and Protocol Globals
@@ -744,34 +717,15 @@ Returns:
   DriverImageHandleBuffer = NULL;
   GetHelp                 = FALSE;
 
-  Language                = LibGetVariableLang ();
-  if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
-  }
 
+  Language = NULL;
   for (Index = 1; Index < SI->Argc; Index += 1) {
     Ptr = SI->Argv[Index];
     if (*Ptr == '-') {
       switch (Ptr[1]) {
       case 'l':
       case 'L':
-        if (*(Ptr + 2) != 0) {
-          if (Language != NULL) {
-            FreePool (Language);
-          }
-
-          StringLength = StrLen (Ptr + 2);
-          Language = AllocatePool (StringLength + 1);
-          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-            Language[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
-          }
-
-          Language[StringIndex] = 0;
-        }
+        Language = LibGetCommandLineLanguage (Ptr + 2);
         break;
 
       case 'c':
@@ -881,6 +835,7 @@ Returns:
   }
 
   for (Index = 0; Index < DriverImageHandleCount; Index++) {
+    Iso639Language = FALSE;
     Status = BS->OpenProtocol (
                   DriverImageHandleBuffer[Index],
                   &gEfiDriverDiagnostics2ProtocolGuid,
@@ -890,6 +845,7 @@ Returns:
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
     if (EFI_ERROR (Status)) {
+      Iso639Language = TRUE;
       Status = BS->OpenProtocol (
                     DriverImageHandleBuffer[Index],
                     &gEfiDriverDiagnosticsProtocolGuid,
@@ -908,21 +864,8 @@ Returns:
       continue;
     }
 
-    Status = EFI_NOT_FOUND;
-    if (strstra (DriverDiagnostics->SupportedLanguages, Language) == NULL) {
-      SupportedLanguages = LibConvertSupportedLanguage (DriverDiagnostics->SupportedLanguages, Language);
-      if (strcmpa (SupportedLanguages, Language) != 0) {
-        FreePool (Language);
-        Language = SupportedLanguages;
-        Status = EFI_SUCCESS;
-      } else {
-        FreePool (SupportedLanguages);
-      }
-    } else {
-      Status = EFI_SUCCESS;
-    }
-
-    if (EFI_ERROR (Status)) {
+    BestLanguage = LibSelectBestLanguage (DriverDiagnostics->SupportedLanguages, Iso639Language, Language);
+    if (BestLanguage == NULL) {
       PrintToken (
         STRING_TOKEN (STR_SHELLENV_PROTID_DRVDIAG_HANDLE_NOT_SUPPORT_LANG),
         HiiHandle,
@@ -971,7 +914,7 @@ Returns:
             HandleBuffer[HandleIndex],
             NULL,
             DiagnosticType,
-            Language
+            BestLanguage
             );
 
         } else {
@@ -1022,7 +965,7 @@ Returns:
             HandleBuffer[HandleIndex],
             ChildHandleBuffer[ChildIndex],
             DiagnosticType,
-            Language
+            BestLanguage
             );
 
         } else {
@@ -1034,6 +977,7 @@ Returns:
       FreePool (ChildHandleType);
     }
 
+    FreePool (BestLanguage);
     FreePool (HandleBuffer);
     FreePool (HandleType);
   }
@@ -1042,7 +986,9 @@ Done:
   if (DriverImageHandle != NULL && DriverImageHandleCount != 0) {
     FreePool (DriverImageHandleBuffer);
   }
-
-  FreePool (Language);
+  
+  if (Language != NULL) {
+    FreePool (Language);
+  }
   return EFI_SUCCESS;
 }

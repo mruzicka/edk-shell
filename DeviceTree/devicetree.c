@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -123,8 +123,6 @@ Returns:
   BOOLEAN                 BestName;
   EFI_STATUS              Status;
   UINTN                   Index;
-  UINTN                   StringIndex;
-  UINTN                   StringLength;
   UINTN                   HandleNumber;
   EFI_HANDLE              Handle;
   SHELL_VAR_CHECK_CODE    RetCode;
@@ -218,28 +216,9 @@ Returns:
     goto Done;
   }
 
-  Language = LibGetVariableLang ();
-  if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
-  }
-
   Item = LibCheckVarGetFlag (&ChkPck, L"-l");
   if (Item) {
-    if (Language != NULL) {
-      FreePool (Language);
-    }
-
-    StringLength = StrLen (Item->VarStr);
-    Language = AllocatePool (StringLength + 1);
-    for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-      Language[StringIndex] = (CHAR8) Item->VarStr[StringIndex];
-    }
-
-    Language[StringIndex] = 0;
+    Language = LibGetCommandLineLanguage (Item->VarStr);
   }
 
   if (LibCheckVarGetFlag (&ChkPck, L"-d") != NULL) {
@@ -555,45 +534,24 @@ Returns:
   BOOLEAN     BestName;
   EFI_STATUS  Status;
   UINTN       Index;
-  UINTN       StringIndex;
-  UINTN       StringLength;
   BOOLEAN     PrtHelp;
 
   Status    = EFI_SUCCESS;
   PrtHelp   = FALSE;
-  Language  = LibGetVariableLang ();
-  if (Language == NULL) {
-    Language    = AllocatePool (4);
-    Language[0] = 'e';
-    Language[1] = 'n';
-    Language[2] = 'g';
-    Language[3] = 0;
-  }
 
   Arg = NULL;
   //
   // Crack args
   //
   BestName = TRUE;
+  Language = NULL;
   for (Index = 1; Index < SI->Argc; Index += 1) {
     Ptr = SI->Argv[Index];
     if (*Ptr == '-') {
       switch (Ptr[1]) {
       case 'l':
       case 'L':
-        if (*(Ptr + 2) != 0) {
-          if (Language != NULL) {
-            FreePool (Language);
-          }
-
-          StringLength = StrLen (Ptr + 2);
-          Language = AllocatePool (StringLength + 1);
-          for (StringIndex = 0; StringIndex < StringLength; StringIndex++) {
-            Language[StringIndex] = (CHAR8) Ptr[StringIndex + 2];
-          }
-
-          Language[StringIndex] = 0;
-        }
+        Language = LibGetCommandLineLanguage (Ptr + 2);
         break;
 
       case 'd':
@@ -680,5 +638,8 @@ Returns:
   Status = EFI_SUCCESS;
 
 Done:
+  if (Language != NULL) {
+    FreePool (Language);
+  }
   return Status;
 }

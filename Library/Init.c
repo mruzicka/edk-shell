@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -26,6 +26,133 @@ extern EFI_UNICODE_COLLATION_PROTOCOL LibStubUnicodeInterface;
 
 extern EFI_GUID                       ShellEnvProtocol;
 
+EFI_STATUS
+InitializeUnicodeCollationSupportWorker (
+  IN EFI_HANDLE         AgentHandle,
+  IN EFI_GUID           *ProtocolGuid
+  )
+/*++
+
+Routine Description:
+
+  Worker function to initialize Unicode Collation support.
+  It tries to locate Unicode Collation (2) protocol and matches it with current
+  platform language code and the default language code.
+    
+Arguments:
+
+  AgentHandle  - The handle used to open Unicode Collation (2) protocol.
+  ProtocolGuid - The pointer to Unicode Collation (2) protocol GUID.
+    
+Returns:
+
+  EFI_SUCCESS  - The Unicode Collation (2) protocol has been successfully located.
+  Others       - The Unicode Collation (2) protocol has not been located.
+
+--*/
+{
+  EFI_STATUS                      Status;
+  UINTN                           NumHandles;
+  UINTN                           Index;
+  EFI_HANDLE                      *Handles;
+  EFI_UNICODE_COLLATION_PROTOCOL  *Uci;
+  BOOLEAN                         Iso639Language;
+  CHAR8                           *BestLanguage;
+
+  Status = BS->LocateHandleBuffer (
+                 ByProtocol,
+                 ProtocolGuid,
+                 NULL,
+                 &NumHandles,
+                 &Handles
+                 );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Iso639Language = (BOOLEAN) (ProtocolGuid == &gEfiUnicodeCollationProtocolGuid);
+
+  Status = EFI_UNSUPPORTED;
+  for (Index = 0; Index < NumHandles; Index++) {
+    //
+    // Open Unicode Collation Protocol
+    //
+    Status = BS->OpenProtocol (
+                   Handles[Index],
+                   ProtocolGuid,
+                   (VOID **) &Uci,
+                   AgentHandle,
+                   NULL,
+                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                   );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+
+    //
+    // Find the best matching matching language from the supported languages
+    // of Unicode Collation (2) protocol. 
+    //
+    BestLanguage = LibSelectBestLanguage (
+                     Uci->SupportedLanguages,
+                     Iso639Language,
+                     NULL
+                     );
+    if (BestLanguage != NULL) {
+      FreePool (BestLanguage);
+      UnicodeInterface = Uci;
+      Status = EFI_SUCCESS;
+      break;
+    }
+  }
+
+  FreePool (Handles);
+
+  return Status;
+}
+
+
+EFI_STATUS
+InitializeUnicodeCollationSupport (
+  IN EFI_HANDLE    AgentHandle
+  )
+/*++
+
+Routine Description:
+
+  This function initializes Unicode Collation Support for shell.
+  It tries to locate Unicode Collation (2) protocol and matches it with current
+  platform language code and the default language code.
+    
+Arguments:
+
+  AgentHandle  - The handle used to open Unicode Collation (2) protocol.
+    
+Returns:
+
+  EFI_SUCCESS  - The Unicode Collation (2) protocol has been successfully located.
+  Others       - The Unicode Collation (2) protocol has not been located.
+
+--*/
+{
+
+  EFI_STATUS       Status;
+
+  //
+  // First try to use RFC 4646 Unicode Collation 2 Protocol.
+  //
+  Status = InitializeUnicodeCollationSupportWorker (AgentHandle, &gEfiUnicodeCollation2ProtocolGuid);
+  //
+  // If the attempt to use Unicode Collation 2 Protocol fails, then we fall back
+  // on the ISO 639-2 Unicode Collation Protocol.
+  //
+  if (EFI_ERROR (Status)) {
+    Status = InitializeUnicodeCollationSupportWorker (AgentHandle, &gEfiUnicodeCollationProtocolGuid);
+  }
+
+  return Status;
+}
+
 VOID
 InitializeShellLib (
   IN EFI_HANDLE           ImageHandle,
@@ -50,7 +177,6 @@ Returns:
 {
   EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
   EFI_STATUS                Status;
-  CHAR8                     *LangCode;
 
   if (!ShellLibInitialized) {
     ShellLibInitialized = TRUE;
@@ -84,16 +210,8 @@ Returns:
     InitializeLibPlatform (ImageHandle, SystemTable);
   }
 
-  if (ImageHandle && UnicodeInterface == &LibStubUnicodeInterface) {
-    LangCode  = LibGetVariableLang ();
-    Status    = InitializeUnicodeSupport (LangCode);
-    if (EFI_ERROR (Status)) {
-      Status = InitializeUnicodeSupport (LanguageCodeEnglish);
-    }
-
-    if (LangCode) {
-      FreePool (LangCode);
-    }
+  if ((ImageHandle != NULL) && (UnicodeInterface == &LibStubUnicodeInterface)) {
+    InitializeUnicodeCollationSupport (ImageHandle);
   }
 
   DEBUG_CODE (
@@ -102,86 +220,6 @@ Returns:
   )
 }
 
-EFI_STATUS
-InitializeUnicodeSupport (
-  CHAR8 *LangCode
-  )
-/*++
-
-Routine Description:
-
-  Initializes Unicode support
-    
-Arguments:
-
-  LangCode - Language Code specified
-    
-Returns:
-
-  None
-
---*/
-{
-  EFI_UNICODE_COLLATION_PROTOCOL  *Ui;
-  EFI_STATUS                      Status;
-  CHAR8                           *Languages;
-  UINTN                           Index;
-  UINTN                           NoHandles;
-  EFI_HANDLE                      *Handles;
-  EFI_STATUS                      ReturnStatus;
-
-  ReturnStatus = EFI_UNSUPPORTED;
-  //
-  // If we don't know it, lookup the current language code
-  //
-  LibLocateHandle (ByProtocol, &gEfiUnicodeCollation2ProtocolGuid, NULL, &NoHandles, &Handles);
-  if (NoHandles == 0) {
-    LibLocateHandle (ByProtocol, &gEfiUnicodeCollationProtocolGuid, NULL, &NoHandles, &Handles);
-  }
-  if (!LangCode || !NoHandles) {
-    goto Done;
-  }
-  //
-  // Check all driver's for a matching language code
-  //
-  for (Index = 0; Index < NoHandles; Index++) {
-    Status = BS->HandleProtocol (Handles[Index], &gEfiUnicodeCollation2ProtocolGuid, (VOID *) &Ui);
-    if (EFI_ERROR (Status)) {
-      Status = BS->HandleProtocol (Handles[Index], &gEfiUnicodeCollationProtocolGuid, (VOID *) &Ui);
-    }
-    if (EFI_ERROR (Status)) {
-      continue;
-    }
-    //
-    // Check for a matching language code
-    //
-    if (strstra (Ui->SupportedLanguages, LangCode) == NULL) {
-      Languages = LibConvertSupportedLanguage (Ui->SupportedLanguages, LangCode);
-      if (strcmpa (Languages, LangCode) != 0) {
-        UnicodeInterface  = Ui;
-        ReturnStatus      = EFI_SUCCESS;
-        FreePool (Languages);
-        goto Done;
-      } else {
-        FreePool (Languages);
-      }
-    } else {
-      UnicodeInterface  = Ui;
-      ReturnStatus      = EFI_SUCCESS;
-      goto Done;
-    }
-  }
-
-Done:
-  //
-  // Cleanup
-  //
-  if (Handles) {
-    FreePool (Handles);
-  }
-
-  return ReturnStatus;
-}
 
 #if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 EFI_HII_PROTOCOL *HiiProt        = NULL;

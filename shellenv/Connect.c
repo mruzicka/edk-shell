@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -831,6 +831,16 @@ Returns:
     return Status;
   }
 
+  //
+  // Close proxy console before disconnect all devices.
+  //
+  SEnvCloseConsoleProxy (
+    ST->ConsoleInHandle,
+    &ST->ConIn,
+    ST->ConsoleOutHandle,
+    &ST->ConOut
+    );
+
   for (Index = 0; Index < AllHandleCount; Index++) {
     //
     // Check whether the handle is still in handle database
@@ -1004,7 +1014,6 @@ SEnvConnectDevicePath (
 VOID
 SEnvConnectConsole (
   CHAR16      *VariableName,
-  EFI_GUID    *PrimaryGuid,
   EFI_GUID    *ConsoleGuid,
   EFI_HANDLE  *ConsoleHandle,
   VOID        **ConsoleInterface
@@ -1018,27 +1027,36 @@ SEnvConnectConsole (
   EFI_HANDLE                *AllHandleBuffer;
   VOID                      *Interface;
 
-  *ConsoleHandle    = NULL;
-  *ConsoleInterface = NULL;
   ConsoleIndex      = 0;
+  AllHandleBuffer   = NULL;
 
   DevicePath        = LibGetVariable (VariableName, &gEfiGlobalVariableGuid);
-  if (DevicePath != NULL) {
-    SEnvConnectDevicePath (DevicePath);
-    FreePool (DevicePath);
+  if (DevicePath == NULL) {
+    //
+    // If no any device defined in EFI variable, do nothing
+    //
+    return;
   }
 
-  AllHandleBuffer = NULL;
-  Status = BS->LocateHandleBuffer (
-                ByProtocol,
-                PrimaryGuid,
-                NULL,
-                &AllHandleCount,
-                &AllHandleBuffer
-                );
-  if (!EFI_ERROR (Status) && AllHandleCount > 0) {
-    *ConsoleHandle = AllHandleBuffer[0];
-  } else if (*ConsoleHandle == NULL) {
+  //
+  // Connect all console devices
+  //
+  SEnvConnectDevicePath (DevicePath);
+  FreePool (DevicePath);
+
+  Status = EFI_NOT_FOUND;
+  //
+  // Check ConsoleHandle validation whatever it was updated or not.
+  //
+  if (*ConsoleHandle != NULL) {
+    Status = BS->HandleProtocol (
+                  *ConsoleHandle,
+                  ConsoleGuid,
+                  &Interface
+                  );
+  } 
+
+  if (EFI_ERROR (Status)) {
     AllHandleBuffer = NULL;
     Status = BS->LocateHandleBuffer (
                   ByProtocol,
@@ -1063,15 +1081,15 @@ SEnvConnectConsole (
                       &gEfiDevicePathProtocolGuid,
                       &Interface
                       );
-        if (EFI_ERROR (Status)) {
+        if (!EFI_ERROR (Status)) {
           ConsoleIndex = Index;
           break;
         }
       }
+      
+      *ConsoleHandle = AllHandleBuffer[ConsoleIndex];
     }
   }
-
-  *ConsoleHandle = AllHandleBuffer[ConsoleIndex];
 
   if (*ConsoleHandle != NULL) {
     BS->HandleProtocol (
@@ -1081,7 +1099,7 @@ SEnvConnectConsole (
           );
   }
 
-  if (AllHandleBuffer) {
+  if (AllHandleBuffer != NULL) {
     FreePool (AllHandleBuffer);
   }
 }
@@ -1189,8 +1207,7 @@ SEnvConnectAllConsoles (
   EFI_STATUS  Status;
 
   //
-  // Check current ConIn and ConOut to ensure it is the ConsoleProxy
-  // Otherwise, the Console should not be close
+  // Check current ConIn and ConOut to judge it is the ConsoleProxy
   //
   Status = SEnvCheckConsoleProxy (
             ST->ConsoleInHandle,
@@ -1203,23 +1220,21 @@ SEnvConnectAllConsoles (
   // Indicate the Console is replaced by redirection operation
   // It is not safe to connect Console here
   //
-  if (EFI_ERROR (Status)) {
-    return ;
+  if (!EFI_ERROR (Status)) {
+    //
+    // It is proxy console, to prevent the proxy console form being restored to original console,
+    // close it temporary before connect all console
+    //
+    SEnvCloseConsoleProxy (
+      ST->ConsoleInHandle,
+      &ST->ConIn,
+      ST->ConsoleOutHandle,
+      &ST->ConOut
+      );
   }
-  //
-  // To prevent the proxy console form being restored to original console,
-  // close it temporary before connect all console
-  //
-  SEnvCloseConsoleProxy (
-    ST->ConsoleInHandle,
-    &ST->ConIn,
-    ST->ConsoleOutHandle,
-    &ST->ConOut
-    );
 
   SEnvConnectConsole (
     VarErrorOut,
-    &gEfiPrimaryStandardErrorDeviceGuid,
     &gEfiSimpleTextOutProtocolGuid,
     &ST->StandardErrorHandle,
     (VOID **) &ST->StdErr
@@ -1227,7 +1242,6 @@ SEnvConnectAllConsoles (
 
   SEnvConnectConsole (
     VarConsoleOut,
-    &gEfiPrimaryConsoleOutDeviceGuid,
     &gEfiSimpleTextOutProtocolGuid,
     &ST->ConsoleOutHandle,
     (VOID **) &ST->ConOut
@@ -1235,7 +1249,6 @@ SEnvConnectAllConsoles (
 
   SEnvConnectConsole (
     VarConsoleIn,
-    &gEfiPrimaryConsoleInDeviceGuid,
     &gEfiSimpleTextInProtocolGuid,
     &ST->ConsoleInHandle,
     (VOID **) &ST->ConIn
