@@ -1602,7 +1602,7 @@ Returns:
     if ((Name != NULL) && (StrCmp (Name, Info->Name) != 0)) {
       continue;
     }
-    
+
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
     if (Info->NicIp4Config == NULL) { 
       Status = IfconfigSetNicAddrByHii (Info, NULL);
@@ -1717,7 +1717,6 @@ Returns:
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
   if (EFI_ERROR (Status)) {
     Status = IfconfigGetAllNicInfoByHii (ImageHandle);
-
     if (EFI_ERROR (Status)) {
       if (mIp4ConfigExist) {
         PrintToken (STRING_TOKEN (STR_IFCONFIG_GET_NIC_FAIL), HiiHandle, Status);
@@ -1727,7 +1726,7 @@ Returns:
 
       return EFI_NOT_FOUND;
     }
-  } 
+  }
 #else 
   if (EFI_ERROR (Status)) {
     if (mIp4ConfigExist) {
