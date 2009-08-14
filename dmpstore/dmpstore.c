@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -24,7 +24,6 @@ Revision History
 --*/
 
 #include "EfiShellLib.h"
-#include "EfiVariable.h"
 #include "dmpstore.h"
 
 extern UINT8  STRING_ARRAY_NAME[];
@@ -34,7 +33,8 @@ extern UINT8  STRING_ARRAY_NAME[];
 //
 #include STRING_DEFINES_FILE
 
-#define DEBUG_NAME_SIZE MAX_VARIABLE_SIZE
+#define INIT_NAME_BUFFER_SIZE  128
+#define INIT_DATA_BUFFER_SIZE  1024
 
 STATIC CHAR16   *AttrType[] = {
   L"invalid",   // 000
@@ -78,12 +78,14 @@ CreateOutputFile (
 EFI_STATUS
 GetFileVariable (
   IN EFI_FILE_HANDLE FileHandle,
-  IN OUT UINTN       *VariableNameSize,
-  IN CHAR16          *VariableName,
+  OUT UINTN          *VariableNameSize,
+  IN OUT UINTN       *NameBufferSize,
+  IN OUT CHAR16      **VariableName,
   IN EFI_GUID        *VendorGuid,
   OUT UINT32         *Attributes,
-  IN OUT UINTN       *DataSize,
-  OUT VOID           *Data
+  OUT UINTN          *DataSize,
+  IN OUT UINTN       *DataBufferSize,
+  IN OUT VOID        **Data
   );
 
 EFI_STATUS
@@ -314,9 +316,11 @@ LoadVariableStore (
   EFI_FILE_HANDLE    FileHandle;  
   EFI_GUID           Guid;
   UINT32             Attributes;
-  CHAR16             Name[DEBUG_NAME_SIZE / 2];
+  CHAR16             *Name;
+  UINTN              NameBufferSize;
   UINTN              NameSize;
-  CHAR16             Data[DEBUG_NAME_SIZE / 2];
+  VOID               *Data;
+  UINTN              DataBufferSize;
   UINTN              DataSize;
   BOOLEAN            Found;
   EFI_FILE_INFO      *FileInfo;
@@ -324,7 +328,15 @@ LoadVariableStore (
   Found      = FALSE;
   FileHandle = NULL;
   FileInfo   = NULL;
-      
+  
+  NameBufferSize = INIT_NAME_BUFFER_SIZE;
+  DataBufferSize = INIT_DATA_BUFFER_SIZE;
+  Name           = AllocateZeroPool (NameBufferSize);
+  Data           = AllocatePool (DataBufferSize);
+  if (Name == NULL || Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
   //
   // Open the previous saved output file
   //  
@@ -362,9 +374,7 @@ LoadVariableStore (
       break;
     }
     
-    NameSize = DEBUG_NAME_SIZE;
-    DataSize = DEBUG_NAME_SIZE;
-    Status = GetFileVariable (FileHandle, &NameSize, Name, &Guid, &Attributes, &DataSize, Data);
+    Status = GetFileVariable (FileHandle, &NameSize, &NameBufferSize, &Name, &Guid, &Attributes, &DataSize, &DataBufferSize, &Data);
     if (Status == EFI_NOT_FOUND) {
       Status = EFI_SUCCESS;
       break;
@@ -414,7 +424,13 @@ Done:
   }  
   if (FileHandle != NULL) {
     LibCloseFile (FileHandle);
-  };
+  }
+  if (Name != NULL) {
+    FreePool (Name);
+  }
+  if (Data != NULL) {
+    FreePool (Data);
+  }
   return Status;
 }
 
@@ -428,9 +444,13 @@ DumpVariableStore (
   EFI_STATUS  Status;
   EFI_GUID    Guid;
   UINT32      Attributes;
-  CHAR16      Name[DEBUG_NAME_SIZE / 2];
+  CHAR16      *Name;
+  UINTN       NameBufferSize; // Allocated Name buffer size
   UINTN       NameSize;
-  CHAR16      Data[DEBUG_NAME_SIZE / 2];
+  CHAR16      *OldName;
+  UINTN       OldNameBufferSize;
+  VOID        *Data;
+  UINTN       DataBufferSize; // Allocated Name buffer size
   UINTN       DataSize;
   BOOLEAN     Found;
 
@@ -455,7 +475,14 @@ DumpVariableStore (
     }    
   }
 
-  Name[0] = 0x0000;
+  NameBufferSize = INIT_NAME_BUFFER_SIZE;
+  DataBufferSize = INIT_DATA_BUFFER_SIZE;
+  Name           = AllocateZeroPool (NameBufferSize);
+  Data           = AllocatePool (DataBufferSize);
+  if (Name == NULL || Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
   do {
     //
     // Break the execution?
@@ -464,8 +491,29 @@ DumpVariableStore (
       goto Done;
     }
     
-    NameSize  = DEBUG_NAME_SIZE;
+    NameSize  = NameBufferSize;
     Status    = RT->GetNextVariableName (&NameSize, Name, &Guid);
+    if (Status == EFI_BUFFER_TOO_SMALL) {
+      OldName           = Name;
+      OldNameBufferSize = NameBufferSize;
+      //
+      // Expand at least twice to avoid reallocate many times
+      //
+      NameBufferSize = NameSize > NameBufferSize * 2 ? NameSize : NameBufferSize * 2;
+      Name           = AllocateZeroPool (NameBufferSize);
+      if (Name == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        FreePool (OldName);
+        goto Done;
+      }
+      //
+      // Preserve the original content to get correct iteration for GetNextVariableName() call
+      //
+      CopyMem (Name, OldName, OldNameBufferSize);
+      FreePool (OldName);
+      NameSize = NameBufferSize;
+      Status = RT->GetNextVariableName (&NameSize, Name, &Guid);
+    }
     if (!EFI_ERROR (Status)) {
       if (VarName != NULL) {
         if (!MetaiMatch (Name, VarName)) {
@@ -474,8 +522,22 @@ DumpVariableStore (
       }      
 
       Found     = TRUE;
-      DataSize  = DEBUG_NAME_SIZE;
+      DataSize  = DataBufferSize;
       Status    = RT->GetVariable (Name, &Guid, &Attributes, &DataSize, Data);
+      if (Status == EFI_BUFFER_TOO_SMALL) {
+        //
+        // Expand at least twice to avoid reallocate many times
+        //
+        FreePool (Data);
+        DataBufferSize = DataSize > DataBufferSize * 2 ? DataSize : DataBufferSize * 2;
+        Data           = AllocatePool (DataBufferSize);
+        if (Data == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+          goto Done;
+        }
+        DataSize = DataBufferSize;
+        Status   = RT->GetVariable (Name, &Guid, &Attributes, &DataSize, Data);
+      }
       if (!EFI_ERROR (Status)) {
         //
         // Dump variable name
@@ -531,6 +593,12 @@ DumpVariableStore (
   }
 
 Done:
+  if (Name != NULL) {
+    FreePool (Name);
+  }
+  if (Data != NULL) {
+    FreePool (Data);
+  }
   return Status;
 }
 
@@ -594,12 +662,14 @@ Done:
 EFI_STATUS
 GetFileVariable (
   IN EFI_FILE_HANDLE FileHandle,
-  IN OUT UINTN       *VariableNameSize,
-  IN CHAR16          *VariableName,
+  OUT UINTN          *VariableNameSize,
+  IN OUT UINTN       *NameBufferSize,
+  IN OUT CHAR16      **VariableName,
   IN EFI_GUID        *VendorGuid,
   OUT UINT32         *Attributes,
-  IN OUT UINTN       *DataSize,
-  OUT VOID           *Data
+  OUT UINTN          *DataSize,
+  IN OUT UINTN       *DataBufferSize,
+  IN OUT VOID        **Data
   )
 {
   EFI_STATUS  Status;
@@ -613,13 +683,23 @@ GetFileVariable (
   if (!EFI_ERROR (Status) && (BufferSize == 0)) {
     return EFI_NOT_FOUND; // End of file
   }
-  if (EFI_ERROR (Status) || (BufferSize != sizeof (UINT32)) || 
-      (NameSize > *VariableNameSize)) {
+  if (EFI_ERROR (Status) || (BufferSize != sizeof (UINT32))) {
     return EFI_ABORTED;
   }
   
+  if (NameSize > *NameBufferSize) {
+    //
+    // Expand at least twice to avoid reallocate many times
+    //
+    FreePool (*VariableName);
+    *NameBufferSize = NameSize > *NameBufferSize * 2 ? NameSize : *NameBufferSize * 2;
+    *VariableName   = AllocateZeroPool (*NameBufferSize);
+    if (*VariableName == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+  }
   BufferSize = NameSize;
-  Status     = LibReadFile (FileHandle, &BufferSize, VariableName);
+  Status     = LibReadFile (FileHandle, &BufferSize, *VariableName);
   if (EFI_ERROR (Status) || (BufferSize != NameSize)) {
     return EFI_ABORTED;
   }
@@ -639,19 +719,29 @@ GetFileVariable (
   Size       = 0;
   BufferSize = sizeof (UINT32);
   Status     = LibReadFile (FileHandle, &BufferSize, &Size);
-  if (EFI_ERROR (Status) || (BufferSize != sizeof (UINT32)) || 
-      (Size > *DataSize)) {
+  if (EFI_ERROR (Status) || (BufferSize != sizeof (UINT32))) {
     return EFI_ABORTED;
   }
   
+  if (Size > *DataBufferSize) {
+    //
+    // Expand at least twice to avoid reallocate many times
+    //
+    FreePool (*Data);
+    *DataBufferSize = Size > *DataBufferSize * 2 ? Size : *DataBufferSize * 2;
+    *Data           = AllocatePool (*DataBufferSize);
+    if (*Data == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+  }
   BufferSize = Size;
-  Status     = LibReadFile (FileHandle, &BufferSize, Data);
+  Status     = LibReadFile (FileHandle, &BufferSize, *Data);
   if (EFI_ERROR (Status) || (BufferSize != Size)) {
     return EFI_ABORTED;
   }
   
   *VariableNameSize = NameSize;
-  *DataSize = Size;
+  *DataSize         = Size;
   return EFI_SUCCESS;
 }
 
