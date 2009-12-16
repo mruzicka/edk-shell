@@ -1734,9 +1734,9 @@ Returns:
 
     } else if ((*Bar & PCI_BIT_1) == 0 && (*Bar & PCI_BIT_2) != 0) {
       Bar64 = 0x0;
-      CopyMem (&Bar64, Bar, sizeof (UINT32));
+      CopyMem (&Bar64, Bar, sizeof (UINT64));
       PrintToken (STRING_TOKEN (STR_PCI2_ONE_VAR_2), HiiHandle, RShiftU64 ((Bar64 & 0xfffffffffffffff0), 32));
-      PrintToken (STRING_TOKEN (STR_PCI2_ONE_VAR_3), HiiHandle, Bar64 & 0xfffffffffffffff0);
+      PrintToken (STRING_TOKEN (STR_PCI2_ONE_VAR_3), HiiHandle, (UINT32) (Bar64 & 0xfffffffffffffff0));
       PrintToken (STRING_TOKEN (STR_PCI2_MEM), HiiHandle);
       PrintToken (STRING_TOKEN (STR_PCI2_64_BITS), HiiHandle);
       IsBar32 = FALSE;
@@ -1806,7 +1806,7 @@ Returns:
   } else {
 
     OldBar64 = 0x0;
-    CopyMem (&OldBar64, Bar, sizeof (UINT32));
+    CopyMem (&OldBar64, Bar, sizeof (UINT64));
     NewBar64 = 0xffffffffffffffff;
 
     IoDev->Pci.Write (IoDev, EfiPciWidthUint32, RegAddress, 2, &NewBar64);

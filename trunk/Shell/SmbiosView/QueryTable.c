@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007 Intel Corporation                                                         
+Copyright (c) 2005 - 2009 Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -342,7 +342,23 @@ TABLE_ITEM  ProcessorUpgradeTable[] = {
   {
     0x15,
     L"Socket LGA775"
-  }
+  },
+  {
+    0x16,
+    L"Socket S1"
+  },
+  {
+    0x17,
+    L"Socket AM2"
+  },
+  {
+    0x18,
+    L"Socket F"
+  },
+  {
+    0x19,
+    L"Socket LGA1366"
+  }\
 };
 
 TABLE_ITEM  McErrorDetectMethodTable[] = {
@@ -647,6 +663,34 @@ TABLE_ITEM  CacheAssociativityTable[] = {
   {
     0x06,
     L"Fully Associative"
+  },
+  {
+    0x07,
+    L"8-way Set-Associative"
+  },
+  {
+    0x08,
+    L"16-way Set-Associative"
+  },
+  {
+    0x09,
+    L"12-way Set-Associative"
+  },
+  {
+    0x0A,
+    L"24-way Set-Associative"
+  },
+  {
+    0x0B,
+    L"32-way Set-Associative"
+  },
+  {
+    0x0C,
+    L"48-way Set-Associative"
+  },
+  {
+    0x0D,
+    L"64-way Set-Associative"
   }
 };
 
@@ -1085,6 +1129,30 @@ TABLE_ITEM  SystemSlotTypeTable[] = {
     0xAA,
     L"PCI Express X16"
   },    
+  {
+    0xAB,
+    L"PCI Express Gen 26"
+  }, 
+  {
+    0xAC,
+    L"PCI Express Gen 2 X1"
+  },
+  {
+    0xAD,
+    L"PCI Express Gen 2 X2"
+  }, 
+  {
+    0xAE,
+    L"PCI Express Gen 2 X4"
+  }, 
+  {
+    0xAF,
+    L"PCI Express Gen 2 X8"
+  },   
+  {
+    0xB0,
+    L"PCI Express Gen 2 X16"
+  }
 };
 
 TABLE_ITEM  SystemSlotDataBusWidthTable[] = {
@@ -1999,6 +2067,14 @@ TABLE_ITEM  MemoryDeviceTypeTable[] = {
   {
     0x14,
     L"  DDR2 FB-DIMM"
+  },
+  {
+    0x18,
+    L"  DDR3"
+  },
+  {
+    0x19,
+    L"  FBD2"
   }
 };
 
