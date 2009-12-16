@@ -188,6 +188,151 @@ Returns:
     );
 }
 
+EFI_STATUS
+TestChildHandle (
+  IN CONST EFI_HANDLE       ControllerHandle,
+  IN CONST EFI_HANDLE       ChildHandle,
+  IN CONST EFI_GUID         *ProtocolGuid
+  )
+/*++
+
+Routine Description:
+
+  Tests whether a child handle is a child device of the controller.
+
+Arguments:
+
+  ControllerHandle - A handle for a (parent) controller to test.
+  ChildHandle      - A child handle to test.
+  ProtocolGuid     - Supplies the protocol that the child controller
+                     opens on its parent controller
+Returns:
+
+  EFI_SUCCESS      - ChildHandle is a child of the ControllerHandle.
+  EFI_UNSUPPORTED  - ChildHandle is not a child of the ControllerHandle.
+
+--*/
+{
+  EFI_STATUS                            Status;
+  EFI_OPEN_PROTOCOL_INFORMATION_ENTRY   *OpenInfoBuffer;
+  UINTN                                 EntryCount;
+  UINTN                                 Index;
+
+  ASSERT (ProtocolGuid != NULL);
+
+  //
+  // Retrieve the list of agents that are consuming the specific protocol
+  // on ControllerHandle.
+  //
+  Status = BS->OpenProtocolInformation (
+                 ControllerHandle,
+                 (EFI_GUID *) ProtocolGuid,
+                 &OpenInfoBuffer,
+                 &EntryCount
+                 );
+  if (EFI_ERROR (Status)) {
+    return EFI_UNSUPPORTED;
+  }
+
+  //
+  // Inspect if ChildHandle is one of the agents.
+  //
+  Status = EFI_UNSUPPORTED;
+  for (Index = 0; Index < EntryCount; Index++) {
+    if ((OpenInfoBuffer[Index].ControllerHandle == ChildHandle) &&
+        (OpenInfoBuffer[Index].Attributes & EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) != 0) {
+      Status = EFI_SUCCESS;
+      break;
+    }
+  }
+
+  FreePool (OpenInfoBuffer);
+  return Status;
+}
+
+EFI_STATUS 
+GetChildHandle (
+  IN EFI_HANDLE         Controller,
+  OUT EFI_HANDLE        *ChildHandle
+  )
+/*++
+
+Routine Description:
+  Get the child handle of the NIC handle.
+
+Arguments:
+  Controller   - Routing information: GUID.
+  ChildHandle  - Returned child handle.
+
+Returns:
+  EFI_SUCCESS  - Successfully to get child handle.
+  Other        - Failed to get child handle.
+
+--*/
+{
+  EFI_STATUS                 Status;
+  EFI_HANDLE                 *Handles;
+  UINTN                      HandleCount;
+  UINTN                      Index;
+  EFI_DEVICE_PATH_PROTOCOL   *ChildDeviceDevicePath;
+  VENDOR_DEVICE_PATH         *VendorDeviceNode;
+
+  //
+  // Locate all EFI Hii Config Access protocols
+  //
+  Status = BS->LocateHandleBuffer (
+                 ByProtocol,
+                 &gEfiHiiConfigAccessProtocolGuid,
+                 NULL,
+                 &HandleCount,
+                 &Handles
+                 );
+  if (EFI_ERROR (Status) || (HandleCount == 0)) {
+    return Status;
+  }
+
+  Status = EFI_NOT_FOUND;
+
+  for (Index = 0; Index < HandleCount; Index++) {
+  
+    Status = TestChildHandle (Controller, Handles[Index], &gEfiManagedNetworkServiceBindingProtocolGuid);
+    if (!EFI_ERROR (Status)) {
+      //
+      // Get device path on the child handle
+      //
+      Status = BS->HandleProtocol (
+                     Handles[Index],
+                     &gEfiDevicePathProtocolGuid,
+                     (VOID **) &ChildDeviceDevicePath
+                     );
+      
+      if (!EFI_ERROR (Status)) {
+        while (!IsDevicePathEnd (ChildDeviceDevicePath)) {
+          ChildDeviceDevicePath = NextDevicePathNode (ChildDeviceDevicePath);
+          //
+          // Parse one instance
+          //
+          if (ChildDeviceDevicePath->Type == HARDWARE_DEVICE_PATH && 
+              ChildDeviceDevicePath->SubType == HW_VENDOR_DP) {
+            VendorDeviceNode = (VENDOR_DEVICE_PATH *) ChildDeviceDevicePath;
+            if (CompareMem (&VendorDeviceNode->Guid, &gEfiNicIp4ConfigVariableGuid, sizeof (EFI_GUID)) == 0) {
+              //
+              // Found item matched gEfiNicIp4ConfigVariableGuid
+              //
+              *ChildHandle = Handles[Index];
+              FreePool (Handles);
+              return EFI_SUCCESS;
+            }
+          }
+        }
+      }      
+    }
+  }
+
+  FreePool (Handles);
+  return Status;  
+}
+
 UINTN
 AppendOffsetWidthValue (
   IN OUT CHAR16               *String,
@@ -267,14 +412,13 @@ Returns:
   UINTN                      NameLength;
 
   //
-  // Get device path 
+  // Get the device path from handle installed EFI HII Config Access protocol
   //
   Status = BS->HandleProtocol (
                  DriverHandle,
                  &gEfiDevicePathProtocolGuid,
                  (VOID **) &DevicePath
                  );
-  
   if (EFI_ERROR (Status)) {
     return NULL;
   }
@@ -315,7 +459,6 @@ Returns:
   //
   // Append L"&PATH="
   //
-
   StrCpy (String, L"&PATH=");
   String += StrLen (L"&PATH=");
   UpperString = String;
@@ -436,11 +579,13 @@ Returns:
   CHAR16                        *String;
   UINTN                         Length;
   UINTN                         Offset;
+  EFI_HANDLE                    ChildHandle;
 
   AccessResults    = NULL;
   ConfigHdr        = NULL;
   ConfigResp       = NULL;
   NicConfigRequest = NULL;
+  NicInfo          = NULL;
 
   InitializeListHead (&NicInfoList);
 
@@ -471,10 +616,17 @@ Returns:
   }
 
   for (Index = 0; Index < HandleCount; Index++) {
+    Status = GetChildHandle (Handles[Index], &ChildHandle);
+    if (EFI_ERROR (Status)) {
+      //
+      // If failed to get Child handle, try NIC controller handle for back-compatibility.
+      //
+      ChildHandle = Handles[Index];
+    }
     //
     // Construct configuration request string header
     //
-    ConfigHdr = ConstructConfigHdr (&gEfiNicIp4ConfigVariableGuid, EFI_NIC_IP4_CONFIG_VARIABLE, Handles[Index]);
+    ConfigHdr = ConstructConfigHdr (&gEfiNicIp4ConfigVariableGuid, EFI_NIC_IP4_CONFIG_VARIABLE, ChildHandle);
     Length = StrLen (ConfigHdr);
     ConfigResp = AllocateZeroPool ((Length + NIC_ITEM_CONFIG_SIZE * 2 + 100) * sizeof (CHAR16));
     if (ConfigResp == NULL) {
@@ -568,6 +720,8 @@ Returns:
     FreePool (ConfigHdr);
   }
 
+  FreePool (Handles);
+
   return EFI_SUCCESS;
  
 ON_ERROR:
@@ -576,6 +730,9 @@ ON_ERROR:
   }
   if (NicConfigRequest != NULL) {
     FreePool (NicConfigRequest);
+  }
+  if (NicInfo != NULL) {
+    FreePool (NicInfo);
   }
   if (ConfigResp != NULL) {
     FreePool (ConfigResp);
@@ -621,16 +778,24 @@ Returns:
   CHAR16                        *String;
   UINTN                         Length;
   UINTN                         Offset;
+  EFI_HANDLE                    ChildHandle;
 
   AccessResults  = NULL;
   ConfigHdr      = NULL;
   ConfigResp     = NULL;
   NicConfig      = NULL;
 
+  Status = GetChildHandle (NicInfo->Handle, &ChildHandle);
+  if (EFI_ERROR (Status)) {
+    //
+    // If failed to get Child handle, try NIC controller handle for back-compatibility
+    //
+    ChildHandle = NicInfo->Handle;
+  }
   //
   // Construct config request string header
   //
-  ConfigHdr = ConstructConfigHdr (&gEfiNicIp4ConfigVariableGuid, EFI_NIC_IP4_CONFIG_VARIABLE, NicInfo->Handle);
+  ConfigHdr = ConstructConfigHdr (&gEfiNicIp4ConfigVariableGuid, EFI_NIC_IP4_CONFIG_VARIABLE, ChildHandle);
 
   Length = StrLen (ConfigHdr);
   ConfigResp = AllocateZeroPool ((Length + NIC_ITEM_CONFIG_SIZE * 2 + 100) * sizeof (CHAR16));
@@ -639,7 +804,7 @@ Returns:
   NicConfig = AllocateZeroPool (NIC_ITEM_CONFIG_SIZE);
   if (NicConfig == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    goto ON_ERROR;
+    goto ON_EXIT;
   }
 
   if (Config != NULL) {
@@ -665,7 +830,7 @@ Returns:
                                 &AccessProgress
                                 );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto ON_EXIT;
   }
 
   //
@@ -676,11 +841,8 @@ Returns:
                                 AccessResults,
                                 &AccessProgress
                                 );
-  if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
-  }
 
-ON_ERROR:
+ON_EXIT:
   if (AccessResults != NULL) {
     FreePool (AccessResults);
   }
@@ -1612,7 +1774,6 @@ Returns:
 #else 
     Status = Info->NicIp4Config->SetInfo (Info->NicIp4Config, NULL, TRUE);
 #endif
-
 
     if (EFI_ERROR (Status)) {
       return Status;

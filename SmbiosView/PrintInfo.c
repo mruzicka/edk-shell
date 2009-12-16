@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2009, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1300,6 +1300,22 @@ DisplayProcessorFamily (
     Print (L"Power PC 750\n");
     break;
 
+  case 0x28:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE_DUO), HiiHandle);
+    break;
+    
+  case 0x29:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE_DUO_MOBILE), HiiHandle);
+    break;    
+
+  case 0x2A:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE_SOLO_MOBILE), HiiHandle);
+    break;
+
+  case 0x2B:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_ATOM), HiiHandle);
+    break;
+
   case 0x30:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ALPHA_FAMILY_2), HiiHandle);
     break;
@@ -1468,6 +1484,30 @@ DisplayProcessorFamily (
     Print (L"AMD Turion 64X2 Mobile\n");
     break;
 
+  case 0x8A:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_OPTERON_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0x8B:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_OPTERON_THIRD_GENERATION), HiiHandle);
+    break;
+
+  case 0x8C:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_PHENOM_FX_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0x8D:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_PHENOM_X4_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0x8E:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_PHENOM_X2_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0x8F:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_ATHLON_X2_DUAL_CORE), HiiHandle);
+    break;
+
   case 0x90:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_PA_RISC_FAMILY), HiiHandle);
     break;
@@ -1476,8 +1516,100 @@ DisplayProcessorFamily (
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_V30_FAMILY), HiiHandle);
     break;
 
+  case 0xA1:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_3200_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xA2:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_3000_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xA3:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5300_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xA4:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5100_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xA5:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5000_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xA6:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_LV_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xA7:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_ULV_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xA8:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7100_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xA9:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5400_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xAA:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xAB:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5200_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xAC:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7200_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xAD:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7300_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xAE:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7400_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xAF:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7400_SERIES_MULTI_CORE), HiiHandle);
+    break;
+
   case 0xB0:
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_PENTIUM_III_XEON), HiiHandle);
+    break;
+
+  case 0xC0:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE2_SOLO), HiiHandle);
+    break;
+
+  case 0xC1:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE2_EXTREME), HiiHandle);
+    break;
+
+  case 0xC2:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE2_QUAD), HiiHandle);
+    break;
+
+  case 0xC3:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE2_EXTREME), HiiHandle);
+    break;
+
+  case 0xC4:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE2_DUO_MOBILE), HiiHandle);
+    break;
+
+  case 0xC5:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE2_SOLO_MOBILE), HiiHandle);
+    break;
+
+  case 0xC6:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CORE_I7), HiiHandle);
+    break;
+
+  case 0xC7:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_CELERON_DUAL_CORE), HiiHandle);
     break;
 
   case 0xC8:
@@ -1514,6 +1646,62 @@ DisplayProcessorFamily (
 
   case 0xD5:
     Print (L"Eden\n");
+    break;
+
+  case 0xD6:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_MULTI_CORE), HiiHandle);
+    break;
+
+  case 0xD7:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_3_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xD8:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_3_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xDA:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xDB:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_5_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xDD:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7_SERIES_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xDE:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7_SERIES_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xDF:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_XEON_7_SERIES_MULTI_CORE), HiiHandle);
+    break;
+
+  case 0xE6:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_EMBEDDED_OPTERON_QUAD_CORE), HiiHandle);
+    break;
+
+  case 0xE7:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_PHENOM_TRIPLE_CORE), HiiHandle);
+    break;
+
+  case 0xE8:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_TURION_ULTRA_DUAL_CORE_MOBILE), HiiHandle);
+    break;
+
+  case 0xE9:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_TURION_DUAL_CORE_MOBILE), HiiHandle);
+    break;
+
+  case 0xEA:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_ATHLON_DUAL_CORE), HiiHandle);
+    break;
+
+  case 0xEB:
+    PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_AMD_SEMPRON_SI), HiiHandle);
     break;
 
   case 0xFA:

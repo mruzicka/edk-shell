@@ -735,6 +735,7 @@ ShellCmdDriverConfigurationProcessActionRequired (
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_STOP_CONTROLLER), HiiHandle);
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_ENTER_STOP_CONTROL), HiiHandle);
     Input (L"", ReturnStr, sizeof (ReturnStr) / sizeof (CHAR16));
+    Print (L"\n");
     BS->DisconnectController (ControllerHandle, DriverImageHandle, ChildHandle);
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_CONTROLLER_STOPPED), HiiHandle);
     break;
@@ -743,6 +744,7 @@ ShellCmdDriverConfigurationProcessActionRequired (
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_RESTART_CONTROLLER), HiiHandle);
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_ENTER_RESTART_CONTROLLER), HiiHandle);
     Input (L"", ReturnStr, sizeof (ReturnStr) / sizeof (CHAR16));
+    Print (L"\n");
     BS->DisconnectController (ControllerHandle, DriverImageHandle, ChildHandle);
     ContextOverride[0]  = DriverImageHandle;
     ContextOverride[1]  = NULL;
