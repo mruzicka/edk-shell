@@ -188,6 +188,7 @@ Returns:
     );
 }
 
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 EFI_STATUS
 TestChildHandle (
   IN CONST EFI_HANDLE       ControllerHandle,
@@ -542,7 +543,6 @@ ON_ERROR:
 
 }
 
-#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 EFI_STATUS
 IfconfigGetAllNicInfoByHii (
   EFI_HANDLE                  ImageHandle
