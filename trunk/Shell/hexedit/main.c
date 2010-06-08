@@ -1,8 +1,7 @@
 /*++
 
-Copyright (c) 2005 - 2010, Intel Corporation. All rights reserved. <BR>
-
-This program and the accompanying materials                          
+Copyright (c) 2005 - 2007, Intel Corporation                                                  
+All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
 http://opensource.org/licenses/bsd-license.php                                            
@@ -342,13 +341,7 @@ Returns:
   } else if (0 == ChkPck.FlagCount || (ChkPck.FlagCount == 1 && LibCheckVarGetFlag (&ChkPck, L"-b") != NULL)) {
     if (0 == ChkPck.ValueCount) {
       Name      = HexEditGetDefaultFileName ();
-      if (Name != NULL) {
-        FreeName  = TRUE;
-      } else {
-        PrintToken(STRING_TOKEN (STR_HEXEDIT_INVALID_DIRECTORY), HiiHandle, L"hexedit");
-        Status = EFI_INVALID_PARAMETER;
-        goto done ;
-      }
+      FreeName  = TRUE;
     } else if (1 == ChkPck.ValueCount) {
       Name = ChkPck.VarList->VarStr;
     } else {
