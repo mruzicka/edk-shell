@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2009, Intel Corporation                                                         
+Copyright (c) 2005 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1386,8 +1386,8 @@ SEnvCmdReconnect (
     }
 
     SEnvDisconnectAll ();
-    SEnvConnectAllDriversToAllControllers ();
     SEnvConnectAllConsoles ();
+    SEnvConnectAllDriversToAllControllers ();
     ReturnStatus = EFI_SUCCESS;
     goto Done;
   }
@@ -1399,27 +1399,28 @@ SEnvCmdReconnect (
 
   DeviceHandle  = NULL;
   Item          = ChkPck.VarList;
-  if (NULL != Item) {
-    ItemValue = (UINTN) StrToUIntegerBase (Item->VarStr, 16, &Status);
-    if (EFI_ERROR (Status)) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_INVALID_ARG), HiiEnvHandle, L"reconnect", Item->VarStr);
-      ReturnStatus = EFI_INVALID_PARAMETER;
-      goto ReconnectDone;
-    }
-
-    HandleNumber = SEnvHandleNoFromUINT (ItemValue);
-    if (HandleNumber != 0) {
-      DeviceHandle = SEnvHandles[HandleNumber - 1];
-    }
-
-    if (DeviceHandle == NULL) {
-      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_HANDLE_NOT_FOUND), HiiEnvHandle, L"reconnect", Item->VarStr);
-      ReturnStatus = EFI_NOT_FOUND;
-      goto ReconnectDone;
-    }
-
-    Item = Item->Next;
+  //
+  // The parameter checking above guarantees the first item cannot be NULL 
+  //
+  ItemValue = (UINTN) StrToUIntegerBase (Item->VarStr, 16, &Status);
+  if (EFI_ERROR (Status)) {
+    PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_INVALID_ARG), HiiEnvHandle, L"reconnect", Item->VarStr);
+    ReturnStatus = EFI_INVALID_PARAMETER;
+    goto ReconnectDone;
   }
+
+  HandleNumber = SEnvHandleNoFromUINT (ItemValue);
+  if (HandleNumber != 0) {
+    DeviceHandle = SEnvHandles[HandleNumber - 1];
+  }
+
+  if (DeviceHandle == NULL) {
+    PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_HANDLE_NOT_FOUND), HiiEnvHandle, L"reconnect", Item->VarStr);
+    ReturnStatus = EFI_NOT_FOUND;
+    goto ReconnectDone;
+  }
+
+  Item = Item->Next;
 
   DriverImageHandle = NULL;
   if (NULL != Item) {
@@ -1461,29 +1462,21 @@ SEnvCmdReconnect (
     Item = Item->Next;
   }
 
-  if (DeviceHandle != NULL) {
-    ReturnStatus = BS->DisconnectController (
-                        DeviceHandle,
-                        DriverImageHandle,
-                        ChildHandle
-                        );
-    ContextOverride[0]  = DriverImageHandle;
-    ContextOverride[1]  = NULL;
-    Status = BS->ConnectController (
-                  DeviceHandle,
-                  ContextOverride,
-                  NULL,
-                  TRUE
-                  );
-    if (!EFI_ERROR (ReturnStatus)) {
-      ReturnStatus = Status;
-    }
-  } else {
-
-    SEnvDisconnectAll ();
-    SEnvConnectAllDriversToAllControllers ();
-    SEnvConnectAllConsoles ();
-    ReturnStatus = EFI_SUCCESS;
+  ReturnStatus = BS->DisconnectController (
+                      DeviceHandle,
+                      DriverImageHandle,
+                      ChildHandle
+                      );
+  ContextOverride[0]  = DriverImageHandle;
+  ContextOverride[1]  = NULL;
+  Status = BS->ConnectController (
+                DeviceHandle,
+                ContextOverride,
+                NULL,
+                TRUE
+                );
+  if (!EFI_ERROR (ReturnStatus)) {
+    ReturnStatus = Status;
   }
 
 Done:

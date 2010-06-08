@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2006, Intel Corporation                                                         
+Copyright (c) 2005 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -345,6 +345,9 @@ LoadDriver (
   CHAR16                    *LoadOptions;
   UINTN                     LoadOptionsSize;
   CHAR16                    *Cwd;
+  EFI_IMAGE_DOS_HEADER      DosHeader;
+  EFI_IMAGE_FILE_HEADER     ImageHeader;
+  EFI_IMAGE_OPTIONAL_HEADER OptionalHeader;
 
   NodePath  = FileDevicePath (NULL, Arg->FileName);
   FilePath  = AppendDevicePath (Arg->ParentDevicePath, NodePath);
@@ -355,6 +358,28 @@ LoadDriver (
 
   if (!FilePath) {
     return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Check whether Image is valid to be loaded.
+  //
+  Status = LibGetImageHeader (
+    FilePath,
+    &DosHeader,
+    &ImageHeader,
+    &OptionalHeader
+    );
+  if (!EFI_ERROR (Status) && !EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
+     (OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER || 
+      OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER)) {
+    FreePool (FilePath);
+    PrintToken (
+      STRING_TOKEN (STR_LOAD_IMAGE_TYPE_UNSUPPORTED),
+      HiiLoadHandle,
+      LibGetMachineTypeString (ImageHeader.Machine),
+      LibGetMachineTypeString (EFI_IMAGE_MACHINE_TYPE)
+      );
+    return EFI_INVALID_PARAMETER;
   }
 
   Status = BS->LoadImage (
@@ -368,6 +393,9 @@ LoadDriver (
   FreePool (FilePath);
 
   if (EFI_ERROR (Status)) {
+    if (Status == EFI_SECURITY_VIOLATION) {
+      BS->UnloadImage (ImageHandle);
+    }
     PrintToken (STRING_TOKEN (STR_LOAD_NOT_IMAGE), HiiLoadHandle, Arg->FullName);
     return EFI_INVALID_PARAMETER;
   }
