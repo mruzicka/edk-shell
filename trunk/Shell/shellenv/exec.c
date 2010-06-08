@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005, Intel Corporation                                                         
+Copyright (c) 2005 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -2066,6 +2066,22 @@ Returns:
           continue;
         }
         //
+        // Check whether Image is valid to be loaded.
+        //
+        Status = LibGetImageHeader (
+                   DevicePath,
+                   &DosHeader,
+                   &ImageHeader,
+                   &OptionalHeader
+                   );
+        if (!EFI_ERROR (Status) &&
+            !EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
+            OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
+          *MachineTypeMismatch = TRUE;
+          *ImageMachineType = ImageHeader.Machine;
+          goto Done;
+        }
+        //
         // Attempt to load the image
         //
         Status = BS->LoadImage (
@@ -2078,20 +2094,10 @@ Returns:
                       );
         if (!EFI_ERROR (Status)) {
           goto Done;
-        } else {
-          Status = LibGetImageHeader (
-                     DevicePath,
-                     &DosHeader,
-                     &ImageHeader,
-                     &OptionalHeader
-                     );
-          if (!EFI_ERROR (Status) &&
-              !EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
-              OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
-            *MachineTypeMismatch = TRUE;
-            *ImageMachineType = ImageHeader.Machine;
-            goto Done;
-          }
+        } else if (Status == EFI_SECURITY_VIOLATION) {
+          BS->UnloadImage (ImageHandle);
+          ImageHandle = NULL;
+          goto Done;
         }
         //
         // Try as a ".nsh" file
