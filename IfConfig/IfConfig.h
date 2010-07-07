@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -40,7 +40,9 @@ typedef struct {
   EFI_HANDLE                  Handle;
   NIC_ADDR                    NicAddress;
   UINT16                      Name[IP4_NIC_NAME_LENGTH];
-  
+  BOOLEAN                     MediaPresentSupported;
+  BOOLEAN                     MediaPresent;
+
   EFI_NIC_IP4_CONFIG_PROTOCOL *NicIp4Config;
   EFI_IP4_CONFIG_PROTOCOL     *Ip4Config;
 

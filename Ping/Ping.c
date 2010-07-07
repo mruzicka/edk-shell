@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution.  The full text of the license may be found at        
@@ -32,21 +32,27 @@ EFI_HII_HANDLE  HiiHandle;
 EFI_GUID  EfiPingGuid = EFI_PING_GUID;
 SHELL_VAR_CHECK_ITEM  PingCheckList[] = {
   {
+    L"-s",
+    0,
+    0,
+    FlagTypeNeedVar
+  },
+  {
     L"-n",
-    0x1,
-    0x6,
+    0,
+    0,
     FlagTypeNeedVar
   },
   {
     L"-l",
-    0x2,
-    0x5,
+    0,
+    0,
     FlagTypeNeedVar
   },
   {
     L"-?",
-    0x4,
-    0x3,
+    0,
+    0,
     FlagTypeSingle
   },
   {
@@ -283,6 +289,7 @@ Returns:
   return (UINT16) Sum;
 }
 
+STATIC
 UINT16
 NetChecksum (
   IN UINT8   *Buffer,
@@ -759,10 +766,11 @@ Returns:
 }
 
 STATIC
-EFI_STATUS
+EFI_HANDLE
 OpenIp4Protocol (
   IN  EFI_HANDLE        ImageHandle,
-  IN  EFI_HANDLE        *ChildHandle,
+  IN  UINT32            NicIndex,
+  OUT EFI_HANDLE        *ChildHandle,
   OUT EFI_IP4_PROTOCOL  **Ip4Proto
   )
 /*++
@@ -773,28 +781,56 @@ Routine Description:
 
 Arguments:
 
-  ImageHandle - The image handle.
-  ChildHandle - Pointer to the child handle.
-  Ip4Proto    - Pointer to the Ip4 protocol.
+  ImageHandle   - The image handle.
+  ServiceHandle - The Service binding handle.
+  ChildHandle   - Pointer to the child handle.
+  Ip4Proto      - Pointer to the Ip4 protocol.
 
 Returns:
 
-  EFI_SUCCESS - The ip4 protocol is opened.
-  other       - Some error occurs.
+  Handle     - The network service binding handle.
+  NULL       - Some error occurs.
 
 --*/
 {
   EFI_STATUS                    Status;
+  EFI_HANDLE                    *Handles;
+  UINTN                         HandleCount;
+  EFI_HANDLE                    *ServiceHandle;
   EFI_SERVICE_BINDING_PROTOCOL  *Ip4Sb;
 
-  Status = BS->LocateProtocol (&gEfiIp4ServiceBindingProtocolGuid, NULL, &Ip4Sb);
+  //
+  // Locate all network device handles
+  //
+  Status = BS->LocateHandleBuffer (
+                 ByProtocol,
+                 &gEfiManagedNetworkServiceBindingProtocolGuid,
+                 NULL,
+                 &HandleCount,
+                 &Handles
+                 );
+  if (EFI_ERROR (Status) || (NicIndex >= HandleCount)) {
+    return NULL;
+  }
+  ServiceHandle = Handles[NicIndex];
+  FreePool (Handles);
+
+  Ip4Sb = NULL;
+  Status = BS->OpenProtocol (
+                ServiceHandle,
+                &gEfiIp4ServiceBindingProtocolGuid,
+                (VOID **) &Ip4Sb,
+                ImageHandle,
+                ServiceHandle,
+                EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                );
   if (EFI_ERROR (Status)) {
-    return Status;
+    return NULL;
   }
 
   Status = Ip4Sb->CreateChild (Ip4Sb, ChildHandle);
   if (EFI_ERROR (Status)) {
-    return Status;
+    return NULL;
   }
 
   Status = BS->OpenProtocol (
@@ -807,15 +843,17 @@ Returns:
                 );
   if (EFI_ERROR (Status)) {
     Ip4Sb->DestroyChild (Ip4Sb, *ChildHandle);
+    return NULL;
   }
 
-  return Status;
+  return ServiceHandle;
 }
 
 STATIC
 VOID
 CloseIp4Protocol (
   IN EFI_HANDLE ImageHandle,
+  IN EFI_HANDLE ServiceHandle,
   IN EFI_HANDLE ChildHandle
   )
 /*++
@@ -826,8 +864,9 @@ Routine Description:
 
 Arguments:
 
-  ImageHandle - The image handle.
-  ChildHandle - The child handle.
+  ImageHandle   - The image handle.
+  ServiceHandle - The network service binding handle.
+  ChildHandle   - The child handle.
 
 Returns:
 
@@ -835,6 +874,7 @@ Returns:
 
 --*/
 {
+  EFI_STATUS                    Status;
   EFI_SERVICE_BINDING_PROTOCOL  *Ip4Sb;
 
   BS->CloseProtocol (
@@ -844,15 +884,25 @@ Returns:
         ChildHandle
         );
 
-  BS->LocateProtocol (&gEfiIp4ServiceBindingProtocolGuid, NULL, &Ip4Sb);
-
-  Ip4Sb->DestroyChild (Ip4Sb, ChildHandle);
+  Ip4Sb = NULL;
+  Status = BS->OpenProtocol (
+                ServiceHandle,
+                &gEfiIp4ServiceBindingProtocolGuid,
+                (VOID **) Ip4Sb,
+                ImageHandle,
+                ServiceHandle,
+                EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                );
+  if (!EFI_ERROR (Status) && (Ip4Sb != NULL)) {
+    Ip4Sb->DestroyChild (Ip4Sb, ChildHandle);
+  }
 }
 
 STATIC
 EFI_STATUS
 PingMainProc (
   IN EFI_HANDLE  ImageHandle,
+  IN UINT32      NicIndex,
   IN UINT32      SendNumber,
   IN UINT32      BufferSize
   )
@@ -865,6 +915,7 @@ Routine Description:
 Arguments:
 
   ImageHandle - The image handle.
+  NicIndex    - The zero-based NIC index.
   SendNumber  - The required counts of the ICMP echo request packets.
   BufferSize  - The buffer size of the ICMP echo request packets.
 
@@ -877,6 +928,7 @@ Returns:
 {
   EFI_STATUS                    Status;
   EFI_IP4_PROTOCOL              *Ip4Proto;
+  EFI_HANDLE                    Ip4ServiceHandle;
   EFI_HANDLE                    Ip4ChildHandle;
   UINT64                        CurrentTick;
   EFI_EVENT                     SendTimer;
@@ -915,9 +967,9 @@ Returns:
   //
   // Open the Ip4 protocol.
   //
-  Status = OpenIp4Protocol (ImageHandle, &Ip4ChildHandle, &Ip4Proto);
-  if (EFI_ERROR (Status)) {
-    return Status;
+  Ip4ServiceHandle = OpenIp4Protocol (ImageHandle, NicIndex, &Ip4ChildHandle, &Ip4Proto);
+  if (Ip4ServiceHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
   }
 
   //
@@ -1206,7 +1258,7 @@ Exit:
     FreePool (IcmpEchoRequest);
   }
 
-  CloseIp4Protocol (ImageHandle, Ip4ChildHandle);
+  CloseIp4Protocol (ImageHandle, Ip4ServiceHandle, Ip4ChildHandle);
 
   return Status;
 }
@@ -1238,6 +1290,10 @@ Returns:
 --*/
 {
   EFI_STATUS                    Status;
+  UINT64                        NicIndex;
+  EFI_IP4_PROTOCOL              *Ip4Proto;
+  EFI_HANDLE                    Ip4ServiceHandle;
+  EFI_HANDLE                    Ip4ChildHandle;
   UINT64                        BufferSize;
   UINT64                        SendNumber;
   CHAR16                        *Useful;
@@ -1306,8 +1362,41 @@ Returns:
     goto Done;
   }
 
+  NicIndex = 0;
   SendNumber = 10;
   BufferSize = 0;
+
+  Item = LibCheckVarGetFlag (&ChkPck, L"-s");
+  if (Item != NULL) {
+    //
+    // Keep consistent naming convention with ifconfig.
+    //
+    if ((StrLen (Item->VarStr) <= 3) ||
+        ((StrnCmp (Item->VarStr, L"eth", 3) != 0) && (StrnCmp (Item->VarStr, L"unk", 3) != 0))) {
+      PrintToken (STRING_TOKEN (STR_PING_INVALID_INTERFACE), HiiHandle, Item->VarStr);
+      Status = EFI_INVALID_PARAMETER;
+      goto Done;
+    }
+
+    NicIndex = StrToUInteger (Item->VarStr + 3, &Status);
+    if (EFI_ERROR (Status)) {
+      PrintToken (STRING_TOKEN (STR_PING_INVALID_INTERFACE), HiiHandle, Item->VarStr);
+      Status = EFI_INVALID_PARAMETER;
+      goto Done;
+    }
+
+    //
+    // Try to open Ip4 protocol from this interface.
+    //
+    Ip4ChildHandle = NULL;
+    Ip4Proto = NULL;
+    Ip4ServiceHandle = OpenIp4Protocol (ImageHandle, (UINT32) NicIndex, &Ip4ChildHandle, &Ip4Proto);
+    if (Ip4ServiceHandle == NULL) {
+      PrintToken (STRING_TOKEN (STR_PING_INVALID_INTERFACE), HiiHandle, Item->VarStr);
+      Status = EFI_INVALID_PARAMETER;
+      goto Done;
+    }
+  }
 
   Item = LibCheckVarGetFlag (&ChkPck, L"-n");
   if (Item !=  NULL) {
@@ -1341,6 +1430,7 @@ Returns:
   
   Status = PingMainProc (
              ImageHandle,
+             (UINT32) NicIndex,
              (UINT32) SendNumber,
              (UINT32) BufferSize
              );
