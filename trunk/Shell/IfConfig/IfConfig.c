@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2009, Intel Corporation                                                         
+Copyright (c) 2006 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -544,6 +544,77 @@ ON_ERROR:
 }
 
 EFI_STATUS
+IfConfigGetNicMediaStatus (
+  IN  EFI_HANDLE                    ImageHandle,
+  IN  EFI_HANDLE                    Handle,
+  OUT BOOLEAN                       *MediaPresentSupported,
+  OUT BOOLEAN                       *MediaPresent
+  )    
+/*++
+
+Routine Description:
+  Get network physical device NIC information.
+
+Arguments:
+  ImageHandle - The image handle of this application.
+  Handle      - The network physical device handle.
+  NicAddr     - NIC information.
+
+Returns:
+  EFI_SUCCESS - Get NIC information successfully.
+  Other       - Fails to get NIC information.
+
+--*/                  
+{
+  EFI_STATUS                    Status;
+  EFI_HANDLE                    MnpHandle;
+  EFI_SIMPLE_NETWORK_MODE       SnpMode;
+  EFI_MANAGED_NETWORK_PROTOCOL  *Mnp;
+
+  MnpHandle = NULL;
+  Mnp       = NULL;
+
+  Status = ShellCreateServiceChild (
+             Handle,
+             ImageHandle, 
+             &gEfiManagedNetworkServiceBindingProtocolGuid,
+             &MnpHandle
+             );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = BS->HandleProtocol (
+                  MnpHandle,
+                  &gEfiManagedNetworkProtocolGuid,
+                  (VOID **) &Mnp
+                  );
+  if (EFI_ERROR (Status)) {
+    goto ON_ERROR;
+  }
+
+  Status = Mnp->GetModeData (Mnp, NULL, &SnpMode);
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_STARTED)) {
+    goto ON_ERROR;
+  }
+ 
+  *MediaPresentSupported = SnpMode.MediaPresentSupported;
+  *MediaPresent = SnpMode.MediaPresent;
+
+ON_ERROR:
+
+  ShellDestroyServiceChild (
+    Handle,
+    ImageHandle, 
+    &gEfiManagedNetworkServiceBindingProtocolGuid,
+    MnpHandle
+    );
+
+  return Status;
+
+}
+
+EFI_STATUS
 IfconfigGetAllNicInfoByHii (
   EFI_HANDLE                  ImageHandle
   )
@@ -660,6 +731,11 @@ Returns:
     } else {
       SPrint (NicInfo->Name, 0, L"unk%d", Index);
     }
+
+    //
+    // Get media status
+    //
+    IfConfigGetNicMediaStatus (ImageHandle, Handles[Index], &NicInfo->MediaPresentSupported, &NicInfo->MediaPresent);
 
     NicConfigRequest = AllocateZeroPool (NIC_ITEM_CONFIG_SIZE);
     if (NicConfigRequest == NULL) {
@@ -863,7 +939,7 @@ ON_EXIT:
 
 EFI_STATUS
 IfconfigGetAllNicInfo (
-  VOID
+  EFI_HANDLE                  ImageHandle
   )
 /*++
 
@@ -989,6 +1065,11 @@ Returns:
     if (EFI_ERROR (Status)) {
       goto ON_ERROR;
     }
+
+    //
+    // Get media status
+    //
+    IfConfigGetNicMediaStatus (ImageHandle, Handles[Index], &NicInfo->MediaPresentSupported, &NicInfo->MediaPresent);
 
     InsertTailList (&NicInfoList, &NicInfo->Link);
     
@@ -1677,6 +1758,7 @@ Returns:
 
     PrintToken (STRING_TOKEN (STR_IFCONFIG_NIC_NAME), HiiHandle, NicInfo->Name);
     PrintMac (L"  MAC        : ", &NicInfo->NicAddress.MacAddr);
+    Print (L"  Media State: %s\n", NicInfo->MediaPresent ? L"Media present" : L"Media disconnected");
 
     if (NicInfo->ConfigInfo == NULL) {
       PrintToken (STRING_TOKEN (STR_IFCONFIG_NIC_NOT_CONFIGURED), HiiHandle);
@@ -1874,7 +1956,7 @@ Returns:
     goto Done;
   }
 
-  Status = IfconfigGetAllNicInfo ();
+  Status = IfconfigGetAllNicInfo (ImageHandle);
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
   if (EFI_ERROR (Status)) {
     Status = IfconfigGetAllNicInfoByHii (ImageHandle);
