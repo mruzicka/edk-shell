@@ -1099,19 +1099,20 @@ Returns:
   // if a bus typed one is found and its bus range covers bus, this handle
   // is the handle we are looking for.
   //
-  if ((*Descriptors)->Desc == ACPI_END_TAG_DESCRIPTOR) {
-    *IsEnd = TRUE;
-  }
 
   while ((*Descriptors)->Desc != ACPI_END_TAG_DESCRIPTOR) {
     if ((*Descriptors)->ResType == ACPI_ADDRESS_SPACE_TYPE_BUS) {
       *MinBus = (UINT16) (*Descriptors)->AddrRangeMin;
       *MaxBus = (UINT16) (*Descriptors)->AddrRangeMax;
       (*Descriptors)++;
-      break;
+      return EFI_SUCCESS;
     }
 
     (*Descriptors)++;
+  }
+
+  if ((*Descriptors)->Desc == ACPI_END_TAG_DESCRIPTOR) {
+    *IsEnd = TRUE;
   }
 
   return EFI_SUCCESS;
