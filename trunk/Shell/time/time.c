@@ -208,9 +208,9 @@ Returns:
         PrintToken (
           STRING_TOKEN (STR_TIME_THREE_VARS),
           HiiHandle,
-          Time.Hour,
-          Time.Minute,
-          Time.Second,
+          (UINTN) Time.Hour,
+          (UINTN) Time.Minute,
+          (UINTN) Time.Second,
           wchSign,
           nValue / 100,
           nValue % 100

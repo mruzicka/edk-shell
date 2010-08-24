@@ -207,7 +207,13 @@ Notes:
   if (ChkPck.ValueCount == 0) {
     Status = RT->GetTime (&Time, NULL);
     if (!EFI_ERROR (Status)) {
-      PrintToken (STRING_TOKEN (STR_DATE_PRINTDATE), HiiHandle, Time.Month, Time.Day, Time.Year);
+      PrintToken (
+        STRING_TOKEN (STR_DATE_PRINTDATE),
+        HiiHandle,
+        (UINTN) Time.Month,
+        (UINTN) Time.Day,
+        (UINTN) Time.Year
+        );
     } else {
       PrintToken (STRING_TOKEN (STR_DATE_CLOCK_NOT_FUNC), HiiHandle);
     }
