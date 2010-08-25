@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2010, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -648,10 +648,10 @@ Returns:
     PrintToken (
       STRING_TOKEN (STR_NSHELL_VERSION),
       HiiNewshellHandle,
-      (ST->Hdr.Revision >> 16),
-      (ST->Hdr.Revision & 0xffff),
-      (ST->FirmwareRevision >> 16),
-      (ST->FirmwareRevision & 0xffff),
+      (UINTN)(ST->Hdr.Revision >> 16),
+      (UINTN)(ST->Hdr.Revision & 0xffff),
+      (UINTN)(ST->FirmwareRevision >> 16),
+      (UINTN)(ST->FirmwareRevision & 0xffff),
       EFI_SHELL_ENHANCED_MODE_VER
       );
     //
