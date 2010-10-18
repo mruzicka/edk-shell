@@ -402,13 +402,13 @@ MainCommandOpenFile (
   //
   Status = MainInputBarSetPrompt (L"File Name to Open: ");
   if (EFI_ERROR (Status)) {
-    FileBufferRead (MainEditor.FileBuffer->FileName, TRUE);
+    FileBufferRead (&MainEditor.FileBuffer->FileName, TRUE);
     return Status;
   }
 
   Status = MainInputBarSetStringSize (100);
   if (EFI_ERROR (Status)) {
-    FileBufferRead (MainEditor.FileBuffer->FileName, TRUE);
+    FileBufferRead (&MainEditor.FileBuffer->FileName, TRUE);
     return Status;
   }
 
@@ -429,7 +429,7 @@ MainCommandOpenFile (
       // CHECK if filename is valid
       //
       if (!IsValidFileName (MainEditor.InputBar->ReturnString)) {
-        FileBufferRead (MainEditor.FileBuffer->FileName, TRUE);
+        FileBufferRead (&MainEditor.FileBuffer->FileName, TRUE);
         MainStatusBarSetStatusString (L"Invalid File Name");
         return EFI_SUCCESS;
       }
@@ -440,10 +440,10 @@ MainCommandOpenFile (
   //
   // read from disk
   //
-  Status = FileBufferRead (MainEditor.InputBar->ReturnString, FALSE);
+  Status = FileBufferRead (&MainEditor.InputBar->ReturnString, FALSE);
 
   if (EFI_ERROR (Status)) {
-    FileBufferRead (MainEditor.FileBuffer->FileName, TRUE);
+    FileBufferRead (&MainEditor.FileBuffer->FileName, TRUE);
     return EFI_LOAD_ERROR;
   }
 

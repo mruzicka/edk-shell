@@ -63,7 +63,7 @@ FileBufferHandleInput (
 
 EFI_STATUS
 FileBufferRead (
-  CHAR16  *,
+  CHAR16  **,
   BOOLEAN
   );
 EFI_STATUS

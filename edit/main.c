@@ -209,7 +209,7 @@ Returns:
     FileBufferSetFileName (ChkPck.VarList->VarStr);
   }
 
-  Status = FileBufferRead (MainEditor.FileBuffer->FileName, FALSE);
+  Status = FileBufferRead (&MainEditor.FileBuffer->FileName, FALSE);
   if (!EFI_ERROR (Status)) {
     MainEditorRefresh ();
     //
