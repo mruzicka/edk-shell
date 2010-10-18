@@ -708,8 +708,8 @@ FileBufferGetFileInfo (
 
 EFI_STATUS
 FileBufferRead (
-  IN CHAR16  *FileName,
-  IN BOOLEAN Recover
+  IN OUT CHAR16  **FileName,
+  IN     BOOLEAN Recover
   )
 /*++
 Routine Description: 
@@ -778,7 +778,7 @@ Returns:
   // so if you want to print the error status
   // you should set the status string
   //
-  FileNameTmp = PoolPrint (L"%s", FileName);
+  FileNameTmp = PoolPrint (L"%s", *FileName);
   if (FileNameTmp == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -916,8 +916,8 @@ Returns:
     // all the check ends
     // so now begin to set file name, free lines
     //
-    if (StrCmp (FileName, FileBuffer.FileName) != 0) {
-      FileBufferSetFileName (FileName);
+    if (StrCmp (*FileName, FileBuffer.FileName) != 0) {
+      FileBufferSetFileName (*FileName);
     }
     //
     // free the old lines
@@ -975,7 +975,7 @@ Returns:
           return EFI_OUT_OF_RESOURCES;
         }
 
-        if (StrLen (Info2->FileName) == StrLen (FileName)) {
+        if (StrLen (Info2->FileName) == StrLen (*FileName)) {
           StrCpy (FileNameTmp, Info2->FileName);
         } else {
           StrCpy (FileNameTmp, Arg->ParentName);
@@ -1272,9 +1272,9 @@ Done:
     //
     i             = 0;
     FSMappingPtr  = NULL;
-    while (FileName[i] != 0) {
-      if (FileName[i] == L':') {
-        FSMappingPtr = &FileName[i];
+    while ((*FileName)[i] != 0) {
+      if ((*FileName)[i] == L':') {
+        FSMappingPtr = &(*FileName)[i];
         break;
       }
 
@@ -1286,12 +1286,12 @@ Done:
     } else {
       i = 0;
       j = 0;
-      while (FileName[i] != 0) {
-        if (FileName[i] == L':') {
+      while ((*FileName)[i] != 0) {
+        if ((*FileName)[i] == L':') {
           break;
         }
 
-        FSMapping[j++] = FileName[i];
+        FSMapping[j++] = (*FileName)[i];
 
         i++;
       }
