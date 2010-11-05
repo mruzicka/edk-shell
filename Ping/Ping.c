@@ -63,6 +63,48 @@ SHELL_VAR_CHECK_ITEM  PingCheckList[] = {
   }
 };
 
+//
+// All the supported IP4 maskes in host byte order.
+//
+IP4_ADDR  gIp4AllMasks[IP4_MASK_NUM] = {
+  0x00000000,
+  0x80000000,
+  0xC0000000,
+  0xE0000000,
+  0xF0000000,
+  0xF8000000,
+  0xFC000000,
+  0xFE000000,
+
+  0xFF000000,
+  0xFF800000,
+  0xFFC00000,
+  0xFFE00000,
+  0xFFF00000,
+  0xFFF80000,
+  0xFFFC0000,
+  0xFFFE0000,
+
+  0xFFFF0000,
+  0xFFFF8000,
+  0xFFFFC000,
+  0xFFFFE000,
+  0xFFFFF000,
+  0xFFFFF800,
+  0xFFFFFC00,
+  0xFFFFFE00,
+
+  0xFFFFFF00,
+  0xFFFFFF80,
+  0xFFFFFFC0,
+  0xFFFFFFE0,
+  0xFFFFFFF0,
+  0xFFFFFFF8,
+  0xFFFFFFFC,
+  0xFFFFFFFE,
+  0xFFFFFFFF,
+};
+
 EFI_IPv4_ADDRESS  DestinationIp;
 EFI_LIST_ENTRY    IcmpTxTimeoutList;
 UINT16            Identifier;
@@ -521,6 +563,106 @@ Returns:
 }
 
 STATIC
+INTN
+EFIAPI
+NetGetIpClass (
+  IN IP4_ADDR               Addr
+  )
+/*++
+
+Routine Description:
+
+  Return the class of the IP address, such as class A, B, C.
+  Addr is in host byte order.
+
+  The address of class A  starts with 0.
+  If the address belong to class A, return IP4_ADDR_CLASSA.
+  The address of class B  starts with 10.
+  If the address belong to class B, return IP4_ADDR_CLASSB.
+  The address of class C  starts with 110.
+  If the address belong to class C, return IP4_ADDR_CLASSC.
+  The address of class D  starts with 1110.
+  If the address belong to class D, return IP4_ADDR_CLASSD.
+  The address of class E  starts with 1111.
+  If the address belong to class E, return IP4_ADDR_CLASSE.
+
+Arguments:
+
+  Addr - The address to get the class from.
+
+Returns:
+
+  IP address class, such as IP4_ADDR_CLASSA.
+
+--*/
+{
+  UINT8                     ByteOne;
+
+  ByteOne = (UINT8) (Addr >> 24);
+
+  if ((ByteOne & 0x80) == 0) {
+    return IP4_ADDR_CLASSA;
+
+  } else if ((ByteOne & 0xC0) == 0x80) {
+    return IP4_ADDR_CLASSB;
+
+  } else if ((ByteOne & 0xE0) == 0xC0) {
+    return IP4_ADDR_CLASSC;
+
+  } else if ((ByteOne & 0xF0) == 0xE0) {
+    return IP4_ADDR_CLASSD;
+
+  } else {
+    return IP4_ADDR_CLASSE;
+
+  }
+}
+
+STATIC
+BOOLEAN
+EFIAPI
+NetIp4IsUnicast (
+  IN IP4_ADDR               Ip,
+  IN IP4_ADDR               NetMask
+  )
+/*++
+
+Routine Description:
+
+  Check whether the IP is a valid unicast address according to the netmask.
+  If NetMask is zero, use the IP address's class to get the default mask.
+
+Arguments:
+
+  Ip      - The IP to check against.
+  NetMask - The mask of the IP.
+
+Returns:
+
+  TRUE if IP is a valid unicast address on the network, otherwise FALSE.
+
+--*/
+{
+  INTN                      Class;
+
+  Class = NetGetIpClass (Ip);
+
+  if ((Ip == 0) || (Class >= IP4_ADDR_CLASSD)) {
+    return FALSE;
+  }
+
+  if (NetMask == 0) {
+    NetMask = gIp4AllMasks[Class << 3];
+  }
+
+  if (((Ip &~NetMask) == ~NetMask) || ((Ip &~NetMask) == 0)) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+STATIC
 VOID
 HandleIcmpEchoReply (
   IN EFI_IP4_RECEIVE_DATA  *RxData
@@ -555,8 +697,9 @@ Returns:
     //
     return;
   }
-
-  if (!EFI_IP4_EQUAL (RxData->Header->SourceAddress, DestinationIp)) {
+  
+  if (NetIp4IsUnicast (NTOHL (EFI_IP4 (DestinationIp)), 0) && 
+      !EFI_IP4_EQUAL (RxData->Header->SourceAddress, DestinationIp)) {
     //
     // The source address of this ICMP packet is different from the DestinationIp.
     //
