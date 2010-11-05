@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006, Intel Corporation                                                         
+Copyright (c) 2006 - 2010, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -38,7 +38,27 @@ Revision History
 
 #define PING_MAX_BUFFER_SIZE    32768
 
+//
+// The address classification
+//
+#define  IP4_ADDR_CLASSA        1
+#define  IP4_ADDR_CLASSB        2
+#define  IP4_ADDR_CLASSC        3
+#define  IP4_ADDR_CLASSD        4
+#define  IP4_ADDR_CLASSE        5
+
+#define  IP4_MASK_NUM           33
+
+typedef UINT32 IP4_ADDR;
+
 #define EFI_IP4_EQUAL(Ip1, Ip2) (CompareMem (&(Ip1), &(Ip2), sizeof (EFI_IPv4_ADDRESS)) == 0)
+
+#define EFI_IP4(EfiIpAddr)      (*(IP4_ADDR *) ((EfiIpAddr).Addr))
+
+#define NTOHL(x) (UINT32)((((UINT32) (x) & 0xff)     << 24) | \
+                          (((UINT32) (x) & 0xff00)   << 8)  | \
+                          (((UINT32) (x) & 0xff0000) >> 8)  | \
+                          (((UINT32) (x) & 0xff000000) >> 24))
 
 #pragma pack(1)
 typedef struct _EFI_ICMP_ECHO_REQUEST {
