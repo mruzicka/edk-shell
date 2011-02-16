@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -70,7 +70,7 @@ SHELL_VAR_CHECK_ITEM    TzoneCheckList[] = {
 };
 
 struct tagMap {
-  INTN  m_nValue;
+  INT16 m_nValue; // Timezone value in EFI_TIME structure.( = UTC - local time). 
   UINTN m_uToken;
 };
 
@@ -83,12 +83,12 @@ InitializeTZone (
 BOOLEAN
 TZoneArgtoValue (
   IN CHAR16              *wszValue,
-  OUT INTN               *pnValue
+  OUT INT16              *pnValue
   );
 
 EFI_STATUS
 TZoneSetValue (
-  IN INTN                  nValue
+  IN INT16                  nValue
   );
 
 EFI_STATUS
@@ -102,136 +102,136 @@ EFI_BOOTSHELL_CODE(
 
 struct tagMap gTZMap[] = {
   {
-    -1200,
-    STRING_TOKEN(STR_TZONE_GMT_N1200)
+    720,
+    STRING_TOKEN(STR_TZONE_GMT_N720)
   },
   {
-    -1100,
-    STRING_TOKEN(STR_TZONE_GMT_N1100)
-  },
-  {
-    -1000,
-    STRING_TOKEN(STR_TZONE_GMT_N1000)
-  },
-  {
-    -900,
-    STRING_TOKEN(STR_TZONE_GMT_N0900)
-  },
-  {
-    -800,
-    STRING_TOKEN(STR_TZONE_GMT_N0800)
-  },
-  {
-    -700,
-    STRING_TOKEN(STR_TZONE_GMT_N0700)
-  },
-  {
-    -600,
-    STRING_TOKEN(STR_TZONE_GMT_N0600)
-  },
-  {
-    -500,
-    STRING_TOKEN(STR_TZONE_GMT_N0500)
-  },
-  {
-    -400,
-    STRING_TOKEN(STR_TZONE_GMT_N0400)
-  },
-  {
-    -330,
-    STRING_TOKEN(STR_TZONE_GMT_N0330)
-  },
-  {
-    -300,
-    STRING_TOKEN(STR_TZONE_GMT_N0300)
-  },
-  {
-    -200,
-    STRING_TOKEN(STR_TZONE_GMT_N0200)
-  },
-  {
-    -100,
-    STRING_TOKEN(STR_TZONE_GMT_N0100)
-  },
-  {
-    0,
-    STRING_TOKEN(STR_TZONE_GMT_0000)
-  },
-  {
-    100,
-    STRING_TOKEN(STR_TZONE_GMT_P0100)
-  },
-  {
-    200,
-    STRING_TOKEN(STR_TZONE_GMT_P0200)
-  },
-  {
-    300,
-    STRING_TOKEN(STR_TZONE_GMT_P0300)
-  },
-  {
-    330,
-    STRING_TOKEN(STR_TZONE_GMT_P0330)
-  },
-  {
-    400,
-    STRING_TOKEN(STR_TZONE_GMT_P0400)
-  },
-  {
-    430,
-    STRING_TOKEN(STR_TZONE_GMT_P0430)
-  },
-  {
-    500,
-    STRING_TOKEN(STR_TZONE_GMT_P0500)
-  },
-  {
-    530,
-    STRING_TOKEN(STR_TZONE_GMT_P0530)
-  },
-  {
-    545,
-    STRING_TOKEN(STR_TZONE_GMT_P0545)
+    660,
+    STRING_TOKEN(STR_TZONE_GMT_N660)
   },
   {
     600,
-    STRING_TOKEN(STR_TZONE_GMT_P0600)
+    STRING_TOKEN(STR_TZONE_GMT_N600)
   },
   {
-    630,
-    STRING_TOKEN(STR_TZONE_GMT_P0630)
+    540,
+    STRING_TOKEN(STR_TZONE_GMT_N540)
   },
   {
-    700,
-    STRING_TOKEN(STR_TZONE_GMT_P0700)
+    480,
+    STRING_TOKEN(STR_TZONE_GMT_N480)
   },
   {
-    800,
-    STRING_TOKEN(STR_TZONE_GMT_P0800)
+    420,
+    STRING_TOKEN(STR_TZONE_GMT_N420)
   },
   {
-    900,
-    STRING_TOKEN(STR_TZONE_GMT_P0900)
+    360,
+    STRING_TOKEN(STR_TZONE_GMT_N360)
   },
   {
-    930,
-    STRING_TOKEN(STR_TZONE_GMT_P0930)
+    300,
+    STRING_TOKEN(STR_TZONE_GMT_N300)
   },
   {
-    1000,
-    STRING_TOKEN(STR_TZONE_GMT_P1000)
+    240,
+    STRING_TOKEN(STR_TZONE_GMT_N240)
   },
   {
-    1100,
-    STRING_TOKEN(STR_TZONE_GMT_P1100)
+    210,
+    STRING_TOKEN(STR_TZONE_GMT_N210)
   },
   {
-    1200,
-    STRING_TOKEN(STR_TZONE_GMT_P1200)
+    180,
+    STRING_TOKEN(STR_TZONE_GMT_N180)
   },
   {
-    1300,
-    STRING_TOKEN(STR_TZONE_GMT_P1300)
+    120,
+    STRING_TOKEN(STR_TZONE_GMT_N120)
+  },
+  {
+    60,
+    STRING_TOKEN(STR_TZONE_GMT_N060)
+  },
+  {
+    0,
+    STRING_TOKEN(STR_TZONE_GMT_000)
+  },
+  {
+    -60,
+    STRING_TOKEN(STR_TZONE_GMT_P060)
+  },
+  {
+    -120,
+    STRING_TOKEN(STR_TZONE_GMT_P120)
+  },
+  {
+    -180,
+    STRING_TOKEN(STR_TZONE_GMT_P180)
+  },
+  {
+    -210,
+    STRING_TOKEN(STR_TZONE_GMT_P210)
+  },
+  {
+    -240,
+    STRING_TOKEN(STR_TZONE_GMT_P240)
+  },
+  {
+    -270,
+    STRING_TOKEN(STR_TZONE_GMT_P270)
+  },
+  {
+    -300,
+    STRING_TOKEN(STR_TZONE_GMT_P300)
+  },
+  {
+    -330,
+    STRING_TOKEN(STR_TZONE_GMT_P330)
+  },
+  {
+    -345,
+    STRING_TOKEN(STR_TZONE_GMT_P345)
+  },
+  {
+    -360,
+    STRING_TOKEN(STR_TZONE_GMT_P360)
+  },
+  {
+    -390,
+    STRING_TOKEN(STR_TZONE_GMT_P390)
+  },
+  {
+    -420,
+    STRING_TOKEN(STR_TZONE_GMT_P420)
+  },
+  {
+    -480,
+    STRING_TOKEN(STR_TZONE_GMT_P480)
+  },
+  {
+    -540,
+    STRING_TOKEN(STR_TZONE_GMT_P540)
+  },
+  {
+    -570,
+    STRING_TOKEN(STR_TZONE_GMT_P570)
+  },
+  {
+    -600,
+    STRING_TOKEN(STR_TZONE_GMT_P600)
+  },
+  {
+    -660,
+    STRING_TOKEN(STR_TZONE_GMT_P660)
+  },
+  {
+    -720,
+    STRING_TOKEN(STR_TZONE_GMT_P720)
+  },
+  {
+    -780,
+    STRING_TOKEN(STR_TZONE_GMT_P780)
   }
 };
 
@@ -257,12 +257,13 @@ InitializeTZone (
   BOOLEAN                 bFullInfo;
   BOOLEAN                 bList;
   BOOLEAN                 bSet;
-  INTN                    nValue;
+  INT16                   nValue;
   UINTN                   uValueSize;
   SHELL_VAR_CHECK_CODE    RetCode;
   CHAR16                  *Useful;
   SHELL_VAR_CHECK_PACKAGE ChkPck;
   SHELL_ARG_LIST          *Item;
+  EFI_TIME                Time;
 
   bFullInfo     = FALSE;
   bList         = FALSE;
@@ -270,6 +271,7 @@ InitializeTZone (
   nValue        = 0;
   uValueSize    = sizeof (INTN);
   ZeroMem (&ChkPck, sizeof (SHELL_VAR_CHECK_PACKAGE));
+  ZeroMem (&Time, sizeof (EFI_TIME));
   //
   // We are now being installed as an internal command driver, initialize
   // as an nshell app and run
@@ -378,10 +380,10 @@ InitializeTZone (
     }
 
     if (nValue >= 0) {
-      PrintToken (STRING_TOKEN (STR_TZONE_INVALID_VALUE), hHiiHandle, L"timezone", L"+", nValue / 100, nValue % 100);
+      PrintToken (STRING_TOKEN (STR_TZONE_INVALID_VALUE), hHiiHandle, L"timezone", L"-", nValue / 60, nValue % 60);
     } else {
       nValue = -nValue;
-      PrintToken (STRING_TOKEN (STR_TZONE_INVALID_VALUE), hHiiHandle, L"timezone", L"-", nValue / 100, nValue % 100);
+      PrintToken (STRING_TOKEN (STR_TZONE_INVALID_VALUE), hHiiHandle, L"timezone", L"+", nValue / 60, nValue % 60);
     }
 
     Status = EFI_INVALID_PARAMETER;
@@ -390,26 +392,13 @@ InitializeTZone (
     Status = TZoneList (&hHiiHandle);
     goto Done;
   } else {
-    Status = RT->GetVariable (
-                  L"TimeZone",
-                  &gEfiGenericVariableGuid,
-                  NULL,
-                  &uValueSize,
-                  &nValue
-                  );
+    Status = RT->GetTime(&Time, NULL);
     if (EFI_ERROR (Status)) {
-      if (EFI_NOT_FOUND == Status) {
-        if (bFullInfo) {
-          PrintToken (STRING_TOKEN (STR_TZONE_GMT_0000), hHiiHandle);
-        } else {
-          PrintToken (STRING_TOKEN (STR_TZONE_GMT_FMT), hHiiHandle, L"+", 0, 0);
-        }
-
-        Status = EFI_SUCCESS;
-      }
-
+      PrintToken (STRING_TOKEN (STR_GET_TIME_ERROR), hHiiHandle);
       goto Done;
     }
+    nValue = Time.TimeZone;
+
     //
     // end of if (EFI_ERROR(Status))
     //
@@ -422,10 +411,10 @@ InitializeTZone (
       }
     } else {
       if (nValue >= 0) {
-        PrintToken (STRING_TOKEN (STR_TZONE_GMT_FMT), hHiiHandle, L"+", nValue / 100, nValue % 100);
+        PrintToken (STRING_TOKEN (STR_TZONE_GMT_FMT), hHiiHandle, L"-", nValue / 60, nValue % 60);
       } else {
         nValue = -nValue;
-        PrintToken (STRING_TOKEN (STR_TZONE_GMT_FMT), hHiiHandle, L"-", nValue / 100, nValue % 100);
+        PrintToken (STRING_TOKEN (STR_TZONE_GMT_FMT), hHiiHandle, L"+", nValue / 60, nValue % 60);
       }
     }
   }
@@ -439,14 +428,14 @@ Done:
 BOOLEAN
 TZoneArgtoValue (
   IN CHAR16              *wszValue,
-  OUT INTN               *pnValue
+  OUT INT16              *pnValue
   )
 {
   UINTN   uPos;
   CHAR16  *pwchBreak;
   BOOLEAN bDigitFound;
   BOOLEAN bSignGot;
-  INTN    nSign;
+  INT16   nSign;
   UINTN   uDigitStart;
 
   uPos        = 0;
@@ -485,7 +474,7 @@ TZoneArgtoValue (
       }
 
       wszValue[uPos]  = 0;
-      *pnValue        = Atoi (wszValue + uDigitStart);
+      *pnValue        = (UINT16) Atoi (wszValue + uDigitStart);
       wszValue[uPos]  = L':';
 
       if (NULL != pwchBreak) {
@@ -531,25 +520,30 @@ TZoneArgtoValue (
     return FALSE;
   }
 
-  *pnValue *= 100;
-  *pnValue  = *pnValue + Atoi (pwchBreak);
+  *pnValue *= 60;
+  *pnValue  = *pnValue + (UINT16) Atoi (pwchBreak);
   *pnValue  = *pnValue * nSign;
 
+  *pnValue  = - (*pnValue);
   return TRUE;
 }
 
 EFI_STATUS
 TZoneSetValue (
-  IN INTN   nValue
+  IN INT16   nValue
   )
 {
-  return RT->SetVariable (
-              L"TimeZone",
-              &gEfiGenericVariableGuid,
-              EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE,
-              sizeof (INTN),
-              &nValue
-              );
+  EFI_TIME    Time;
+  EFI_STATUS  Status;
+
+  Status      = RT->GetTime (&Time, NULL);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Time.TimeZone = nValue;
+
+  return RT->SetTime(&Time);
 }
 
 EFI_STATUS
