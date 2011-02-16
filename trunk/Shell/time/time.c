@@ -1,6 +1,6 @@
 /*++
  
-Copyright (c) 2005 - 2007, Intel Corporation                                                         
+Copyright (c) 2005 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -96,8 +96,7 @@ Returns:
   UINTN                   Offset;
   UINTN                   Data;
   EFI_HII_HANDLE          HiiHandle;
-  INTN                    nValue;
-  UINTN                   uValueSize;
+  INT16                   nValue;
   CHAR16                  wchSign;
 
   SHELL_VAR_CHECK_CODE    RetCode;
@@ -188,38 +187,27 @@ Returns:
     Status = RT->GetTime (&Time, NULL);
 
     if (!EFI_ERROR (Status)) {
-      Status = RT->GetVariable (
-                    L"TimeZone",
-                    &gEfiGenericVariableGuid,
-                    NULL,
-                    &uValueSize,
-                    &nValue
-                    );
-      if (!EFI_ERROR (Status) || EFI_NOT_FOUND == Status) {
-        if (EFI_NOT_FOUND == Status) {
-          nValue = 0;
-        }
-
-        if (nValue < 0) {
-          nValue  = -nValue;
-          wchSign = L'-';
-        }
-
-        PrintToken (
-          STRING_TOKEN (STR_TIME_THREE_VARS),
-          HiiHandle,
-          (UINTN) Time.Hour,
-          (UINTN) Time.Minute,
-          (UINTN) Time.Second,
-          wchSign,
-          nValue / 100,
-          nValue % 100
-          );
-        Status = EFI_SUCCESS;
-        goto Done;
+      if (Time.TimeZone < 0) {
+        nValue  = -Time.TimeZone;
+      } else {
+        nValue = Time.TimeZone;
+        wchSign = L'-';
       }
-    }
 
+      PrintToken (
+        STRING_TOKEN (STR_TIME_THREE_VARS),
+        HiiHandle,
+        (UINTN) Time.Hour,
+        (UINTN) Time.Minute,
+        (UINTN) Time.Second,
+        wchSign,
+        nValue / 60,
+        nValue % 60
+        );
+      Status = EFI_SUCCESS;
+      goto Done;
+    }
+    
     PrintToken (STRING_TOKEN (STR_TIME_CLOCK_NOT_FUNC), HiiHandle, L"time");
     goto Done;
   }
