@@ -48,10 +48,10 @@ To build the EFI Shell with this package, user should do the following things:
         "Other\Maintained\Application\Shell\Bin\Shell.inf" with 
         "Other\Maintained\Application\Shell\Shell.inf", like this:
         [Components]
-        бнбн
+        ......
         #Other\Maintained\Application\Shell\Bin\Shell.inf
         Other\Maintained\Application\Shell\Shell.inf
-        бнбн
+        ......
 
         Type the command:
         Cd C:\EDK\Sample\Platform\Nt32\Build
@@ -68,10 +68,10 @@ To build the EFI Shell with this package, user should do the following things:
         "Other\Maintained\Application\Shell\Bin\Shell.inf" 
         with "Other\Maintained\Application\Shell\Shell.inf", like this:
         [Components]
-        бнбн
+        ......
         #Other\Maintained\Application\Shell\Bin\Shell.inf
         Other\Maintained\Application\Shell\Shell.inf
-        бнбн
+        ......
 
         Type the command:
         Cd C:\EDK\Sample\Platform\IPF\Build
