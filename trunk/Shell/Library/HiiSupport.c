@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2007, Intel Corporation                                                         
+Copyright (c) 2007 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -144,6 +144,81 @@ Returns:
   return PkgListHdr;
 }
 
+CHAR8 *
+GetSupportedLanguages (
+  IN EFI_HII_HANDLE           HiiHandle
+  )
+/*++
+
+Routine Description:
+  Retrieves a pointer to the a Null-terminated ASCII string containing the list 
+  of languages that an HII handle in the HII Database supports.  The returned 
+  string is allocated using AllocatePool().  The caller is responsible for freeing
+  the returned string using FreePool().  The format of the returned string follows
+  the language format assumed the HII Database.
+
+Arguments:
+  HiiHandle      - A handle that was previously registered in the HII Database.
+
+Returns:
+  A pointer to the Null-terminated ASCII string of supported languages.
+  NULL will return when the list of suported languages could not be retrieved.
+
+--*/
+{
+  EFI_STATUS  Status;
+  UINTN       LanguageSize;
+  CHAR8       TempSupportedLanguages;
+  CHAR8       *SupportedLanguages;
+
+  //
+  // Retrieve the size required for the supported languages buffer.
+  //
+  LanguageSize = 0;
+  Status = gLibHiiString->GetLanguages (gLibHiiString, HiiHandle, &TempSupportedLanguages, &LanguageSize);
+
+  //
+  // If GetLanguages() returns EFI_SUCCESS for a zero size, 
+  // then there are no supported languages registered for HiiHandle.  If GetLanguages() 
+  // returns an error other than EFI_BUFFER_TOO_SMALL, then HiiHandle is not present
+  // in the HII Database
+  //
+  if (Status != EFI_BUFFER_TOO_SMALL) {
+    //
+    // Return NULL if the size can not be retrieved, or if HiiHandle is not in the HII Database
+    //
+    return NULL;
+  }
+
+  //
+  // Allocate the supported languages buffer.
+  //
+  SupportedLanguages = AllocateZeroPool (LanguageSize);
+  if (SupportedLanguages == NULL) {
+    //
+    // Return NULL if allocation fails.
+    //
+    return NULL;
+  }
+
+  //
+  // Retrieve the supported languages string
+  //
+  Status = gLibHiiString->GetLanguages (gLibHiiString, HiiHandle, SupportedLanguages, &LanguageSize);
+  if (EFI_ERROR (Status)) {
+    //
+    // Free the buffer and return NULL if the supported languages can not be retrieved.
+    //
+    FreePool (SupportedLanguages);
+    return NULL;
+  }
+
+  //
+  // Return the Null-terminated ASCII string of supported languages
+  //
+  return SupportedLanguages;
+}
+
 EFI_STATUS
 GetCurrentLanguage (
   OUT     CHAR8               *Lang
@@ -256,40 +331,81 @@ LibGetString (
 {
   EFI_STATUS Status;
   CHAR8      CurrentLang[RFC_3066_ENTRY_SIZE];
+  CHAR8      *SupportedLanguage;
+  CHAR8      *BestLanguage;
+  CHAR8      *Language;
 
   Status = LocateHiiProtocols ();
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
-
+  
   GetCurrentLanguage (CurrentLang);
+  Language = CurrentLang;
 
-  Status = gLibHiiString->GetString (
-                            gLibHiiString,
-                            CurrentLang,
-                            PackageList,
-                            StringId,
-                            String,
-                            StringSize,
-                            NULL
-                            );
-
-  if (EFI_ERROR (Status) && (Status != EFI_BUFFER_TOO_SMALL)) {
+  SupportedLanguage = GetSupportedLanguages (PackageList);
+  BestLanguage      = NULL;
+  if (SupportedLanguage != NULL) {
     //
-    // Since en-US should be supported by all shell strings, if we cannot get 
-    // the string in current language, use the en-US instead.
+    // Get the best matching language to guarantee the string value could be got.
     //
-    strcpya (CurrentLang, "en-US");
+    BestLanguage = LibSelectBestLanguage (SupportedLanguage, FALSE, CurrentLang);
+    Language     = BestLanguage;
+  }
 
+  if (Language == NULL) {
+    Status = EFI_UNSUPPORTED;
+  } else {
     Status = gLibHiiString->GetString (
                               gLibHiiString,
-                              CurrentLang,
+                              Language,
                               PackageList,
                               StringId,
                               String,
                               StringSize,
                               NULL
                               );
+  }
+
+  if (EFI_ERROR (Status) && (Status != EFI_BUFFER_TOO_SMALL) && strcmpa (CurrentLang, "en-US") != 0) {
+    //
+    // Since en-US should be supported by all shell strings, if we cannot get 
+    // the string in current language, use the en-US instead.
+    //
+    strcpya (CurrentLang, "en-US");
+    Language = CurrentLang;
+    if (SupportedLanguage != NULL) {
+      if (BestLanguage != NULL) {
+        FreePool (BestLanguage);
+      }
+      //
+      // Get the best matching language to guarantee the string value could be got.
+      //
+      BestLanguage = LibSelectBestLanguage (SupportedLanguage, FALSE, CurrentLang);
+      Language = BestLanguage;
+    }
+
+    if (Language == NULL) {
+      Status = EFI_UNSUPPORTED;
+    } else {
+      Status = gLibHiiString->GetString (
+                                gLibHiiString,
+                                Language,
+                                PackageList,
+                                StringId,
+                                String,
+                                StringSize,
+                                NULL
+                                );
+    }
+  }
+  
+  if (SupportedLanguage != NULL) {
+    FreePool (SupportedLanguage);
+  }
+
+  if (BestLanguage != NULL) {
+    FreePool (BestLanguage);
   }
 
   return Status;
