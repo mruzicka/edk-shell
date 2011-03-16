@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                         
+Copyright (c) 2005 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -824,7 +824,63 @@ FakeHiiGetLanguages (
   IN OUT UINTN                        *LanguagesSize
   )
 {
-  return EFI_UNSUPPORTED;
+  EFI_FAKE_HII_DATA                     *Private;
+  FAKE_HII_DATABASE_RECORD              *DatabaseRecord;
+  EFI_LIST_ENTRY                        *Link;
+  FAKE_HII_STRING_PACKAGE               *StringPackage;  
+  BOOLEAN                               Matched = FALSE; 
+  UINTN                                 ResultSize;
+ 
+  if (This == NULL || PackageList == NULL || Languages == NULL || LanguagesSize == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (((FAKE_HII_HANDLE *) PackageList)->Signature != FAKE_HII_HANDLE_SIGNATURE) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Get the specified package list.
+  //
+  Private = EFI_STRING_FAKE_HII_DATA_FROM_THIS (This);
+  DatabaseRecord = NULL;
+  for (Link = Private->DatabaseList.Flink; Link != &Private->DatabaseList; Link = Link->Flink) {
+    DatabaseRecord = CR (Link, FAKE_HII_DATABASE_RECORD, Entry, FAKE_HII_DATABASE_RECORD_SIGNATURE);
+    if (DatabaseRecord->Handle == PackageList) {
+      Matched = TRUE;
+      break;
+    }
+  }
+
+  if (!Matched) {
+    return EFI_NOT_FOUND;
+  }
+  
+  //
+  // Search the languages in the specified packagelist.
+  //
+  ResultSize = 0;
+  for (Link = DatabaseRecord->StringPkgHdr.Flink; Link != &DatabaseRecord->StringPkgHdr; Link = Link->Flink) {
+    StringPackage = CR (Link, FAKE_HII_STRING_PACKAGE, Entry, FAKE_HII_STRING_PACKAGE_SIGNATURE);
+    ResultSize += strlena (StringPackage->StringPkgHdr->Language) + 1;
+    if (ResultSize <= *LanguagesSize) {
+      strcpya (Languages, StringPackage->StringPkgHdr->Language);
+      Languages += strlena (StringPackage->StringPkgHdr->Language) + 1;
+      *(Languages - 1) = L';';
+    }
+  }
+
+  if (ResultSize == 0) {
+    return EFI_NOT_FOUND;
+  }
+
+  if (*LanguagesSize < ResultSize) {
+    *LanguagesSize = ResultSize;
+    return EFI_BUFFER_TOO_SMALL;
+  }
+
+  *(Languages - 1) = 0;
+  return EFI_SUCCESS;
 }
 
 EFI_STATUS

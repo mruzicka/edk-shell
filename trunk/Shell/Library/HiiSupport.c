@@ -251,10 +251,6 @@ Returns:
                  Lang
                  );
 
-  if (EFI_ERROR (Status)) {
-    strcpya (Lang, "en-US");
-  }
-
   return Status;
 }
 
@@ -331,82 +327,51 @@ LibGetString (
 {
   EFI_STATUS Status;
   CHAR8      CurrentLang[RFC_3066_ENTRY_SIZE];
-  CHAR8      *SupportedLanguage;
+  CHAR8      *SupportedLanguages;
   CHAR8      *BestLanguage;
-  CHAR8      *Language;
 
   Status = LocateHiiProtocols ();
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
   
-  GetCurrentLanguage (CurrentLang);
-  Language = CurrentLang;
-
-  SupportedLanguage = GetSupportedLanguages (PackageList);
-  BestLanguage      = NULL;
-  if (SupportedLanguage != NULL) {
-    //
-    // Get the best matching language to guarantee the string value could be got.
-    //
-    BestLanguage = LibSelectBestLanguage (SupportedLanguage, FALSE, CurrentLang);
-    Language     = BestLanguage;
+  Status = GetCurrentLanguage (CurrentLang);
+  if (EFI_ERROR (Status)) {
+    ZeroMem (CurrentLang, sizeof (CurrentLang));
+  }
+  SupportedLanguages = GetSupportedLanguages (PackageList);
+  if (SupportedLanguages == NULL) {
+    return EFI_NOT_FOUND;
   }
 
-  if (Language == NULL) {
-    Status = EFI_UNSUPPORTED;
-  } else {
-    Status = gLibHiiString->GetString (
-                              gLibHiiString,
-                              Language,
-                              PackageList,
-                              StringId,
-                              String,
-                              StringSize,
-                              NULL
-                              );
-  }
-
-  if (EFI_ERROR (Status) && (Status != EFI_BUFFER_TOO_SMALL) && strcmpa (CurrentLang, "en-US") != 0) {
-    //
-    // Since en-US should be supported by all shell strings, if we cannot get 
-    // the string in current language, use the en-US instead.
-    //
-    strcpya (CurrentLang, "en-US");
-    Language = CurrentLang;
-    if (SupportedLanguage != NULL) {
-      if (BestLanguage != NULL) {
-        FreePool (BestLanguage);
-      }
-      //
-      // Get the best matching language to guarantee the string value could be got.
-      //
-      BestLanguage = LibSelectBestLanguage (SupportedLanguage, FALSE, CurrentLang);
-      Language = BestLanguage;
-    }
-
-    if (Language == NULL) {
-      Status = EFI_UNSUPPORTED;
-    } else {
-      Status = gLibHiiString->GetString (
-                                gLibHiiString,
-                                Language,
-                                PackageList,
-                                StringId,
-                                String,
-                                StringSize,
-                                NULL
-                                );
-    }
-  }
+  //
+  // Get the best matching language from SupportedLanguages
+  //
+  BestLanguage = GetBestLanguage (
+                   SupportedLanguages, 
+                   FALSE,                                             // RFC 4646 mode
+                   CurrentLang,                                       // Highest priority
+                   SupportedLanguages,                                // Lowest priority 
+                   NULL
+                   );
   
-  if (SupportedLanguage != NULL) {
-    FreePool (SupportedLanguage);
+  if (BestLanguage == NULL) {
+    FreePool (SupportedLanguages);
+    return EFI_NOT_FOUND;
   }
 
-  if (BestLanguage != NULL) {
-    FreePool (BestLanguage);
-  }
+  Status = gLibHiiString->GetString (
+                            gLibHiiString,
+                            BestLanguage,
+                            PackageList,
+                            StringId,
+                            String,
+                            StringSize,
+                            NULL
+                            );
+  
+  FreePool (SupportedLanguages);
+  FreePool (BestLanguage);
 
   return Status;
 }
