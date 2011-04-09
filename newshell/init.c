@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2010, Intel Corporation                                                         
+Copyright (c) 2005 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -622,6 +622,13 @@ Returns:
   ASSERT (!EFI_ERROR (Status));
 
   //
+  // Clear screen for root Shell
+  //
+  if (IsRootInstance) {
+    ST->ConOut->ClearScreen (ST->ConOut);
+  }
+
+  //
   // Now we can initialize like a normal shell app.
   //
   EFI_SHELL_APP_INIT (ImageHandle, SystemTable);
@@ -684,6 +691,7 @@ Returns:
     }
   )
 
+  Status = EFI_SUCCESS;
   if (IsRootInstance) {
     Status = _ProcessStartup (
               ImageHandle,
@@ -701,7 +709,6 @@ Returns:
   //
   SE2->IncrementShellNestingLevel ();
 
-  Status = EFI_SUCCESS;
   while (Status != -1) {
     Status = NShellPrompt (ImageHandle);
     EFI_NT_EMULATOR_CODE (
