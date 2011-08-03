@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2010, Intel Corporation                                                         
+Copyright (c) 2006 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -24,7 +24,10 @@ Abstract:
 extern UINT8 STRING_ARRAY_NAME[];
 
 #define NET_IFTYPE_ETHERNET    1
-#define NIC_ITEM_CONFIG_SIZE   sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * MAX_IP4_CONFIG_IN_VARIABLE
+//
+// EDKII Ip4ConfigDxe driver uses the EFI_IP4_ROUTE_TABLE with 16 entries
+//
+#define NIC_ITEM_CONFIG_SIZE   sizeof (NIC_IP4_CONFIG_INFO) + sizeof (EFI_IP4_ROUTE_TABLE) * 16
 
 EFI_HII_HANDLE  HiiHandle;
 
