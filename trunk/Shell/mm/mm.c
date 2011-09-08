@@ -521,7 +521,7 @@ Notes:
     } else if (AccessType == EfiPciConfig) {
       IoDev->Pci.Write (IoDev, Width, Address, 1, &Value);
     } else if (AccessType == EfiPciEConfig) {
-      IoDev->Pci.Write (IoDev, Width, PciEAddress, 1, &Buffer);
+      IoDev->Pci.Write (IoDev, Width, PciEAddress, 1, &Value);
     } else {
       WriteMem (Width, Address, 1, &Value);
     }
