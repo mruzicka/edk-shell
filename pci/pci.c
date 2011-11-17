@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2010, Intel Corporation                                                         
+Copyright (c) 2005 - 2011, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -710,19 +710,19 @@ Returns:
                 PrintToken (
                   STRING_TOKEN (STR_PCI2_FOUR_VARS),
                   HiiHandle,
-                  IoDev->SegmentNumber,
-                  Bus,
-                  Device,
-                  Func
+                  (UINTN) IoDev->SegmentNumber,
+                  (UINTN) Bus,
+                  (UINTN) Device,
+                  (UINTN) Func
                   );
 
                 PciPrintClassCode (PciHeader.ClassCode, FALSE);
                 PrintToken (
                   STRING_TOKEN (STR_PCI2_VENDOR),
                   HiiHandle,
-                  PciHeader.VendorId,
-                  PciHeader.DeviceId,
-                  PciHeader.ClassCode[0]
+                  (UINTN) PciHeader.VendorId,
+                  (UINTN) PciHeader.DeviceId,
+                  (UINTN) PciHeader.ClassCode[0]
                   );
 
                 ScreenCount += 2;
@@ -845,8 +845,8 @@ Returns:
     PrintToken (
       STRING_TOKEN (STR_PCI2_CANNOT_FIND_PROTOCOL),
       HiiHandle,
-      Segment,
-      Bus
+      (UINTN) Segment,
+      (UINTN) Bus
       );
 
     goto Done;
@@ -870,14 +870,14 @@ Returns:
   PrintToken (
     STRING_TOKEN (STR_PCI2_SEGMENT_BUS),
     HiiHandle,
-    Segment,
-    Bus,
-    Device,
-    Func,
-    Segment,
-    Bus,
-    Device,
-    Func
+    (UINTN) Segment,
+    (UINTN) Bus,
+    (UINTN) Device,
+    (UINTN) Func,
+    (UINTN) Segment,
+    (UINTN) Bus,
+    (UINTN) Device,
+    (UINTN) Func
     );
 
   //
