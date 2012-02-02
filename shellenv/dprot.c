@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2008, Intel Corporation                                                  
+Copyright (c) 2005 - 2012, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1334,6 +1334,7 @@ Returns:
 
 --*/
 {
+  EFI_STATUS                        Status;
   EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *PciRootBridgeIo;
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Configuration;
   UINT64                            Supports;
@@ -1341,20 +1342,22 @@ Returns:
 
   PciRootBridgeIo = Interface;
 
-  Configuration   = NULL;
-  PciRootBridgeIo->Configuration (PciRootBridgeIo, (VOID **) &Configuration);
-  PciRootBridgeIo->GetAttributes (PciRootBridgeIo, &Supports, &Attributes);
-
   //
   // Dump PciRootBridgeIo Info
   //
   Print (L"\n");
   PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_PARENTHANDLE), HiiEnvHandle, PciRootBridgeIo->ParentHandle);
   PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_SEGMENT), HiiEnvHandle, PciRootBridgeIo->SegmentNumber);
-  PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_ATTRIBUTES), HiiEnvHandle, Attributes);
-  PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_SUPPORTS), HiiEnvHandle, Supports);
 
-  if (Configuration != NULL) {
+  Status = PciRootBridgeIo->GetAttributes (PciRootBridgeIo, &Supports, &Attributes);
+  if (!EFI_ERROR (Status)) {
+    PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_ATTRIBUTES), HiiEnvHandle, Attributes);
+    PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_SUPPORTS), HiiEnvHandle, Supports);
+  }
+
+  Configuration = NULL;
+  Status = PciRootBridgeIo->Configuration (PciRootBridgeIo, (VOID **) &Configuration);
+  if (!EFI_ERROR (Status) && (Configuration != NULL)) {
     Print (L"\n");
     PrintToken (STRING_TOKEN (STR_SHELLENV_DPROT_TYPE_FLAG), HiiEnvHandle);
     Print (L"      ====  ====  ================  ================  ====");
