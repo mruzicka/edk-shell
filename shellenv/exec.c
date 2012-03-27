@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2010, Intel Corporation                                                         
+Copyright (c) 2005 - 2012, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -208,7 +208,7 @@ SEnvDoExecute (
   IN  BOOLEAN                  Output
   );
 
-VOID
+EFI_STATUS
 SEnvLoadImage (
   IN  EFI_HANDLE               ParentImage,
   IN  CHAR16                   *IName,
@@ -1435,12 +1435,10 @@ Returns:
   //
   // Load the app, or open the script
   //
-  SEnvLoadImage (ParentImageHandle, Shell->ShellInt.Argv[0], &NewImage, &Script, &MachineType, &MachineTypeMismatch);
+  Status = SEnvLoadImage (ParentImageHandle, Shell->ShellInt.Argv[0], &NewImage, &Script, &MachineType, &MachineTypeMismatch);
   if (!NewImage && !Script) {
     if (Output) {
-      if (MachineTypeMismatch == FALSE) {
-        PrintToken (STRING_TOKEN (STR_SHELLENV_EXEC_NOT_FOUND), HiiEnvHandle, Shell->ShellInt.Argv[0]);
-      } else {
+      if (MachineTypeMismatch) {
         //
         // Image is not loaded successfully because of the machine type mismatch.
         // Print the error info.
@@ -1451,9 +1449,12 @@ Returns:
           LibGetMachineTypeString (MachineType),
           LibGetMachineTypeString (EFI_IMAGE_MACHINE_TYPE)
           );
+      } else if (Status == EFI_NOT_FOUND) {
+        PrintToken (STRING_TOKEN (STR_SHELLENV_EXEC_NOT_FOUND), HiiEnvHandle, Shell->ShellInt.Argv[0]);
+      } else {
+        PrintToken (STRING_TOKEN (STR_SHELLENV_EXEC_EXIT_STATUS_CODE), HiiEnvHandle, Status);
       }
     }
-    Status = EFI_INVALID_PARAMETER;
     goto Done;
   }
 
@@ -1778,7 +1779,7 @@ Done:
   return Status;
 }
 
-VOID
+EFI_STATUS
 SEnvLoadImage (
   IN EFI_HANDLE           ParentImage,
   IN CHAR16               *IName,
@@ -1797,6 +1798,9 @@ Arguments:
   IName         - The name
   pImageHandle  - The image handle
   pScriptHandle - The script handle
+  ImageMachineType    - The machine type of the application.
+  MachineTypeMismatch - Check whether the machine type is mismatch between the 
+                        application and the shell.
 
 Returns:
 
@@ -1840,14 +1844,14 @@ Returns:
   PathNeedFree           = FALSE;
   Info                   = NULL;
   *MachineTypeMismatch   = FALSE;
-
+  Status                 = EFI_NOT_FOUND;
 
   //
   // Check if IName contains path info
   //
   INameLen = StrLen (IName);
   if (INameLen == 0) {
-    return ;
+    return Status;
   }
 
   Ptr1  = NULL;
@@ -1865,19 +1869,19 @@ Returns:
   // Processing :foo
   //
   if (PathPos == 0 && IName[PathPos] == ':') {
-    return ;
+    return Status;
   }
   //
   // Processing foo: or foo:\
   //
   if (PathPos != -1 && Ptr1 == NULL) {
-    return ;
+    return Status;
   }
 
   if (PathPos >= 0) {
     Path = AllocateZeroPool ((PathPos + 1 + 1) * sizeof (CHAR16));
     if (Path == NULL) {
-      return ;
+      return EFI_OUT_OF_RESOURCES;
     }
 
     PathNeedFree = TRUE;
@@ -1895,7 +1899,7 @@ Returns:
         Path          = Ptr2;
         PathNeedFree  = TRUE;
       } else {
-        return ;
+        return Status;
       }
     }
 
@@ -1915,7 +1919,7 @@ Returns:
       Size  = StrSize (Path) + 2 * sizeof (CHAR16);
       Ptr1  = AllocateZeroPool (Size);
       if (NULL == Ptr1) {
-        return ;
+        return EFI_OUT_OF_RESOURCES;
       }
 
       if (Path[0]) {
@@ -1930,7 +1934,7 @@ Returns:
     PathNeedFree = TRUE;
 
     if (!Path) {
-      return ;
+      return Status;
     }
 
     Ptr1 = StrDuplicate (Path);
@@ -1940,7 +1944,7 @@ Returns:
   }
 
   if (!Path) {
-    return ;
+    return Status;
   }
 
   Path = Ptr1;
@@ -2074,29 +2078,30 @@ Returns:
                    &ImageHeader,
                    &OptionalHeader
                    );
-        if (!EFI_ERROR (Status) &&
-            !EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
-            OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
-          *MachineTypeMismatch = TRUE;
-          *ImageMachineType = ImageHeader.Machine;
-          goto Done;
-        }
-        //
-        // Attempt to load the image
-        //
-        Status = BS->LoadImage (
-                      FALSE,
-                      ParentImage,
-                      DevicePath,
-                      NULL,
-                      0,
-                      &ImageHandle
-                      );
         if (!EFI_ERROR (Status)) {
-          goto Done;
-        } else if (Status == EFI_SECURITY_VIOLATION) {
-          BS->UnloadImage (ImageHandle);
-          ImageHandle = NULL;
+          if(!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (ImageHeader.Machine) &&
+              OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
+            *MachineTypeMismatch = TRUE;
+            *ImageMachineType = ImageHeader.Machine;
+            Status = EFI_INVALID_PARAMETER;
+            goto Done;
+          }
+
+          //
+          // Attempt to load the image
+          //
+          Status = BS->LoadImage (
+                        FALSE,
+                        ParentImage,
+                        DevicePath,
+                        NULL,
+                        0,
+                        &ImageHandle
+                        );
+          if (Status == EFI_SECURITY_VIOLATION) {
+            BS->UnloadImage (ImageHandle);
+            ImageHandle = NULL;
+          }
           goto Done;
         }
         //
@@ -2200,6 +2205,8 @@ Done:
     ASSERT (!ImageHandle);
     *pScriptHandle = ScriptHandle;
   }
+
+  return Status;
 }
 
 EFI_STATUS
