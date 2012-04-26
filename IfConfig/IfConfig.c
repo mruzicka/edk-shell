@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2006 - 2011, Intel Corporation                                                         
+Copyright (c) 2006 - 2012, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -1454,7 +1454,7 @@ Returns:
     Timeout = FALSE;
     Status  = BS->CreateEvent (
                     EFI_EVENT_NOTIFY_SIGNAL | EFI_EVENT_TIMER,
-                    EFI_TPL_CALLBACK - 1,
+                    EFI_TPL_CALLBACK,
                     TimeoutToGetMap,
                     NULL,
                     &TimerToGetMap
