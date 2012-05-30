@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2012, Intel Corporation                                                         
+Copyright (c) 2005 - 2012, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -175,6 +175,11 @@ STATIC UINT32   mShellNestingLevel = 0;
 // The command execution break flag
 //
 STATIC BOOLEAN  mExecutionBreak = FALSE;
+
+//
+// The return code for exit command.
+//
+UINT64          mExitCode = (UINT64) EFI_SUCCESS;
 
 //
 // Internal prototypes
@@ -2237,6 +2242,8 @@ Returns:
   SHELL_VAR_CHECK_CODE    RetCode;
   CHAR16                  *Useful;
   SHELL_VAR_CHECK_PACKAGE ChkPck;
+  SHELL_ARG_LIST          *Item;
+  UINT64                  RetVal;
 
   Useful      = NULL;
   Background  = EFI_BLACK;
@@ -2289,10 +2296,24 @@ Returns:
     goto Done;
   }
 
-  if (ChkPck.ValueCount > 0) {
+  if (ChkPck.ValueCount > 1) {
     PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_TOO_MANY), HiiEnvHandle, L"exit");
     Status = EFI_INVALID_PARAMETER;
     goto Done;
+  }
+
+  if (ChkPck.ValueCount == 1) {
+    Item   = GetFirstArg (&ChkPck);
+    RetVal = StrToUInt (Item->VarStr, 16, &Status);
+    if (Status == EFI_SUCCESS) {
+      mExitCode = RetVal;
+    } else {
+      PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_INVALID_ARG), HiiEnvHandle, L"exit", Item->VarStr);
+      Status = EFI_INVALID_PARAMETER;
+      goto Done;
+    }
+  } else {
+    mExitCode = EFI_SUCCESS;
   }
 
   ST->ConOut->SetAttribute (ST->ConOut, (ST->ConOut->Mode->Attribute & 0x0f) | (Background << 4));
