@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2011, Intel Corporation                                                         
+Copyright (c) 2005 - 2012, Intel Corporation                                              
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -24,6 +24,7 @@ Abstract:
 
 extern UINT8    STRING_ARRAY_NAME[];
 extern BOOLEAN  gHiiInitialized = FALSE;
+extern UINT64   mExitCode;
 
 //
 // This is the generated header file which includes whatever needs to be exported (strings + IFR)
@@ -736,7 +737,7 @@ Returns:
   // Set status to -2 to inform parent shell that a nested
   // child shell has just quited.
   //
-  Status = IsRootInstance ? EFI_SUCCESS : (EFI_STATUS) -2;
+  Status = IsRootInstance ? (EFI_STATUS) mExitCode : (EFI_STATUS) -2;
   EFI_NO_MONOSHELL_CODE (
     Done :
   )
