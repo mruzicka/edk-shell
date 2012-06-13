@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2009, Intel Corporation                                                  
+Copyright (c) 2005 - 2012, Intel Corporation                                                  
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -245,6 +245,16 @@ LibGetImageHeader (
   OUT EFI_IMAGE_DOS_HEADER        *DosHeader,
   OUT EFI_IMAGE_FILE_HEADER       *ImageHeader,
   OUT EFI_IMAGE_OPTIONAL_HEADER   *OptionalHeader
+  );
+
+VOID
+LibSetExitCode (
+  IN UINT64  ExitValue
+  );
+
+UINT64
+LibGetExitCode (
+  VOID
   );
 
 #endif

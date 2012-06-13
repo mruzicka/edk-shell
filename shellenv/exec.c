@@ -177,11 +177,6 @@ STATIC UINT32   mShellNestingLevel = 0;
 STATIC BOOLEAN  mExecutionBreak = FALSE;
 
 //
-// The return code for exit command.
-//
-UINT64          mExitCode = (UINT64) EFI_SUCCESS;
-
-//
 // Internal prototypes
 //
 
@@ -2306,14 +2301,14 @@ Returns:
     Item   = GetFirstArg (&ChkPck);
     RetVal = StrToUInt (Item->VarStr, 16, &Status);
     if (Status == EFI_SUCCESS) {
-      mExitCode = RetVal;
+      LibSetExitCode (RetVal);
     } else {
       PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_INVALID_ARG), HiiEnvHandle, L"exit", Item->VarStr);
       Status = EFI_INVALID_PARAMETER;
       goto Done;
     }
   } else {
-    mExitCode = EFI_SUCCESS;
+    LibSetExitCode (EFI_SUCCESS);
   }
 
   ST->ConOut->SetAttribute (ST->ConOut, (ST->ConOut->Mode->Attribute & 0x0f) | (Background << 4));
