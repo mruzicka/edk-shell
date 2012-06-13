@@ -1,6 +1,6 @@
 /*++
 
-Copyright (c) 2005 - 2009, Intel Corporation                                                         
+Copyright (c) 2005 - 2012, Intel Corporation                                                         
 All rights reserved. This program and the accompanying materials                          
 are licensed and made available under the terms and conditions of the BSD License         
 which accompanies this distribution. The full text of the license may be found at         
@@ -90,6 +90,11 @@ CHAR16        *ShellLibMemoryTypeDesc[EfiMaxMemoryType] = {
 };
 
 CHAR8  ca[] = { 3, 1, 2 };
+
+//
+// Exit code.
+//
+STATIC UINT64 ExitCode = (UINT64) EFI_SUCCESS;
 
 VOID *
 LibGetVariableLang (
