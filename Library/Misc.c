@@ -2360,6 +2360,47 @@ Returns:
   return Status;
 }
 
+VOID
+LibSetExitCode (
+  IN UINT64  ExitValue
+  )
+/*++
+
+Routine Description:
+
+  Save the exit code.
+
+Arguments:
+
+  ExitValue - The input new exit code.
+
+Returns:
+
+--*/  
+{
+  ExitCode = ExitValue;
+}
+
+UINT64
+LibGetExitCode (
+  VOID
+  )
+/*++
+
+Routine Description:
+
+  Get the exit code.
+
+Arguments:
+
+Returns:
+
+  ExitCode - The current exit code.
+
+--*/  
+{
+  return ExitCode;
+}
 EFI_STATUS
 GetControllerNameWorker (
   IN  EFI_GUID    *ProtocolGuid,
