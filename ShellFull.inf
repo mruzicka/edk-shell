@@ -94,6 +94,10 @@ COMPONENT_TYPE       = APPLICATION
   attrib/attrib.c
   attrib/attrib.h
 
+  bcfg/BcfgStrings.uni
+  bcfg/bcfg.c
+  bcfg/bcfg.h
+
   cls/clsstrings.uni
   cls/cls.c
 

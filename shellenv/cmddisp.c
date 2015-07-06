@@ -231,6 +231,19 @@ InitializeAttrib (
 
 EFI_STATUS
 EFIAPI
+InitializeBcfgGetLineHelp (
+  OUT CHAR16              **Str
+  );
+
+EFI_STATUS
+EFIAPI
+InitializeBcfg (
+  IN EFI_HANDLE           ImageHandle,
+  IN EFI_SYSTEM_TABLE     *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
 InitializeClsGetLineHelp (
   OUT CHAR16              **Str
   );
@@ -799,6 +812,9 @@ SEnvInternalCommands[] = {
   InitializeVolGetLineHelp,
 
 #ifdef EFI_FULLSHELL
+  InitializeBcfg,
+  L"bcfg",
+  InitializeBcfgGetLineHelp,
   InitializeComp,
   L"comp",
   InitializeCompGetLineHelp,
