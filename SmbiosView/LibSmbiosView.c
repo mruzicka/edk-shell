@@ -22,10 +22,10 @@ Revision History
 --*/
 
 #include "EfiShellLib.h"
-#include "LIbSmbios.h"
+#include "LibSmbios.h"
 #include "LibSmbiosView.h"
 #include "smbiosview.h"
-#include "smbios.h"
+#include "Smbios.h"
 #include STRING_DEFINES_FILE
 
 STATIC UINT8                    mInit         = 0;
@@ -62,7 +62,7 @@ Returns:
   //
   // Get SMBIOS table from System Configure table
   //
-  Status = LibGetSystemConfigurationTable (&gEfiSmbiosTableGuid, &mSmbiosTable);
+  Status = LibGetSystemConfigurationTable (&gEfiSmbiosTableGuid, (VOID**)&mSmbiosTable);
 
   if (mSmbiosTable == NULL) {
     PrintToken (STRING_TOKEN (STR_SMBIOSVIEW_LIBSMBIOSVIEW_CANNOT_GET_TABLE), HiiHandle);
@@ -110,13 +110,13 @@ LibSmbiosGetEPS (
 
 VOID
 LibSmbiosGetStructHead (
-  SMBIOS_STRUCTURE_POINTER *pHead
+  SMBIOS_STRUCTURE_POINTER **pHead
   )
 {
   //
   // return SMBIOS structure table address
   //
-  pHead = mSmbiosStruct;
+  *pHead = mSmbiosStruct;
 }
 
 EFI_STATUS

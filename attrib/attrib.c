@@ -57,7 +57,7 @@ AttribFile (
 //
 // Global Variables
 //
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 EFI_GUID        EfiAttribGuid = EFI_ATTRIB_GUID;
 SHELL_VAR_CHECK_ITEM    AttribCheckList[] = {
   {
@@ -124,7 +124,7 @@ SHELL_VAR_CHECK_ITEM    AttribCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -438,7 +438,7 @@ Returns:
     //
     Info = Arg->Info;
     if (Add || Remove) {
-      Info->Attribute = Info->Attribute & (~Remove) | Add;
+      Info->Attribute = (Info->Attribute & (~Remove)) | Add;
       Status = Arg->Handle->SetInfo (
                               Arg->Handle,
                               &gEfiFileInfoGuid,

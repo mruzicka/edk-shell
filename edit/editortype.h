@@ -28,7 +28,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define EDITOR_NAME           L"EFI Editor\0"
 #define EDITOR_VERSION        L"0.99\0"
 
-#define EFI_EDITOR_LINE_LIST  'eell'
+#define EFI_EDITOR_LINE_LIST  EFI_SIGNATURE_32 ('e','e','l','l')
 
 #define INSERT_MODE_STR       L"INS"
 #define OVERWR_MODE_STR       L"OVR"
@@ -149,8 +149,8 @@ typedef struct _EFI_EDITOR_MENU_ITEM {
 } EFI_EDITOR_MENU_ITEM;
 
 typedef struct {
-  UINT32  Foreground : 4;
-  UINT32  Background : 4;
+  UINT8  Foreground : 4;
+  UINT8  Background : 4;
 } EFI_EDITOR_COLOR_ATTRIBUTES;
 
 typedef union {

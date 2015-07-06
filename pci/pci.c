@@ -334,7 +334,7 @@ PCIE_EXPLAIN_STRUCT PcieExplainList[] = {
   {
     0,
     0,
-    0,
+    (PCIE_CAPREG_FIELD_WIDTH)0,
     NULL,
     PcieExplainTypeMax
   }
@@ -344,7 +344,7 @@ PCIE_EXPLAIN_STRUCT PcieExplainList[] = {
 // Global Variables
 //
 PCI_CONFIG_SPACE  *mConfigSpace;
-EFI_HII_HANDLE    HiiHandle;
+STATIC EFI_HII_HANDLE    HiiHandle;
 EFI_GUID          EfiPciGuid = EFI_PCI_GUID;
 SHELL_VAR_CHECK_ITEM    PciCheckList[] = {
   {
@@ -375,7 +375,7 @@ SHELL_VAR_CHECK_ITEM    PciCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -1034,7 +1034,7 @@ Returns:
   Status = BS->HandleProtocol (
                 Handle,
                 &gEfiPciRootBridgeIoProtocolGuid,
-                IoDev
+                (VOID**)IoDev
                 );
 
   if (EFI_ERROR (Status)) {
@@ -1043,7 +1043,7 @@ Returns:
   //
   // Call Configuration() to get address space descriptors
   //
-  Status = (*IoDev)->Configuration (*IoDev, Descriptors);
+  Status = (*IoDev)->Configuration (*IoDev, (VOID**)Descriptors);
   if (Status == EFI_UNSUPPORTED) {
     *Descriptors = NULL;
     return EFI_SUCCESS;
@@ -1237,7 +1237,7 @@ Returns:
     PrintToken (STRING_TOKEN (STR_PCI2_SINGLE_FUNCTION), HiiHandle);
   }
 
-  HeaderType = (UINT8) (Common->HeaderType & 0x7f);
+  HeaderType = (PCI_HEADER_TYPE) (Common->HeaderType & 0x7f);
   switch (HeaderType) {
   case PciDevice:
     PrintToken (STRING_TOKEN (STR_PCI2_PCI_DEVICE), HiiHandle);
@@ -1300,6 +1300,9 @@ Returns:
               );
     CapPtr = ConfigSpace->NonCommon.CardBus.CapabilitiesPtr;
     break;
+
+  default:
+    Status = EFI_UNSUPPORTED;
   }
   //
   // If Status bit4 is 1, dump or explain capability structure
@@ -1956,7 +1959,7 @@ Returns:
     INDEX_OF (&(CardBus->IoBase0)),
     Io32Bit ? L"          32 bit" : L"          16 bit",
     CardBus->IoBase0 & (Io32Bit ? 0xfffffffc : 0x0000fffc),
-    CardBus->IoLimit0 & (Io32Bit ? 0xffffffff : 0x0000ffff) | 0x00000003
+    (CardBus->IoLimit0 & (Io32Bit ? 0xffffffff : 0x0000ffff)) | 0x00000003
     );
 
   Io32Bit = (BOOLEAN) (CardBus->IoBase1 & PCI_BIT_0);
@@ -1966,7 +1969,7 @@ Returns:
     INDEX_OF (&(CardBus->IoBase1)),
     Io32Bit ? L"          32 bit" : L"          16 bit",
     CardBus->IoBase1 & (Io32Bit ? 0xfffffffc : 0x0000fffc),
-    CardBus->IoLimit1 & (Io32Bit ? 0xffffffff : 0x0000ffff) | 0x00000003
+    (CardBus->IoLimit1 & (Io32Bit ? 0xffffffff : 0x0000ffff)) | 0x00000003
     );
 
   //

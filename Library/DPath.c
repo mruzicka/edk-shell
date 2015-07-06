@@ -20,7 +20,7 @@ Revision History
 
 --*/
 
-#include "EfiShelllib.h"
+#include "EfiShellLib.h"
 
 EFI_GUID mEfiDevicePathMessagingUartFlowControlGuid = DEVICE_PATH_MESSAGING_UART_FLOW_CONTROL;
 
@@ -1468,7 +1468,7 @@ Returns:
   
   Status = LibLocateProtocol (
              &gEfiDevicePathToTextProtocolGuid,
-             &DevPathToText
+             (VOID**)&DevPathToText
              );
   if (!EFI_ERROR (Status)) {
     ToText = DevPathToText->ConvertDevicePathToText (
@@ -1766,7 +1766,7 @@ Returns:
       Status = BS->HandleProtocol (
                     Device,
                     Protocol,
-                    Interface
+                    (VOID**)Interface
                     );
     }
   }

@@ -30,7 +30,7 @@ Abstract:
 #define EDITOR_NAME           L"EFI Hex Editor\0"
 #define EDITOR_VERSION        L"0.99\0"
 
-#define EFI_EDITOR_LINE_LIST  'eell'
+#define EFI_EDITOR_LINE_LIST  EFI_SIGNATURE_32 ('e','e','l','l')
 
 #define FILE_ATTRIBUTES       EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE
 #define FILE_READ_WRITE       EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE
@@ -147,8 +147,8 @@ typedef struct _HEFI_EDITOR_MENU_ITEM {
 } HEFI_EDITOR_MENU_ITEM;
 
 typedef struct {
-  UINT32  Foreground : 4;
-  UINT32  Background : 4;
+  UINT8  Foreground : 4;
+  UINT8  Background : 4;
 } HEFI_EDITOR_COLOR_ATTRIBUTES;
 
 typedef union {

@@ -22,7 +22,7 @@ Revision History
 --*/
 
 #include "EfiShellLib.h"
-#include "decompress.h"
+#include "Decompress.h"
 
 extern UINT8    STRING_ARRAY_NAME[];
 
@@ -31,7 +31,7 @@ extern UINT8    STRING_ARRAY_NAME[];
 //
 #include STRING_DEFINES_FILE
 
-#include EFI_PROTOCOL_DEFINITION (decompress)
+#include EFI_PROTOCOL_DEFINITION (Decompress)
 
 EFI_HII_HANDLE  HiiDecompressHandle;
 EFI_GUID        EfiDecompressGuid = EFI_DECOMPRESS_GUID;
@@ -52,7 +52,7 @@ SHELL_VAR_CHECK_ITEM    DecompressCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -192,7 +192,7 @@ Returns:
   //
   //
   //
-  Status = LibLocateProtocol (&gEfiDecompressProtocolGuid, &Decompress);
+  Status = LibLocateProtocol (&gEfiDecompressProtocolGuid, (VOID**)&Decompress);
   if (EFI_ERROR (Status)) {
     PrintToken (STRING_TOKEN (STR_DECOMPRESS_PROTOCOL_NOT_FOUND), HiiDecompressHandle, L"efidecompress");
     Status = EFI_UNSUPPORTED;

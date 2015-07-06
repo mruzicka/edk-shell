@@ -21,7 +21,7 @@ Revision History
 
 --*/
 
-#include "EfiShelllib.h"
+#include "EfiShellLib.h"
 
 #if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
 
@@ -56,11 +56,11 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  Status = LibLocateProtocol (&gEfiHiiDatabaseProtocolGuid, &gLibHiiDatabase);
+  Status = LibLocateProtocol (&gEfiHiiDatabaseProtocolGuid, (VOID**)&gLibHiiDatabase);
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  Status = LibLocateProtocol (&gEfiHiiStringProtocolGuid, &gLibHiiString);
+  Status = LibLocateProtocol (&gEfiHiiStringProtocolGuid, (VOID**)&gLibHiiString);
   if (EFI_ERROR (Status)) {
     return Status;
   }  

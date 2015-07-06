@@ -20,14 +20,14 @@ Abstract:
 --*/
 
 #include "EfiShellLib.h"
-#include "CpuFuncs.h"
+//#include "CpuFuncs.h"
 #include EFI_ARCH_PROTOCOL_DEFINITION (Cpu)
 #include EFI_PROTOCOL_DEFINITION (Ip4)
 #include "Ping.h"
 #include STRING_DEFINES_FILE
 extern UINT8 STRING_ARRAY_NAME[];
 
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 
 EFI_GUID  EfiPingGuid = EFI_PING_GUID;
 SHELL_VAR_CHECK_ITEM  PingCheckList[] = {
@@ -59,7 +59,7 @@ SHELL_VAR_CHECK_ITEM  PingCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -114,6 +114,8 @@ UINT32            RttSum;
 UINT32            RttMin;
 UINT32            RttMax;
 
+EFI_CPU_ARCH_PROTOCOL  *gCpu = NULL;
+
 STATIC
 UINT64
 GetTimerValue (
@@ -135,7 +137,22 @@ Returns:
 
 --*/
 {
-  return EfiReadTsc ();
+  static UINT64          CurrentTick = 0;
+  UINT64                 TimerPeriod;
+  EFI_STATUS             Status;
+
+  ASSERT (gCpu != NULL);
+
+  Status = gCpu->GetTimerValue (gCpu, 0, &CurrentTick, &TimerPeriod);
+  if (EFI_ERROR (Status)) {
+    //
+    // The WinntGetTimerValue will return EFI_UNSUPPORTED. Set the
+    // TimerPeriod by ourselves.
+    //
+    CurrentTick += 1000000;
+  }
+
+  return CurrentTick;
 }
 
 STATIC
@@ -168,7 +185,7 @@ Returns:
   //
   // Locate the Cpu Arch Protocol.
   //
-  Status = BS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, &Cpu);
+  Status = BS->LocateProtocol (&gEfiCpuArchProtocolGuid, NULL, (VOID**)&Cpu);
   if (EFI_ERROR (Status)) {
     return Status;
   }

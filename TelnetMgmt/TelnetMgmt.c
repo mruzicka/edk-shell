@@ -32,7 +32,7 @@ extern UINT8    STRING_ARRAY_NAME[];
 //
 #include STRING_DEFINES_FILE
 
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 EFI_GUID        EfiTelnetMgmtGuid = EFI_TELNETMGMT_GUID;
 EFI_GUID        mEfiTelnetServerGuid = EFI_TELNET_SERVER_PROTOCOL_GUID;
 SHELL_VAR_CHECK_ITEM        TelnetmgmtCheckList[] = {
@@ -58,7 +58,7 @@ SHELL_VAR_CHECK_ITEM        TelnetmgmtCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 

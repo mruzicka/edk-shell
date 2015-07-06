@@ -36,7 +36,7 @@ extern UINT8  STRING_ARRAY_NAME[];
 //
 // Global Variables
 //
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 EFI_GUID        EfiMountGuid = EFI_MOUNT_GUID;
 SHELL_VAR_CHECK_ITEM      MountCheckList[] = {
   {
@@ -55,7 +55,7 @@ SHELL_VAR_CHECK_ITEM      MountCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 

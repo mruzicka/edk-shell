@@ -66,7 +66,7 @@ SHELL_VAR_CHECK_ITEM      CpCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -578,7 +578,7 @@ Returns:
     //
     if (SrcArg->Status == EFI_SUCCESS &&
         (SrcArg->Info->Attribute & EFI_FILE_DIRECTORY) &&
-        (DstArg->Status == EFI_SUCCESS && (DstArg->Info->Attribute & EFI_FILE_DIRECTORY) || DstMustDir && DstHandle)
+        (DstArg->Status == EFI_SUCCESS && ((DstArg->Info->Attribute & EFI_FILE_DIRECTORY) || (DstMustDir && DstHandle)))
         ) {
       if (StrCmp (SrcFilePath, DstFilePath) == 0) {
         PrintToken (STRING_TOKEN (STR_CP_CANNOT_COPY_ITSELF), HiiCpyHandle, L"cp/copy", SrcArg->FullName);
@@ -592,7 +592,7 @@ Returns:
     // we need to compose a full name of dir\file for the source
     //
     if (SrcArg->Status == EFI_SUCCESS &&
-      (DstArg->Status == EFI_SUCCESS && (DstArg->Info->Attribute & EFI_FILE_DIRECTORY) || DstMustDir && DstHandle)) {
+      (DstArg->Status == EFI_SUCCESS && ((DstArg->Info->Attribute & EFI_FILE_DIRECTORY) || (DstMustDir && DstHandle)))) {
       if (DstFullName) {
         FreePool (DstFullName);
       }
@@ -869,7 +869,6 @@ Returns:
   EFI_STATUS                      Status;
   EFI_FILE_INFO                   *SrcInfo;
   EFI_FILE_INFO                   *DstInfo;
-  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *DstVol;
   EFI_FILE_SYSTEM_INFO            *DstFsInfo;
   CHAR16                          InputString[10];
   UINTN                           BufSize;
@@ -894,7 +893,6 @@ Returns:
   SrcInfo           = NULL;
   DstInfo           = NULL;
   FileInfo          = NULL;
-  DstVol            = NULL;
   DstFsInfo         = NULL;
   InputString[0]    = 0;
   BufSize           = 0;
@@ -1789,7 +1787,7 @@ Returns:
     //
     if (SrcArg->Status == EFI_SUCCESS &&
         !(SrcArg->Info->Attribute & EFI_FILE_DIRECTORY) &&
-        (DstArg->Status == EFI_SUCCESS && (DstArg->Info->Attribute & EFI_FILE_DIRECTORY) || DstDir && DstHandle)
+        (DstArg->Status == EFI_SUCCESS && ((DstArg->Info->Attribute & EFI_FILE_DIRECTORY) || (DstDir && DstHandle)))
         ) {
       if (DstFullName) {
         FreePool (DstFullName);

@@ -40,24 +40,24 @@ COMPONENT_TYPE       = APPLICATION
 
 
 [sources.common]
-   ..\ShCommonStrings.uni   
+   ../ShCommonStrings.uni
    DateStrings.uni
    Date.c
    Date.h 
                                           
 [includes.common]
   .
-  ..\Inc
-  ..\Library
-  $(EDK_SOURCE)\Foundation
-  $(EDK_SOURCE)\Foundation\Include
-  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
-  $(EDK_SOURCE)\Foundation\Efi
-  $(EDK_SOURCE)\Foundation\Efi\Include
-  $(EDK_SOURCE)\Foundation\FrameWork
-  $(EDK_SOURCE)\Foundation\FrameWork\Include
-  $(EDK_SOURCE)\Foundation\Core\Dxe
-  $(DEST_DIR)\
+  ../Inc
+  ../Library
+  $(EDK_SOURCE)/Foundation
+  $(EDK_SOURCE)/Foundation/Include
+  $(EDK_SOURCE)/Foundation/Include/IndustryStandard
+  $(EDK_SOURCE)/Foundation/Efi
+  $(EDK_SOURCE)/Foundation/Efi/Include
+  $(EDK_SOURCE)/Foundation/FrameWork
+  $(EDK_SOURCE)/Foundation/FrameWork/Include
+  $(EDK_SOURCE)/Foundation/Core/Dxe
+  $(DEST_DIR./
 
 [libraries.common]  
   EfiShellLib
@@ -71,7 +71,12 @@ COMPONENT_TYPE       = APPLICATION
 
 [nmake.common]
   IMAGE_ENTRY_POINT=InitializeDate
+
+[nmake.IA32, nmake.EBC, nmake.X64, nmake.IPF]
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_ARRAY_NAME=$(BASE_NAME)Strings 
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_DEFINES_FILE=\"$(BASE_NAME)StrDefs.h\"
   C_STD_FLAGS = $(C_STD_FLAGS) /DEFI_BOOTSHELL
+
+[nmake.ARM, nmake.AARCH64]
+  C_STD_FLAGS = $(C_STD_FLAGS) -DEFI_BOOTSHELL
 

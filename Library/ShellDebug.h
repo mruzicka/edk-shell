@@ -98,4 +98,3 @@ EFIDebugVariable (
   VOID
   );
 #endif
-    

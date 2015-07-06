@@ -25,7 +25,7 @@ FILE_GUID            = D9D42564-071C-4d73-8DB0-43C55C62DC4C
 COMPONENT_TYPE       = APPLICATION
 
 [sources.common]
-..\ShCommonStrings.uni
+../ShCommonStrings.uni
 DecompressStrings.uni
 decompress.c
 decompress.h
@@ -33,17 +33,17 @@ decompress.h
 
 [includes.common]
   .
-  ..\Inc
-  ..\Library
-  $(EDK_SOURCE)\Foundation
-  $(EDK_SOURCE)\Foundation\Include
-  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
-  $(EDK_SOURCE)\Foundation\Efi
-  $(EDK_SOURCE)\Foundation\Efi\Include
-  $(EDK_SOURCE)\Foundation\FrameWork
-  $(EDK_SOURCE)\Foundation\FrameWork\Include
-  $(EDK_SOURCE)\Foundation\Core\Dxe
-  $(DEST_DIR)\
+  ../Inc
+  ../Library
+  $(EDK_SOURCE)/Foundation
+  $(EDK_SOURCE)/Foundation/Include
+  $(EDK_SOURCE)/Foundation/Include/IndustryStandard
+  $(EDK_SOURCE)/Foundation/Efi
+  $(EDK_SOURCE)/Foundation/Efi/Include
+  $(EDK_SOURCE)/Foundation/FrameWork
+  $(EDK_SOURCE)/Foundation/FrameWork/Include
+  $(EDK_SOURCE)/Foundation/Core/Dxe
+  $(DEST_DIR./
 
 [libraries.common]  
   EfiShellLib
@@ -63,11 +63,13 @@ decompress.h
 # we will specify some additional DEFINEs on the compile command line.
 #
 [nmake.common]
-  C_PROJ_FLAGS = $(C_PROJ_FLAGS) /Zm500
   IMAGE_ENTRY_POINT=InitializeDecompress
+
+[nmake.IA32, nmake.EBC, nmake.X64, nmake.IPF]
+  C_PROJ_FLAGS = $(C_PROJ_FLAGS) /Zm500
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_ARRAY_NAME=$(BASE_NAME)Strings 
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_DEFINES_FILE=\"$(BASE_NAME)StrDefs.h\"
   C_STD_FLAGS = $(C_STD_FLAGS) /DEFI_BOOTSHELL
 
-
- 
+[nmake.ARM, nmake.AARCH64]
+  C_STD_FLAGS = $(C_STD_FLAGS) -DEFI_BOOTSHELL

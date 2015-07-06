@@ -58,7 +58,7 @@ SHELL_VAR_CHECK_ITEM    MemCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -149,7 +149,7 @@ Returns:
     return EFI_SUCCESS;
   }
 
-  Address = (AddressStr) ? Xtoi (AddressStr) : (UINT64) SystemTable;
+  Address = (AddressStr) ? Xtoi (AddressStr) : (UINT64)(UINTN) SystemTable;
   Size    = (SizeStr) ? Xtoi (SizeStr) : 512;
 
   //
@@ -157,7 +157,7 @@ Returns:
   //
   PrintToken (STRING_TOKEN (STR_MEM_MEMORY_ADDR), HiiMemHandle, 2 * sizeof (UINTN), Address, Size);
   if (MMIo) {
-    Status = BS->LocateProtocol (&gEfiPciRootBridgeIoProtocolGuid, NULL, &PciRootBridgeIo);
+    Status = BS->LocateProtocol (&gEfiPciRootBridgeIoProtocolGuid, NULL, (VOID**)&PciRootBridgeIo);
     if (EFI_ERROR (Status)) {
       PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_LOC_PROT_ERR_EX), HiiMemHandle, L"mem", L"PciRootBridgeIo");
       return Status;
@@ -172,7 +172,7 @@ Returns:
       return Status;
     }
 
-    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, EfiPciIoWidthUint8, Address, Size, Buffer);
+    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, EfiPciWidthUint8, Address, Size, Buffer);
   } else {
     Buffer = (UINT8 *) (UINTN) Address;
   }
@@ -233,7 +233,7 @@ Returns:
   MMIo                  = FALSE;
   AddressStr            = NULL;
   SizeStr               = NULL;
-  Address               = (UINT64) SystemTable;
+  Address               = (UINT64)(UINTN) SystemTable;
   Size                  = 512;
   RetCode               = LibCheckVariables (SI, MemCheckList, &ChkPck, &Useful);
   if (VarCheckOk != RetCode) {
@@ -312,7 +312,7 @@ Returns:
   //
   PrintToken (STRING_TOKEN (STR_MEM_NEW_MEMORY_ADDR), HiiMemHandle, 2 * sizeof (UINTN), Address, Size);
   if (MMIo) {
-    Status = BS->LocateProtocol (&gEfiPciRootBridgeIoProtocolGuid, NULL, &PciRootBridgeIo);
+    Status = BS->LocateProtocol (&gEfiPciRootBridgeIoProtocolGuid, NULL, (VOID**)&PciRootBridgeIo);
     if (EFI_ERROR (Status)) {
       PrintToken (STRING_TOKEN (STR_SHELLENV_GNC_LOC_PROT_ERR_EX), HiiMemHandle, L"mem", L"PciRootBridgeIo");
       return Status;
@@ -327,7 +327,7 @@ Returns:
       return Status;
     }
 
-    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, EfiPciIoWidthUint8, Address, Size, Buffer);
+    PciRootBridgeIo->Mem.Read (PciRootBridgeIo, EfiPciWidthUint8, Address, Size, Buffer);
   } else {
     Buffer = (UINT8 *) (UINTN) Address;
   }

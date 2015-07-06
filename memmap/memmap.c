@@ -35,7 +35,7 @@ extern UINT8  STRING_ARRAY_NAME[];
 //
 // Global Variables
 //
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 EFI_GUID        EfiMemmapGuid = EFI_MEMMAP_GUID;
 SHELL_VAR_CHECK_ITEM    MemmapCheckList[] = {
   {
@@ -54,7 +54,7 @@ SHELL_VAR_CHECK_ITEM    MemmapCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -216,7 +216,7 @@ Returns:
     }
 
     Bytes = LShiftU64 (Desc->NumberOfPages, 12);
-    Ptr   = MemoryTypeStr (Desc->Type);
+    Ptr   = MemoryTypeStr ((EFI_MEMORY_TYPE)Desc->Type);
     PrintToken (
       STRING_TOKEN (STR_MEMMAP_FIVE_ARGS),
       HiiHandle,

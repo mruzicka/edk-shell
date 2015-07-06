@@ -33,7 +33,7 @@ Abstract:
 #include "libstatusbar.h"
 #include "libinputbar.h"
 #include "libmenubar.h"
-#include "libmisc.h"
+#include "libMisc.h"
 //
 // This is the generated header file which includes whatever needs to be exported (strings + IFR)
 //
@@ -43,7 +43,7 @@ extern EFI_EDITOR_GLOBAL_EDITOR MainEditor;
 extern BOOLEAN                  EditorFirst;
 extern BOOLEAN                  EditorExit;
 
-extern EFI_HII_HANDLE           HiiHandle;
+extern EFI_HII_HANDLE           gEditHiiHandle;
 #if (EFI_SPECIFICATION_VERSION < 0x0002000A)
 extern EFI_HII_PROTOCOL         *Hii;
 #endif

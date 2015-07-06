@@ -628,7 +628,7 @@ SHELL_VAR_CHECK_ITEM    DHCheckList[] = {
     NULL,
     0,
     0,
-    FALSE
+    (SHELL_VAR_CHECK_FLAG_TYPE) FALSE
   }
 };
 
@@ -1183,7 +1183,7 @@ GetDriverName (
       *DriverName = LibDevicePathToStr (Image->FilePath);
     }
   } else {
-    LibGetDriverName (DriverBindingHandle, Language, DriverName);
+    LibGetDriverName (DriverBindingHandle, (CHAR8*)Language, DriverName);
   }
 
   return EFI_SUCCESS;
@@ -1539,7 +1539,7 @@ Returns:
 
     DevicePath      = NULL;
     BestDeviceName  = NULL;
-    Status          = BS->HandleProtocol (Handle, &gEfiDevicePathProtocolGuid, &DevicePath);
+    Status          = BS->HandleProtocol (Handle, &gEfiDevicePathProtocolGuid, (VOID**)&DevicePath);
 
     Print (L"\n");
     PrintToken (STRING_TOKEN (STR_SHELLENV_PROTID_CONTROLLER_NAME), HiiEnvHandle);
@@ -1598,14 +1598,14 @@ Returns:
         Image = FALSE;
         Status = GetDriverName (
                   DriverBindingHandleBuffer[Index],
-                  Language,
+                  (UINT8*)Language,
                   FALSE,
                   &DriverName
                   );
         if (DriverName == NULL) {
           Status = GetDriverName (
                     DriverBindingHandleBuffer[Index],
-                    Language,
+                    (UINT8*)Language,
                     TRUE,
                     &DriverName
                     );
@@ -1792,7 +1792,7 @@ Returns:
 
   Status = GetDriverName (
             Handle,
-            Language,
+            (UINT8*)Language,
             FALSE,
             &DriverName
             );
@@ -1806,7 +1806,7 @@ Returns:
 
   Status = GetDriverName (
             Handle,
-            Language,
+            (UINT8*)Language,
             TRUE,
             &DriverName
             );
@@ -1979,7 +1979,7 @@ Returns:
 
       if (Prot->Handles[Index] == Handle) {
         Dump    = Verbose ? Prot->DumpInfo : Prot->DumpToken;
-        Status  = BS->HandleProtocol (Handle, &Prot->ProtocolId, &Interface);
+        Status  = BS->HandleProtocol (Handle, &Prot->ProtocolId, (VOID**)&Interface);
         if (!EFI_ERROR (Status)) {
           if (Verbose) {
             for (Index1 = 0; Index1 < ProtocolBufferCount; Index1++) {
@@ -2027,7 +2027,7 @@ Returns:
           goto Done;
         }
 
-        Status = BS->HandleProtocol (Handle, ProtocolBuffer[Index1], &Interface);
+        Status = BS->HandleProtocol (Handle, ProtocolBuffer[Index1], (VOID**)&Interface);
         if (!EFI_ERROR (Status)) {
           PrintToken (
             STRING_TOKEN (STR_SHELLENV_PROTID_TWO_VARS_HG_NEW),
@@ -2660,8 +2660,6 @@ Returns:
 
 --*/
 {
-  EFI_STATUS                Status;
-
   DEVICEPATH_INFO           *DevicePathInfo;
 
   UINTN                     Index;
@@ -2688,7 +2686,7 @@ Returns:
   //
   // Establish current device path info list
   //
-  Status = LibLocateHandle (
+  LibLocateHandle (
             ByProtocol,
             Protocol,
             NULL,

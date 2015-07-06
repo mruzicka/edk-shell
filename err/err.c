@@ -35,7 +35,7 @@ extern UINTN  EFIDebug;
 //
 // Global Variables
 //
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 EFI_GUID        EfiErrGuid = EFI_ERR_GUID;
 SHELL_VAR_CHECK_ITEM    ErrCheckList[] = {
   {
@@ -60,7 +60,7 @@ SHELL_VAR_CHECK_ITEM    ErrCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -149,7 +149,7 @@ _DumpHandleMask (
   EFI_DEBUG_MASK_PROTOCOL *dmp;
   UINTN                   Mask;
 
-  Status = BS->HandleProtocol (Handle, &gEfiDebugMaskProtocolGuid, &dmp);
+  Status = BS->HandleProtocol (Handle, &gEfiDebugMaskProtocolGuid, (VOID**)&dmp);
   if (!EFI_ERROR (Status)) {
     Status = dmp->GetDebugMask (dmp, &Mask);
     if (!EFI_ERROR (Status)) {
@@ -170,13 +170,11 @@ _DumpDriverMask (
   UINTN       HandleNum;
   UINTN       Index;
   UINTN       DrvHandle;
-  BOOLEAN     Found;
 
   HandleBuf = NULL;
   HandleNum = 0;
   DrvHandle = 0;
   Status    = EFI_SUCCESS;
-  Found     = FALSE;
 
   if (NULL != Handle) {
     DrvHandle = (UINTN) StrToUIntegerBase (Handle, 16, &Status) - 1;
@@ -278,7 +276,7 @@ _SetDriverMask (
     goto Done;
   }
 
-  Status = BS->HandleProtocol (RealHandle, &gEfiDebugMaskProtocolGuid, &dmp);
+  Status = BS->HandleProtocol (RealHandle, &gEfiDebugMaskProtocolGuid, (VOID**)&dmp);
   if (EFI_ERROR (Status)) {
     PrintToken (STRING_TOKEN (STR_ERR_HANDLE_NOT_FOUND), HiiHandle, DrvHandle + 1);
     goto Done;
@@ -336,7 +334,7 @@ _SetAllDriverMask (
   }
   
   for (Index = 0; Index < BufferSize / sizeof(EFI_HANDLE); Index ++) {
-    Status = BS->HandleProtocol (Buffer[Index], &gEfiDebugMaskProtocolGuid, &dmp);
+    Status = BS->HandleProtocol (Buffer[Index], &gEfiDebugMaskProtocolGuid, (VOID**)&dmp);
     Status = dmp->SetDebugMask (dmp, Msk);
   }
 

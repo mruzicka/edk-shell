@@ -53,8 +53,8 @@ STATIC
 BOOLEAN
 GetNumber (
   IN      CHAR16  *Str,
-  IN OUT  INTN    *Position,
-  IN OUT  INTN    *Number,
+  IN OUT  UINTN   *Position,
+  IN OUT  UINTN   *Number,
   IN BOOLEAN      EndNum
   );
 
@@ -92,7 +92,7 @@ SHELL_VAR_CHECK_ITEM    DateCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -330,8 +330,8 @@ STATIC
 BOOLEAN
 GetNumber (
   IN      CHAR16    *Str,
-  IN OUT  INTN      *Position,
-  IN OUT  INTN      *Number,
+  IN OUT  UINTN     *Position,
+  IN OUT  UINTN     *Number,
   IN BOOLEAN        EndNum
   )
 {

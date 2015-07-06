@@ -23,7 +23,7 @@ Abstract:
 #include "nshell.h"
 
 extern UINT8    STRING_ARRAY_NAME[];
-extern BOOLEAN  gHiiInitialized = FALSE;
+BOOLEAN  gHiiInitialized = FALSE;
 
 //
 // This is the generated header file which includes whatever needs to be exported (strings + IFR)
@@ -99,13 +99,13 @@ _GetFsDpOfImg (
   Status = BS->HandleProtocol (
                 ImgHnd,
                 &gEfiLoadedImageProtocolGuid,
-                &img
+                (VOID**)&img
                 );
   if (!EFI_ERROR (Status)) {
     Status = BS->HandleProtocol (
                   img->DeviceHandle,
                   &gEfiDevicePathProtocolGuid,
-                  &dp
+                  (VOID**)&dp
                   );
     if (!EFI_ERROR (Status)) {
       *DevPath  = DuplicateDevicePath (dp);
@@ -220,7 +220,7 @@ _DoInit (
   //
   Status = LibLocateProtocol (
              &gEfiConsoleControlProtocolGuid,
-             &ConsoleControl
+             (VOID**)&ConsoleControl
              );
   if (!EFI_ERROR (Status)) {
     Status = ConsoleControl->GetMode (ConsoleControl, &mOldCurrentMode, NULL, NULL);
@@ -342,7 +342,7 @@ _EnableShellEnv (
       Status = _ShellLoadEnvDriver (ImageHandle);
     )
     if (EFI_ERROR (Status)) {
-      Status = LibLocateProtocol (&ShellEnvProtocol, &SE);
+      Status = LibLocateProtocol (&ShellEnvProtocol, (VOID**)&SE);
       if (EFI_ERROR (Status)) {
         PrintToken (STRING_TOKEN (STR_NSHELL_ENV_DRIVER), HiiNewshellHandle);
         return Status;
@@ -372,7 +372,7 @@ _InstallShellInterface (
     *IsRootInstance = TRUE;
   }
 
-  Status = LibLocateProtocol (&ShellEnvProtocol, &SE);
+  Status = LibLocateProtocol (&ShellEnvProtocol, (VOID**)&SE);
   ASSERT (!EFI_ERROR (Status));
   SI = SE->NewShell (ImageHandle);
 
@@ -543,7 +543,7 @@ _CleanUpOnExit (
   //
   ConsoleControlStatus = LibLocateProtocol (
                            &gEfiConsoleControlProtocolGuid,
-                           &ConsoleControl
+                           (VOID**)&ConsoleControl
                            );
   if (!EFI_ERROR (ConsoleControlStatus)) {
     ConsoleControlStatus = ConsoleControl->GetMode (ConsoleControl, &CurrentMode, NULL, NULL);
@@ -709,7 +709,7 @@ Returns:
   //
   SE2->IncrementShellNestingLevel ();
 
-  while (Status != -1) {
+  while (Status != (EFI_STATUS) -1) {
     Status = NShellPrompt (ImageHandle);
     EFI_NT_EMULATOR_CODE (
       //
@@ -723,7 +723,7 @@ Returns:
         Status = BS->HandleProtocol (
                       ImageHandle,
                       &ShellInterfaceProtocol,
-                      &SI
+                      (VOID**)&SI
                       );
         ASSERT (!EFI_ERROR (Status));
       }

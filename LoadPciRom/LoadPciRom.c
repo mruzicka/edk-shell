@@ -24,7 +24,7 @@ Revision History
 
 #include "EfiShellLib.h"
 #include "LoadPciRom.h"
-#include "Pci22.h"
+#include "pci22.h"
 
 extern UINT8    STRING_ARRAY_NAME[];
 
@@ -56,7 +56,7 @@ LoadEfiDriversFromRomImage (
   );
 
 EFI_HANDLE      gMyImageHandle;
-EFI_HII_HANDLE  HiiHandle;
+STATIC EFI_HII_HANDLE  HiiHandle;
 EFI_GUID        EfiLoadPciRomGuid = EFI_LOADPCIROM_GUID;
 SHELL_VAR_CHECK_ITEM    LPRCheckList[] = {
   {
@@ -81,7 +81,7 @@ SHELL_VAR_CHECK_ITEM    LPRCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE) 0
   }
 };
 
@@ -377,7 +377,7 @@ Returns:
         }
 
         if (EfiRomHeader->CompressionType == EFI_PCI_EXPANSION_ROM_HEADER_COMPRESSED) {
-          Status = BS->LocateProtocol (&gEfiDecompressProtocolGuid, NULL, &Decompress);
+          Status = BS->LocateProtocol (&gEfiDecompressProtocolGuid, NULL, (VOID**)&Decompress);
           if (EFI_ERROR (Status)) {
             PrintToken (STRING_TOKEN (STR_LOADPCIROM_DECOMP_NOT_FOUND), HiiHandle);
             SkipImage = TRUE;

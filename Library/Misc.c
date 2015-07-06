@@ -21,7 +21,7 @@ Revision History
 
 --*/
 
-#include "EfiShelllib.h"
+#include "EfiShellLib.h"
 
 #if (PLATFORM == NT32)
 #define LOCAL_EFI_WIN_NT_THUNK_PROTOCOL_GUID \
@@ -348,7 +348,7 @@ Returns:
   ASSERT (Buffer != NULL);
 
   if (mShellEnv == NULL) {
-    Status = LibLocateProtocol (&ShellEnvProtocol, &mShellEnv);
+    Status = LibLocateProtocol (&ShellEnvProtocol, (VOID**)&mShellEnv);
     if (EFI_ERROR (Status)) {
       mShellEnv = NULL;
     }
@@ -1171,7 +1171,7 @@ Returns:
       Status = BS->HandleProtocol (
                     Image->DeviceHandle,
                     &gEfiFirmwareVolumeProtocolGuid,
-                    &FV
+                    (VOID**)&FV
                     );
       if (!EFI_ERROR (Status)) {
         Status = FV->ReadSection (
@@ -1192,7 +1192,7 @@ Returns:
         Status = BS->HandleProtocol (
                       Image->DeviceHandle,
                       &gEfiFirmwareVolume2ProtocolGuid,
-                      &FV2
+                      (VOID**)&FV2
                       );
         if (!EFI_ERROR (Status)) {
           Status = FV2->ReadSection (
@@ -1339,7 +1339,7 @@ LibCmdGetStringByToken (
 {
   EFI_STATUS      Status;
   CHAR16          *String;
-  EFI_HII_HANDLE  HiiHandle;
+  STATIC EFI_HII_HANDLE  HiiHandle;
 
   ASSERT (Str);
 
@@ -1730,6 +1730,8 @@ Returns:
     return L"X64";
   case EFI_IMAGE_MACHINE_IA64:
     return L"IA64";
+  case EFI_IMAGE_MACHINE_AARCH64:
+    return L"AARCH64";
   default:
     return L"UNKNOWN";
   }

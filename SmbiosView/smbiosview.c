@@ -26,7 +26,7 @@ Revision History
 #include "smbiosview.h"
 #include "PrintInfo.h"
 #include "QueryTable.h"
-#include "smbios.h"
+#include "Smbios.h"
 
 extern UINT8                STRING_ARRAY_NAME[];
 
@@ -88,7 +88,7 @@ SHELL_VAR_CHECK_ITEM        SmbiosviewCheckList[] = {
     NULL,
     0,
     0,
-    0
+    (SHELL_VAR_CHECK_FLAG_TYPE)0
   }
 };
 

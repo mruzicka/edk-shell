@@ -21,7 +21,7 @@ Revision History
 
 --*/
 
-#include "EfiShelllib.h"
+#include "EfiShellLib.h"
 
 #define PRINT_STRING_LEN        1024
 #define PRINT_ITEM_BUFFER_LEN   100
@@ -86,8 +86,8 @@ typedef struct _pstate {
 typedef struct {
   BOOLEAN PageBreak;
   BOOLEAN AutoWrap;
-  INTN    MaxRow;
-  INTN    MaxColumn;
+  UINTN   MaxRow;
+  UINTN   MaxColumn;
   INTN    InitRow;
   INTN    Row;
   INTN    Column;
@@ -1575,7 +1575,7 @@ Returns:
 {
   BOOLEAN       Done;
   UINTN         Column;
-  INTN          Row;
+  UINTN         Row;
   UINTN         StartColumn;
   UINTN         Update;
   UINTN         Delete;
@@ -1769,7 +1769,7 @@ Returns:
     //
     // If we need to update the output do so now
     //
-    if (Update != -1) {
+    if (Update != (UINTN) -1) {
       PrintAt (Column, Row, L"%s%.*s", InStr + Update, Delete, L"");
       Len = StrLen (InStr);
 
@@ -1928,8 +1928,8 @@ LibGetPageBreak (
   return mPrintMode.PageBreak;
 }
 
+#if 0
 STATIC
-
 BOOLEAN
 GetOutputPause (
   VOID
@@ -1937,6 +1937,7 @@ GetOutputPause (
 {
   return mPrintMode.OutputPause;
 }
+#endif
 
 INTN
 DbgPrint (

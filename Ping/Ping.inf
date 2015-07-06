@@ -25,24 +25,24 @@ FILE_GUID            = FAAA94BA-7095-4c0f-8D69-8E00C8328863
 COMPONENT_TYPE       = APPLICATION
 
 [sources.common]
-  ..\ShCommonStrings.uni
+  ../ShCommonStrings.uni
   PingStrings.uni
   Ping.h
   Ping.c
 
 [includes.common]
-  ..\Inc
-  ..\Library
-  $(EDK_SOURCE)\Foundation\Efi
-  $(EDK_SOURCE)\Foundation
-  $(EDK_SOURCE)\Foundation\Efi\Include
-  $(EDK_SOURCE)\Foundation\Include
-  $(EDK_SOURCE)\Foundation\Include\IndustryStandard
-  $(EDK_SOURCE)\Foundation\FrameWork
-  $(EDK_SOURCE)\Foundation\FrameWork\Include
-  $(EDK_SOURCE)\Foundation\Core\Dxe
-  $(EDK_SOURCE)\Foundation\Library\Dxe\Include
-  $(DEST_DIR)\
+  ../Inc
+  ../Library
+  $(EDK_SOURCE)/Foundation/Efi
+  $(EDK_SOURCE)/Foundation
+  $(EDK_SOURCE)/Foundation/Efi/Include
+  $(EDK_SOURCE)/Foundation/Include
+  $(EDK_SOURCE)/Foundation/Include/IndustryStandard
+  $(EDK_SOURCE)/Foundation/FrameWork
+  $(EDK_SOURCE)/Foundation/FrameWork/Include
+  $(EDK_SOURCE)/Foundation/Core/Dxe
+  $(EDK_SOURCE)/Foundation/Library/Dxe/Include
+  $(DEST_DIR./
 
 [libraries.common]  
   EfiShellLib
@@ -52,7 +52,6 @@ COMPONENT_TYPE       = APPLICATION
   ArchProtocolLib
   EdkGuidLib
   EdkFrameworkGuidLib
-  EfiDriverLib
 
 [libraries.Ia32]
   CpuIA32Lib
@@ -64,9 +63,12 @@ COMPONENT_TYPE       = APPLICATION
   CpuIA32Lib
 
 [nmake.common]
-  C_PROJ_FLAGS = $(C_PROJ_FLAGS)
   IMAGE_ENTRY_POINT=Ping
-  C_STD_FLAGS = $(C_STD_FLAGS) /DEFI_BOOTSHELL
+
+[nmake.IA32, nmake.EBC, nmake.X64, nmake.IPF]
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_ARRAY_NAME=$(BASE_NAME)Strings 
   C_STD_FLAGS = $(C_STD_FLAGS) /DSTRING_DEFINES_FILE=\"$(BASE_NAME)StrDefs.h\"
+  C_STD_FLAGS = $(C_STD_FLAGS) /DEFI_BOOTSHELL
 
+[nmake.ARM, nmake.AARCH64]
+  C_STD_FLAGS = $(C_STD_FLAGS) -DEFI_BOOTSHELL
