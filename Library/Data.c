@@ -67,14 +67,14 @@ EFI_UNICODE_COLLATION_PROTOCOL  *UnicodeInterface = &LibStubUnicodeInterface;
 EFI_GUID                        ShellEnvProtocol = SHELL_ENVIRONMENT_INTERFACE_PROTOCOL;
 
 EFI_DEVICE_PATH_PROTOCOL        LibEndDevicePath[] = {
-  END_DEVICE_PATH_TYPE,
+  {END_DEVICE_PATH_TYPE,
   END_ENTIRE_DEVICE_PATH_SUBTYPE,
-  END_DEVICE_PATH_LENGTH,
-  0
+  {END_DEVICE_PATH_LENGTH,
+  0}}
 };
 
 //
 // protocol GUIDs and other miscellaneous GUIDs
 //
-EFI_GUID                        NullGuid                  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+EFI_GUID                        NullGuid                  = { 0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0} };
 EFI_GUID                        UnknownDeviceGuid         = UNKNOWN_DEVICE_GUID;

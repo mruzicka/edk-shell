@@ -158,21 +158,21 @@ typedef struct {
 } TABLE_HEADER_INFO;
 
 TABLE_HEADER_INFO DmemTableHeader[] = {
-  EFI_PARTITION_SIGNATURE,
+  {EFI_PARTITION_SIGNATURE,
   L"Partition",
-  DumpPartition,
-  EFI_SYSTEM_TABLE_SIGNATURE,
+  DumpPartition},
+  {EFI_SYSTEM_TABLE_SIGNATURE,
   L"System",
-  DumpSystemTable,
-  EFI_BOOT_SERVICES_SIGNATURE,
+  DumpSystemTable},
+  {EFI_BOOT_SERVICES_SIGNATURE,
   L"Boot Services",
-  DumpGenericHeader,
-  EFI_RUNTIME_SERVICES_SIGNATURE,
+  DumpGenericHeader},
+  {EFI_RUNTIME_SERVICES_SIGNATURE,
   L"Runtime Services",
-  DumpGenericHeader,
-  0x00,
+  DumpGenericHeader},
+  {0x00,
   L"",
-  DumpGenericHeader
+  DumpGenericHeader}
 };
 
 static UINT8   FatNumber[] = { 12, 16, 32, 0 };

@@ -65,8 +65,8 @@ HEFI_EDITOR_GLOBAL_EDITOR       HMainEditorConst = {
   &HBufferImage,
   &HClipBoard,
   {
-    0,
-    0
+    {0,
+    0}
   },
   {
     0,

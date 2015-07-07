@@ -61,8 +61,8 @@ EFI_EDITOR_GLOBAL_EDITOR      MainEditorConst = {
   &MainInputBar,
   &FileBuffer,
   {
-    0,
-    0
+    {0,
+    0}
   },
   {
     0,
