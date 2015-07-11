@@ -36,6 +36,7 @@ extern UINT8      STRING_ARRAY_NAME[];
 #include EFI_PROTOCOL_DEFINITION (PciRootBridgeIo)
 
 EFI_STATUS
+EFIAPI
 PciDump (
   IN EFI_HANDLE                             ImageHandle,
   IN EFI_SYSTEM_TABLE                       *SystemTable
@@ -441,6 +442,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 PciDump (
   IN EFI_HANDLE                             ImageHandle,
   IN EFI_SYSTEM_TABLE                       *SystemTable
@@ -3175,6 +3177,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializePciGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -66,6 +66,7 @@ EFI_BOOTSHELL_CODE (
 //
 //
 EFI_STATUS
+EFIAPI
 GuidMain (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -75,6 +76,7 @@ GuidMain (
 //
 //
 EFI_STATUS
+EFIAPI
 GuidMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -236,6 +238,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 GuidMainGetLineHelp (
   OUT CHAR16          **Str
   )

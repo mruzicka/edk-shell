@@ -66,6 +66,7 @@ SHELL_VAR_CHECK_ITEM    DevicesCheckList[] = {
 };
 
 EFI_STATUS
+EFIAPI
 DevicesMain (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -87,6 +88,7 @@ DevicesMainOld (
 //
 //
 EFI_STATUS
+EFIAPI
 DevicesMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -367,6 +369,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeDevicesGetLineHelp (
   OUT CHAR16              **Str
   )

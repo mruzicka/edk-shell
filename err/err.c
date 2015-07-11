@@ -65,6 +65,7 @@ SHELL_VAR_CHECK_ITEM    ErrCheckList[] = {
 };
 
 EFI_STATUS
+EFIAPI
 InitializeError (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -350,6 +351,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeError (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -615,6 +617,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeErrorGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -75,6 +75,7 @@ struct tagMap {
 };
 
 EFI_STATUS
+EFIAPI
 InitializeTZone (
   IN EFI_HANDLE        hImageHandle,
   IN EFI_SYSTEM_TABLE  *pSystemTable
@@ -236,6 +237,7 @@ struct tagMap gTZMap[] = {
 };
 
 EFI_STATUS
+EFIAPI
 InitializeTZone (
   IN EFI_HANDLE               hImageHandle,
   IN EFI_SYSTEM_TABLE         *pSystemTable
@@ -400,6 +402,10 @@ InitializeTZone (
     //
     // end of if (EFI_ERROR(Status))
     //
+    if (nValue == EFI_UNSPECIFIED_TIMEZONE) {
+      PrintToken (STRING_TOKEN (STR_TZONE_UNSPECIFIED), hHiiHandle);
+      goto Done;
+    }
     if (bFullInfo) {
       for (uIndex = 0; uIndex < sizeof (gTZMap) / sizeof (struct tagMap); uIndex++) {
         if (gTZMap[uIndex].m_nValue == nValue) {
@@ -559,6 +565,7 @@ TZoneList (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeZoneGetLineHelp (
   OUT CHAR16              **Str
   )

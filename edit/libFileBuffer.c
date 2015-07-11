@@ -73,14 +73,14 @@ extern BOOLEAN          EditorMouseAction;
 // Name:
 //   FileBufferInit -- Initialization function for FileBuffer
 // In:
-//   VOID
+//   FileName - The file to load
 // Out:
 //   EFI_SUCCESS
 //   EFI_LOAD_ERROR
 //
 EFI_STATUS
 FileBufferInit (
-  VOID
+  CHAR16 *FileName
   )
 {
   //
@@ -96,7 +96,7 @@ FileBufferInit (
   //
   // default set FileName to NewFile.txt
   //
-  FileBuffer.FileName = EditGetDefaultFileName ();
+  FileBuffer.FileName = FileName ? StrDuplicate (FileName) : EditGetDefaultFileName ();
   if (FileBuffer.FileName == NULL) {
     return EFI_LOAD_ERROR;
   }
@@ -592,9 +592,9 @@ FileBufferCreateLine (
   Line->Type      = DEFAULT_TYPE;
 
   //
-  // initial buffer of the line is "\0"
+  // initial buffer of the line is ""
   //
-  Line->Buffer = PoolPrint (L"\0");
+  Line->Buffer = StrDuplicate (L"");
   if (Line->Buffer == NULL) {
     return NULL;
   }
@@ -625,26 +625,15 @@ FileBufferSetFileName (
   IN CHAR16 *Str
   )
 {
-  UINTN Size;
-  UINTN Index;
-
   //
   // free the old file name
   //
   EditorFreePool (FileBuffer.FileName);
 
-  Size                = StrLen (Str);
-
-  FileBuffer.FileName = AllocatePool (2 * (Size + 1));
+  FileBuffer.FileName = StrDuplicate (Str);
   if (FileBuffer.FileName == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-
-  for (Index = 0; Index < Size; Index++) {
-    FileBuffer.FileName[Index] = Str[Index];
-  }
-
-  FileBuffer.FileName[Size] = L'\0';
 
   return EFI_SUCCESS;
 }
@@ -1046,7 +1035,7 @@ Returns:
 
     AsciiBuffer = Buffer;
 
-    if (FileSize < 2) {
+    if (FileSize < sizeof (UINT16)) {
       //
       // size < Unicode file header, so only can be ASCII file
       //
@@ -1059,7 +1048,7 @@ Returns:
         //
         // Unicode file's size should be even
         //
-        if ((FileSize % 2) != 0) {
+        if ((FileSize % sizeof (CHAR16)) != 0) {
           MainStatusBarSetStatusString (L"File Format Wrong");
           EditorFreePool (Buffer);
           ShellFreeFileList (&DirList);
@@ -1067,7 +1056,7 @@ Returns:
           return EFI_LOAD_ERROR;
         }
 
-        FileSize /= 2;
+        FileSize /= sizeof (CHAR16);
 
         FileBuffer.FileType = UNICODE_FILE;
         UnicodeBuffer       = Buffer;
@@ -1085,7 +1074,7 @@ Returns:
       //
     }
     //
-    // end of FileSize < 2
+    // end of FileSize < sizeof (UINT16)
     // all the check ends
     // so now begin to set file name, free lines
     //
@@ -1198,7 +1187,7 @@ Returns:
       // Unicode and one '\0'
       //
       EditorFreePool (Line->Buffer);
-      Line->Buffer = AllocateZeroPool (LineSize * 2 + 2);
+      Line->Buffer = AllocateZeroPool ((LineSize + 1) * sizeof (CHAR16));
 
       if (Line->Buffer == NULL) {
         RemoveEntryList (&Line->Link);
@@ -1422,10 +1411,10 @@ GetNewLine (
     if (MainEditor.FileBuffer->FileType == UNICODE_FILE) {
       Buffer[0]   = 0x0d;
       Buffer[1]   = 0;
-      NewLineSize = 2;
+      NewLineSize = sizeof (CHAR16);
     } else {
       Buffer[0]   = 0x0d;
-      NewLineSize = 1;
+      NewLineSize = sizeof (CHAR8);
     }
 
     *Size = NewLineSize;
@@ -1438,10 +1427,10 @@ GetNewLine (
     if (MainEditor.FileBuffer->FileType == UNICODE_FILE) {
       Buffer[0]   = 0x0a;
       Buffer[1]   = 0;
-      NewLineSize = 2;
+      NewLineSize = sizeof (CHAR16);
     } else {
       Buffer[0]   = 0x0a;
-      NewLineSize = 1;
+      NewLineSize = sizeof (CHAR8);
     }
 
     *Size = NewLineSize;
@@ -1457,11 +1446,11 @@ GetNewLine (
       Buffer[2]   = 0x0a;
       Buffer[3]   = 0;
 
-      NewLineSize = 4;
+      NewLineSize = 2 * sizeof (CHAR16);
     } else {
       Buffer[0]   = 0x0d;
       Buffer[1]   = 0x0a;
-      NewLineSize = 2;
+      NewLineSize = 2 * sizeof (CHAR8);
     }
 
     *Size = NewLineSize;
@@ -1477,11 +1466,11 @@ GetNewLine (
       Buffer[2]   = 0x0d;
       Buffer[3]   = 0;
 
-      NewLineSize = 4;
+      NewLineSize = 2 * sizeof (CHAR16);
     } else {
       Buffer[0]   = 0x0a;
       Buffer[1]   = 0x0d;
-      NewLineSize = 2;
+      NewLineSize = 2 * sizeof (CHAR8);
     }
 
     *Size = NewLineSize;
@@ -1489,6 +1478,7 @@ GetNewLine (
   }
 
 }
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 //
 // Name:
 //   FileBufferSave -- Save lines in FileBuffer to disk
@@ -1753,7 +1743,7 @@ FileBufferSave (
       if (FileBuffer.FileType == ASCII_FILE) {
         Length += Line->Size;
       } else {
-        Length += (Line->Size * 2);
+        Length += (Line->Size * sizeof (CHAR16));
       }
       //
       // end if ASCII_FILE
@@ -1784,7 +1774,7 @@ FileBufferSave (
         UnicodeToAscii (Line->Buffer, Line->Size, Ptr);
         Length = Line->Size;
       } else {
-        Length = (Line->Size * 2);
+        Length = (Line->Size * sizeof (CHAR16));
         CopyMem (Ptr, (CHAR8 *) Line->Buffer, Length);
       }
       //
@@ -1860,6 +1850,7 @@ FileBufferSave (
 
   return EFI_SUCCESS;
 }
+#pragma GCC diagnostic pop
 //
 // Name:
 //   FileBufferHandleInput -- Dispatch input to different handler
@@ -2689,8 +2680,6 @@ FileBufferDoReturn (
   EFI_EDITOR_LINE *Line;
   EFI_EDITOR_LINE *NewLine;
   UINTN           FileColumn;
-  UINTN           Index;
-  CHAR16          *Buffer;
   UINTN           Row;
   UINTN           Col;
 
@@ -2709,8 +2698,9 @@ FileBufferDoReturn (
   NewLine->Signature  = EFI_EDITOR_LINE_LIST;
   NewLine->Size       = Line->Size - FileColumn + 1;
   NewLine->TotalSize  = NewLine->Size;
-  NewLine->Buffer     = PoolPrint (L"\0");
+  NewLine->Buffer     = StrDuplicate(Line->Buffer + FileColumn - 1);
   if (NewLine->Buffer == NULL) {
+    FreePool (NewLine);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -2718,28 +2708,12 @@ FileBufferDoReturn (
 
   if (NewLine->Size > 0) {
     //
-    // UNICODE + '\0'
+    // cut short the current line
     //
-    Buffer = AllocatePool (2 * (NewLine->Size + 1));
-    if (Buffer == NULL) {
-      FreePool (NewLine->Buffer);
-      FreePool (NewLine);
-      return EFI_OUT_OF_RESOURCES;
-    }
-
-    FreePool (NewLine->Buffer);
-
-    NewLine->Buffer = Buffer;
-
-    for (Index = 0; Index < NewLine->Size; Index++) {
-      NewLine->Buffer[Index] = Line->Buffer[Index + FileColumn - 1];
-    }
-
-    NewLine->Buffer[NewLine->Size]  = L'\0';
-
     Line->Buffer[FileColumn - 1]    = L'\0';
     Line->Size                      = FileColumn - 1;
   }
+
   //
   // increase NumLines
   //
@@ -2956,7 +2930,7 @@ FileBufferCutLine (
   //
   // if is the last dummy line, SO CAN not cut
   //
-  if (StrCmp (Line->Buffer, L"\0") == 0 && Line->Link.Flink == FileBuffer.ListHead
+  if (*Line->Buffer == L'\0' && Line->Link.Flink == FileBuffer.ListHead
   //
   // last line
   //
@@ -3207,8 +3181,8 @@ FileBufferReplace (
     if (FileBuffer.CurrentLine->TotalSize + 1 <= NewSize) {
       FileBuffer.CurrentLine->Buffer = ReallocatePool (
                                         FileBuffer.CurrentLine->Buffer,
-                                        2 * OldSize,
-                                        2 * NewSize
+                                        OldSize * sizeof (CHAR16),
+                                        NewSize * sizeof (CHAR16)
                                         );
       FileBuffer.CurrentLine->TotalSize = NewSize - 1;
     }
@@ -3406,8 +3380,8 @@ FileBufferReplaceAll (
         if (Line->TotalSize + 1 <= NewSize) {
           Line->Buffer = ReallocatePool (
                           Line->Buffer,
-                          2 * OldSize,
-                          2 * NewSize
+                          OldSize * sizeof (CHAR16),
+                          NewSize * sizeof (CHAR16)
                           );
           Line->TotalSize = NewSize - 1;
         }

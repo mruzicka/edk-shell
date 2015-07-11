@@ -81,6 +81,7 @@ ShellDeviceTree (
   );
 
 EFI_STATUS
+EFIAPI
 DevicetreeMain (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -99,6 +100,7 @@ EFI_BOOTSHELL_CODE(
 //
 //
 EFI_STATUS
+EFIAPI
 DevicetreeMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -487,6 +489,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 DevicetreeMainGetLineHelp (
   OUT CHAR16                **Str
   )

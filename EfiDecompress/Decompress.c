@@ -60,6 +60,7 @@ SHELL_VAR_CHECK_ITEM    DecompressCheckList[] = {
 // Function declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeDecompress (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -73,6 +74,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeDecompress (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -486,6 +488,7 @@ Quit:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeDecompressGetLineHelp (
   OUT CHAR16                  **Str
   )

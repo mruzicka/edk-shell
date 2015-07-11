@@ -107,7 +107,7 @@ LibUninstallProtocolInterfaces (
 
 EFI_STATUS
 LibReinstallProtocolInterfaces (
-  IN OUT EFI_HANDLE                   *Handle,
+  IN EFI_HANDLE                       Handle,
   ...
   );
 

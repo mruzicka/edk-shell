@@ -26,6 +26,7 @@ Revision History
 extern EFI_HII_HANDLE HiiMemHandle;
 
 EFI_STATUS
+EFIAPI
 DumpMm (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -36,6 +37,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 DumpMm (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -101,6 +103,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 DumpMmGetLineHelp (
   OUT CHAR16          **Str
   )

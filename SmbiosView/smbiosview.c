@@ -96,6 +96,7 @@ SHELL_VAR_CHECK_ITEM        SmbiosviewCheckList[] = {
 // Entry Point
 //
 EFI_STATUS
+EFIAPI
 InitializeSmbiosViewApplication (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -106,6 +107,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeSmbiosViewApplication (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -769,6 +771,7 @@ GetShowTypeString (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeSmbiosViewApplicationGetLineHelp (
   OUT CHAR16              **Str
   )

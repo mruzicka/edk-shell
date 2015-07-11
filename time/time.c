@@ -185,8 +185,21 @@ Returns:
 
   if (ChkPck.ValueCount == 0) {
     Status = RT->GetTime (&Time, NULL);
+    if (EFI_ERROR (Status)) {
+      PrintToken (STRING_TOKEN (STR_TIME_CLOCK_NOT_FUNC), HiiHandle, L"time");
+      goto Done;
+    }
 
-    if (!EFI_ERROR (Status)) {
+    Status = EFI_SUCCESS;
+    if (Time.TimeZone == EFI_UNSPECIFIED_TIMEZONE) {
+      PrintToken (
+        STRING_TOKEN (STR_TIME_THREE_VARS),
+        HiiHandle,
+        (UINTN) Time.Hour,
+        (UINTN) Time.Minute,
+        (UINTN) Time.Second
+        );
+    } else {
       if (Time.TimeZone < 0) {
         nValue  = -Time.TimeZone;
       } else {
@@ -195,7 +208,7 @@ Returns:
       }
 
       PrintToken (
-        STRING_TOKEN (STR_TIME_THREE_VARS),
+        STRING_TOKEN (STR_TIME_THREE_VARS_AND_TZ),
         HiiHandle,
         (UINTN) Time.Hour,
         (UINTN) Time.Minute,
@@ -204,11 +217,8 @@ Returns:
         nValue / 60,
         nValue % 60
         );
-      Status = EFI_SUCCESS;
-      goto Done;
     }
     
-    PrintToken (STRING_TOKEN (STR_TIME_CLOCK_NOT_FUNC), HiiHandle, L"time");
     goto Done;
   }
   //

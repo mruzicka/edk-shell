@@ -1072,7 +1072,12 @@ Returns:
     //
     // Get media status
     //
+#if (EFI_SPECIFICATION_VERSION >= 0x0002000A)
     IfConfigGetNicMediaStatus (ImageHandle, Handles[Index], &NicInfo->MediaPresentSupported, &NicInfo->MediaPresent);
+#else
+    NicInfo->MediaPresentSupported = FALSE;
+    NicInfo->MediaPresent = FALSE;
+#endif
 
     InsertTailList (&NicInfoList, &NicInfo->Link);
     

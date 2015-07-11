@@ -1824,7 +1824,7 @@ Returns:
 
   return FALSE;
 }
-
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 EFI_DEVICE_PATH_PROTOCOL *
 LibDuplicateDevicePathInstance (
   IN EFI_DEVICE_PATH_PROTOCOL  *DevPath
@@ -1873,7 +1873,7 @@ Returns:
 
   return NewDevPath;
 }
-
+#pragma GCC diagnostic pop
 INTN
 DevicePathCompare (
   IN  EFI_DEVICE_PATH_PROTOCOL *DevicePath1,

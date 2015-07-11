@@ -77,14 +77,14 @@ EFI_EDITOR_GLOBAL_EDITOR      MainEditorConst = {
 // Name:
 //   MainEditorInit -- Init function for MainEditor
 // In:
-//   VOID
+//   FileName - The name of the file to edit
 // Out:
 //   EFI_SUCCESS
 //   EFI_LOAD_ERROR
 //
 EFI_STATUS
 MainEditorInit (
-  VOID
+  CHAR16 *FileName
   )
 {
   EFI_STATUS  Status;
@@ -191,7 +191,7 @@ MainEditorInit (
     return EFI_LOAD_ERROR;
   }
 
-  Status = FileBufferInit ();
+  Status = FileBufferInit (FileName);
   if (EFI_ERROR (Status)) {
     PrintToken (STRING_TOKEN (STR_EDIT_LIBEDITOR_FILEBUFFER), gEditHiiHandle);
     return EFI_LOAD_ERROR;

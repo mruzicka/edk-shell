@@ -88,6 +88,7 @@ SHELL_VAR_CHECK_ITEM  IpconfigCheckList[] = {
 #define IP_STRING_MAX_LENGTH  32
 
 EFI_STATUS
+EFIAPI
 InitializeIpConfig (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -334,6 +335,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeIpConfig (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -862,6 +864,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeIpConfigGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -49,6 +49,20 @@ typedef struct _pitem {
   BOOLEAN Long;
 } PRINT_ITEM;
 
+typedef
+EFI_STATUS
+(EFIAPI *GENERIC_OUTPUT_STRING) (
+  VOID    *context,
+  CHAR16  *str
+  );
+
+typedef
+EFI_STATUS
+(EFIAPI *GENERIC_SET_ATTRIBUTE) (
+  VOID    *context,
+  UINTN   attr
+  );
+
 typedef struct _pstate {
   //
   // Input
@@ -73,9 +87,9 @@ typedef struct _pstate {
   UINTN   AttrBlueColor;
   UINTN   AttrGreenColor;
 
-  INTN (*Output) (VOID *context, CHAR16 *str);
-  INTN (*SetAttr) (VOID *context, UINTN attr);
-  VOID          *Context;
+  GENERIC_OUTPUT_STRING Output;
+  GENERIC_SET_ATTRIBUTE SetAttr;
+  VOID    *Context;
 
   //
   // Current item being formatted
@@ -105,7 +119,8 @@ _Print (
   IN PRINT_STATE     *ps
   );
 
-INTN
+EFI_STATUS
+EFIAPI
 _SPrint (
   IN VOID     *Context,
   IN CHAR16   *Buffer
@@ -126,16 +141,11 @@ _PoolCatPrint (
   IN CHAR16               *fmt,
   IN VA_LIST              args,
   IN OUT POOL_PRINT       *spc,
-  IN INTN
-    (
-  *Output)
-    (
-      VOID *context,
-      CHAR16 *str
-    )
+  IN GENERIC_OUTPUT_STRING Output
   );
 
-INTN
+EFI_STATUS
+EFIAPI
 _PoolPrint (
   IN VOID     *Context,
   IN CHAR16   *Buffer
@@ -190,13 +200,35 @@ SetCursorPosition (
   IN  UINTN                           Len
   );
 
-INTN
+EFI_STATUS
+EFIAPI
 _DbgOut (
   IN VOID     *Context,
   IN CHAR16   *Buffer
   );
 
-INTN
+static
+inline
+GENERIC_OUTPUT_STRING
+GenericOutputStringCast (
+  EFI_TEXT_OUTPUT_STRING fn
+  )
+{
+  return (GENERIC_OUTPUT_STRING) fn;
+}
+
+static
+inline
+GENERIC_SET_ATTRIBUTE
+GenericSetAttributeCast (
+  EFI_TEXT_SET_ATTRIBUTE fn
+  )
+{
+  return (GENERIC_SET_ATTRIBUTE) fn;
+}
+
+EFI_STATUS
+EFIAPI
 _SPrint (
   IN VOID     *Context,
   IN CHAR16   *Buffer
@@ -245,7 +277,7 @@ Returns:
     spc->str[spc->maxlen] = 0;
   }
 
-  return 0;
+  return EFI_SUCCESS;
 }
 
 VOID
@@ -253,13 +285,7 @@ _PoolCatPrint (
   IN CHAR16               *fmt,
   IN VA_LIST              args,
   IN OUT POOL_PRINT       *spc,
-  IN INTN
-    (
-  *Output)
-    (
-      VOID *context,
-      CHAR16 *str
-    )
+  IN GENERIC_OUTPUT_STRING Output
   )
 /*++'
 
@@ -283,7 +309,7 @@ Returns:
   ps.Output   = Output;
   ps.Context  = spc;
   ps.fmt.u.pw = fmt;
-  ps.args     = args;
+  VA_COPY (ps.args, args);
   _Print (&ps);
 }
 
@@ -616,8 +642,8 @@ Returns:
 
   SetMem (&ps, sizeof (ps), 0);
   ps.Context  = Out;
-  ps.Output   = (INTN (*) (VOID *, CHAR16 *)) Out->OutputString;
-  ps.SetAttr  = (INTN (*) (VOID *, UINTN)) Out->SetAttribute;
+  ps.Output   = GenericOutputStringCast (Out->OutputString);
+  ps.SetAttr  = GenericSetAttributeCast (Out->SetAttribute);
   ASSERT (NULL != Out->Mode);
   ps.Attr           = Out->Mode->Attribute;
 
@@ -635,7 +661,7 @@ Returns:
     ps.fmt.u.pc   = fmta;
   }
 
-  ps.args = args;
+  VA_COPY (ps.args, args);
 
   if (Column != (UINTN) -1) {
     Out->SetCursorPosition (Out, Column, Row);
@@ -1365,7 +1391,8 @@ SetOutputPause (
   BS->RestoreTPL (Tpl);
 }
 
-INTN
+EFI_STATUS
+EFIAPI
 _PoolPrint (
   IN VOID     *Context,
   IN CHAR16   *Buffer
@@ -1967,7 +1994,6 @@ Returns:
 {
   EFI_SIMPLE_TEXT_OUT_PROTOCOL  *DbgOut;
   PRINT_STATE                   ps;
-  VA_LIST                       args;
   UINTN                         back;
   UINTN                         attr;
   UINTN                         SavedAttribute;
@@ -1978,14 +2004,11 @@ Returns:
     return 0;
   }
 
-  VA_START (args, fmt);
   ZeroMem (&ps, sizeof (ps));
 
-  ps.Output     = _DbgOut;
   ps.fmt.Ascii  = TRUE;
   ps.fmt.u.pc   = fmt;
-  ps.args       = args;
-  ps.Attr       = EFI_TEXT_ATTR (EFI_LIGHTGRAY, EFI_RED);
+  ps.Output     = _DbgOut;
 
   DbgOut        = LibRuntimeDebugOut;
 
@@ -1997,9 +2020,10 @@ Returns:
   }
 
   if (DbgOut) {
-    ps.Attr     = DbgOut->Mode->Attribute;
     ps.Context  = DbgOut;
-    ps.SetAttr  = (INTN (*) (VOID *, UINTN)) DbgOut->SetAttribute;
+    ps.SetAttr  = GenericSetAttributeCast (DbgOut->SetAttribute);
+    ASSERT (NULL != DbgOut->Mode);
+    ps.Attr     = DbgOut->Mode->Attribute;
   }
 
   SavedAttribute    = ps.Attr;
@@ -2026,6 +2050,8 @@ Returns:
     ps.SetAttr (ps.Context, attr);
   }
 
+  VA_START (ps.args, fmt);
+
   _Print (&ps);
 
   //
@@ -2038,7 +2064,8 @@ Returns:
   return 0;
 }
 
-INTN
+EFI_STATUS
+EFIAPI
 _DbgOut (
   IN VOID     *Context,
   IN CHAR16   *Buffer
@@ -2066,6 +2093,5 @@ Returns:
     DbgOut->OutputString (DbgOut, Buffer);
   }
 
-  return 0;
+  return EFI_SUCCESS;
 }
-

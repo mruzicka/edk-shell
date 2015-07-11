@@ -74,6 +74,7 @@ SHELL_VAR_CHECK_ITEM    HexeditCheckList[] = {
 EFI_HANDLE        HImageHandleBackup;
 
 EFI_STATUS
+EFIAPI
 InitializeEFIHexEditor (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -101,6 +102,7 @@ PrintUsage (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeEFIHexEditor (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -486,6 +488,7 @@ done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeEFIHexEditorGetLineHelp (
   OUT CHAR16              **Str
   )

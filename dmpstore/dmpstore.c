@@ -51,6 +51,7 @@ STATIC CHAR16   *AttrType[] = {
 //
 //
 EFI_STATUS
+EFIAPI
 InitializeDumpStore (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -141,6 +142,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeDumpStore (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -781,6 +783,7 @@ SetFileVariable (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeDumpStoreGetLineHelp (
   OUT CHAR16                **Str
   )

@@ -23,6 +23,7 @@ Abstract:
 extern UINT8  STRING_ARRAY_NAME[];
 
 EFI_STATUS
+EFIAPI
 InitializeEFIEditor (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -74,6 +75,7 @@ EFI_HANDLE        ImageHandleBackup;
 //    EFI_SUCCESS
 //
 EFI_STATUS
+EFIAPI
 InitializeEFIEditor (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -191,7 +193,7 @@ Returns:
     goto done;
   }
 
-  Status = MainEditorInit ();
+  Status = MainEditorInit (ChkPck.ValueCount ? ChkPck.VarList->VarStr : NULL);
   if (EFI_ERROR (Status)) {
     Out->ClearScreen (Out);
     Out->EnableCursor (Out, TRUE);
@@ -200,14 +202,6 @@ Returns:
   }
 
   MainEditorBackup ();
-
-  //
-  // if editor launched with file named
-  //
-  if (ChkPck.ValueCount == 1) {
-
-    FileBufferSetFileName (ChkPck.VarList->VarStr);
-  }
 
   Status = FileBufferRead (&MainEditor.FileBuffer->FileName, FALSE);
   if (!EFI_ERROR (Status)) {
@@ -268,6 +262,7 @@ done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeEFIEditorGetLineHelp (
   OUT CHAR16              **Str
   )

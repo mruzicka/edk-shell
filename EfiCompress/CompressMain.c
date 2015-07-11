@@ -58,6 +58,7 @@ SHELL_VAR_CHECK_ITEM    CompressCheckList[] = {
 // Function declarations
 //
 EFI_STATUS
+EFIAPI
 InitializeCompress (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -71,6 +72,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeCompress (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -444,6 +446,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeCompressGetLineHelp (
   OUT CHAR16                     **Str
   )

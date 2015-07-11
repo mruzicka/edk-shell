@@ -87,7 +87,7 @@ LineDup (
   //
   // set the line buffer
   //
-  Dest->Buffer = PoolPrint (L"%s\0", Src->Buffer);
+  Dest->Buffer = StrDuplicate (Src->Buffer);
   if (Dest->Buffer == NULL) {
     FreePool (Dest);
     return NULL;
@@ -345,10 +345,9 @@ Returns:
 --*/
 {
   UINTN   Index;
-  CHAR16  *s;
   CHAR16  *Str;
 
-  Index = (StrSize) * 2;
+  Index = StrSize * sizeof (CHAR16);
 
   Str   = Line->Buffer;
 
@@ -356,7 +355,7 @@ Returns:
   // do not have free space
   //
   if (Line->TotalSize <= Line->Size) {
-    Str = ReallocatePool (Str, Index, Index + 16);
+    Str = ReallocatePool (Str, Index, Index + 8 * sizeof (CHAR16));
     if (Str == NULL) {
       return 0;
     }
@@ -366,14 +365,13 @@ Returns:
   //
   // move the later part of the string one character right
   //
-  s = Str;
   for (Index = StrSize; Index > Pos; Index--) {
-    s[Index] = s[Index - 1];
+    Str[Index] = Str[Index - 1];
   }
   //
   // insert char into it.
   //
-  s[Index]      = Char;
+  Str[Index]    = Char;
 
   Line->Buffer  = Str;
   Line->Size++;

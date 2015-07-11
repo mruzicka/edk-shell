@@ -1495,9 +1495,8 @@ ProxyConInFlashState (
                   TimerRelative,
                   (UINT64) 20000000
                   );
-    mConInProxy.InputState = INPUT_STATE_ESC;
   } else {
-    Status = EFI_UNSUPPORTED;
+    Status = EFI_SUCCESS;
   }
 
   return Status;

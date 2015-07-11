@@ -51,6 +51,10 @@ EFI_GUID        VtUtf8Protocol          = DEVICE_PATH_MESSAGING_VT_UTF8;
 
 #define DEFAULT_FORM_BUFFER_SIZE  0xFFFF
 
+#define NULL2      ((VOID*) 1)
+
+#define ALIGN2(P)  ((VOID*) (((UINT8*) 0) + ((((UINT8*) (P)) - ((UINT8*) 0)) & -2)))
+
 STATIC EFI_SHELL_ENVIRONMENT  *mShellEnv = NULL;
 
 STATIC CHAR8  Hex[] = {
@@ -236,44 +240,49 @@ Returns:
 
 --*/
 {
-  BOOLEAN TryAgain;
-
   ASSERT (Status != NULL);
   ASSERT (Buffer != NULL);
 
   //
   // If this is an initial request, buffer will be null with a new buffer size
   //
-  if (NULL == *Buffer && BufferSize) {
+  if (*Buffer == NULL) {
     *Status = EFI_BUFFER_TOO_SMALL;
+    if (BufferSize == 0) {
+      // Avoid allocating zero-length buffer
+      *Buffer = NULL2;
+      return TRUE;
+    }
   }
-  //
-  // If the status code is "buffer too small", resize the buffer
-  //
-  TryAgain = FALSE;
-  if (*Status == EFI_BUFFER_TOO_SMALL) {
 
-    if (*Buffer) {
+  if (EFI_ERROR (*Status)) {
+    if (ALIGN2 (*Buffer)) {
       FreePool (*Buffer);
     }
 
-    *Buffer = AllocateZeroPool (BufferSize);
+    //
+    // If the status code is "buffer too small", resize the buffer
+    //
+    if (*Status == EFI_BUFFER_TOO_SMALL) {
+      *Buffer = AllocateZeroPool (BufferSize);
+      if (*Buffer) {
+        return TRUE;
+      }
 
-    if (*Buffer) {
-      TryAgain = TRUE;
-    } else {
       *Status = EFI_OUT_OF_RESOURCES;
+    } else {
+      *Buffer = NULL;
     }
-  }
-  //
-  // If there's an error, free the buffer
-  //
-  if (!TryAgain && EFI_ERROR (*Status) && *Buffer) {
-    FreePool (*Buffer);
-    *Buffer = NULL;
+  } else {
+    //
+    // Make sure that possible NULL2 is converted to NULL by aligning it using ALIGN2.
+    // Note that pointers returned by the AllocateZeroPool are 8 byte aligned which
+    // means that they survive ALIGN2 unmodified.
+    //
+    *Buffer = ALIGN2 (*Buffer);
   }
 
-  return TryAgain;
+  return FALSE;
 }
 
 INTN
@@ -285,7 +294,7 @@ CompareGuid (
 
 Routine Description:
 
-  Compares to GUIDs
+  Compares two GUIDs
 
 Arguments:
 
@@ -1412,9 +1421,10 @@ QSort (
     }
   }
 
+  FreePool (Ele);
+
   QSort (Buffer, Low, EleSize, Compare);
   QSort ((UINT8 *) Buffer + (High + 1) * EleSize, EleNum - High - 1, EleSize, Compare);
-  FreePool (Ele);
 }
 
 VOID

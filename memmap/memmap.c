@@ -62,6 +62,7 @@ SHELL_VAR_CHECK_ITEM    MemmapCheckList[] = {
 //
 //
 EFI_STATUS
+EFIAPI
 InitializeMemmap (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -80,6 +81,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeMemmap (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -303,6 +305,7 @@ IsRealMemory (
 }
 
 EFI_STATUS
+EFIAPI
 InitializeMemmapGetLineHelp (
   OUT CHAR16              **Str
   )

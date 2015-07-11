@@ -58,6 +58,7 @@ SHELL_VAR_CHECK_ITEM    ModeCheckList[] = {
 };
 
 EFI_STATUS
+EFIAPI
 InitializeMode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -71,6 +72,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeMode (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -251,6 +253,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeModeGetLineHelp (
   OUT CHAR16              **Str
   )

@@ -1733,14 +1733,14 @@ FakeCompareLanguage (
 
 VOID
 FakeAsciiToUnicode (
-  IN UINT8                                        *Lang,
-  IN UINT16                                       *Language
+  IN CHAR8                              *Ascii,
+  IN CHAR16                             *Unicode
   )
 {
   UINT8 Count;
 
   for (Count = 0; Count < 3; Count++) {
-    Language[Count] = (CHAR16) Lang[Count];
+    Unicode[Count] = (CHAR16) Ascii[Count];
   }
 }
 
@@ -2244,6 +2244,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiExportDatabase (
   IN     EFI_HII_PROTOCOL *This,
   IN     EFI_HII_HANDLE   Handle,
@@ -2255,6 +2256,7 @@ FakeHiiExportDatabase (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetDefaultImage (
   IN     EFI_HII_PROTOCOL           *This,
   IN     EFI_HII_HANDLE             Handle,
@@ -2266,6 +2268,7 @@ FakeHiiGetDefaultImage (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetGlyph (
   IN     EFI_HII_PROTOCOL  *This,
   IN     CHAR16            *Source,
@@ -2279,6 +2282,7 @@ FakeHiiGetGlyph (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetKeyboardLayout (
   IN     EFI_HII_PROTOCOL    * This,
   OUT    UINT16              *DescriptorCount,
@@ -2289,6 +2293,7 @@ FakeHiiGetKeyboardLayout (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetLine (
   IN     EFI_HII_PROTOCOL  *This,
   IN     EFI_HII_HANDLE    Handle,
@@ -2304,6 +2309,7 @@ FakeHiiGetLine (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGetSecondaryLanguages (
   IN  EFI_HII_PROTOCOL    *This,
   IN  EFI_HII_HANDLE      Handle,
@@ -2315,6 +2321,7 @@ FakeHiiGetSecondaryLanguages (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiGlyphToBlt (
   IN     EFI_HII_PROTOCOL               *This,
   IN     UINT8                          *GlyphBuffer,
@@ -2330,6 +2337,7 @@ FakeHiiGlyphToBlt (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiNewString (
   IN     EFI_HII_PROTOCOL      *This,
   IN     CHAR16                *Language,
@@ -2342,6 +2350,7 @@ FakeHiiNewString (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiResetStrings (
   IN     EFI_HII_PROTOCOL   *This,
   IN     EFI_HII_HANDLE     Handle
@@ -2351,6 +2360,7 @@ FakeHiiResetStrings (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiTestString (
   IN     EFI_HII_PROTOCOL  *This,
   IN     CHAR16            *StringToTest,
@@ -2362,6 +2372,7 @@ FakeHiiTestString (
 }
 
 EFI_STATUS
+EFIAPI
 FakeHiiUpdateForm (
   IN EFI_HII_PROTOCOL     *This,
   IN EFI_HII_HANDLE       Handle,

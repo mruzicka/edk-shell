@@ -42,6 +42,7 @@ typedef enum {
 } EFI_ACCESS_TYPE;
 
 EFI_STATUS
+EFIAPI
 DumpIoModify (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -162,6 +163,7 @@ GetPciEAddressFromInputAddress (
   );
 
 EFI_STATUS
+EFIAPI
 DumpIoModify (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -913,6 +915,7 @@ Returns:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeMMGetLineHelp (
   OUT CHAR16              **Str
   )

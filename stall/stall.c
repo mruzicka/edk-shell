@@ -55,6 +55,7 @@ SHELL_VAR_CHECK_ITEM    StallCheckList[] = {
 };
 
 EFI_STATUS
+EFIAPI
 InitializeStall (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -65,6 +66,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 InitializeStall (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -236,6 +238,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeStallGetLineHelp (
   OUT CHAR16            **Str
   )

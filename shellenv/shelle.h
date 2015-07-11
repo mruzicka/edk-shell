@@ -299,6 +299,7 @@ SEnvInitProtocolInfo (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvLoadDefaultsGetLineHelp (
   IN OUT CHAR16                     **Str
   )
@@ -492,6 +493,7 @@ SEnvIGetProtID (
   );
 
 EFI_STATUS
+EFIAPI
 SEnvCmdUnloadGetLineHelp (
   OUT CHAR16                   **Str
   )
@@ -1668,6 +1670,7 @@ EFIStructsPrint (
   );
 
 EFI_STATUS
+EFIAPI
 DumpBlockDev (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable

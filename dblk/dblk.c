@@ -58,6 +58,7 @@ SHELL_VAR_CHECK_ITEM      DblkCheckList[] = {
 
 
 EFI_STATUS
+EFIAPI
 DumpBlockDev (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -68,6 +69,7 @@ EFI_BOOTSHELL_CODE(
 )
 
 EFI_STATUS
+EFIAPI
 DumpBlockDev (
   IN EFI_HANDLE           ImageHandle,
   IN EFI_SYSTEM_TABLE     *SystemTable
@@ -280,6 +282,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeDblkGetLineHelp (
   OUT CHAR16              **Str
   )

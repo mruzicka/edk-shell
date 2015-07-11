@@ -103,6 +103,7 @@ EFI_BOOTSHELL_CODE(
 //
 //
 EFI_STATUS
+EFIAPI
 OpeninfoMain (
   IN EFI_HANDLE         ImageHandle,
   IN EFI_SYSTEM_TABLE   *SystemTable
@@ -112,6 +113,7 @@ OpeninfoMain (
 //
 //
 EFI_STATUS
+EFIAPI
 OpeninfoMain (
   IN EFI_HANDLE               ImageHandle,
   IN EFI_SYSTEM_TABLE         *SystemTable
@@ -365,6 +367,7 @@ Done:
 }
 
 EFI_STATUS
+EFIAPI
 InitializeOpenInfoGetLineHelp (
   OUT CHAR16              **Str
   )
