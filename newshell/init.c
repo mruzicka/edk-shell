@@ -230,11 +230,52 @@ _DoInit (
   }
 
   //
-  // Enable cursor for console output
+  // Set the largest available console mode
+  // and enable cursor for console output
   //
   ASSERT (ST->ConOut != NULL);
-  mOldCursorVisible = ST->ConOut->Mode->CursorVisible;
-  ST->ConOut->EnableCursor (ST->ConOut, TRUE);
+  {
+    EFI_SIMPLE_TEXT_OUT_PROTOCOL  *ConOut = ST->ConOut;
+    INTN                          LargestMode = ConOut->Mode->Mode;
+    INTN                          Mode;
+    UINTN                         LargestArea = 0;
+    UINTN                         Area;
+    UINTN                         Col;
+    UINTN                         Row;
+
+    //
+    // Save the cursor visibility status
+    //
+    mOldCursorVisible = ConOut->Mode->CursorVisible;
+
+    //
+    // Find the largest available console mode
+    //
+    for (Mode = 0; Mode < ConOut->Mode->MaxMode; Mode++) {
+      Status = ConOut->QueryMode (ConOut, Mode, &Col, &Row);
+      if (EFI_ERROR (Status))
+        continue;
+
+      Area = Col * Row;
+      if (Area > LargestArea) {
+        LargestArea = Area;
+        LargestMode = Mode;
+      }
+    }
+
+    //
+    // Set the largest mode (if different from the current mode)
+    //
+    if (LargestMode != ConOut->Mode->Mode) {
+      ConOut->SetMode (ConOut, LargestMode);
+      ConOut->ClearScreen (ConOut);
+    }
+
+    //
+    // Enable cursor for console output
+    //
+    ConOut->EnableCursor (ConOut, TRUE);
+  }
 
   //
   // When running under EFI1.1, there is no HII support
